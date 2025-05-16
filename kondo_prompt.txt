@@ -1,0 +1,76 @@
+Robot Description:
+
+The robot, that now has the arms at its sides, has the following joints with their default angles:
+    {
+        "Head": 0.0,
+        "LeftShoulder": 0.0,
+        "LeftArm": 0.0,
+        "LeftElbow": 0.0,
+        "LeftForearm": 0.0,
+        "RightShoulder": 0.0,
+        "RightArm": 0.0,
+        "RightElbow": 0.0,
+        "RightForearm": 0.0
+    }
+
+Joint Limits (radians):
+{
+    "Head": [-2.356, 2.356],
+    "LeftShoulder": [-2.356, 2.356],
+    "LeftArm": [-2.356, 2.356],
+    "LeftElbow": [-2.356, 2.356],
+    "LeftForearm": [-2.356, 2.356],
+    "RightShoulder": [-2.356, 2.356],
+    "RightArm": [-2.356, 2.356],
+    "RightElbow": [-2.356, 2.356],
+    "RightForearm": [-2.356, 2.356]
+}
+
+
+All axes are defined in a right-handed robot-fixed frame (attached to the torso) where:
+
+    +X = Forward (direction the robot faces).
+    +Y = Left.
+    +Z = Up.
+
+
+Joint Rotation Axes:
+
+    Each joint rotates around its specified axis locally (relative to the robot’s frame):
+    
+       {
+            "Head": [0, 0, 1],          # +angle = CCW around Z (nod forward, tilt backward)
+            "LeftShoulder": [0, -1, 0],  # +angle = CCW around -Y (forward arm swing)
+            "LeftArm": [1, 0, 0],        # +angle = CCW around +X (lifts arm **leftward** sideways)
+            "LeftElbow": [0, 0, 1],      # +angle = CCW around Z (bends elbow inward)
+            "LeftForearm": [0, -1, 0],   # +angle = CCW around -Y (twists forearm forward)
+            "RightShoulder": [0, -1, 0], # +angle = CCW around -Y (mirrors left)
+            "RightArm": [-1, 0, 0],      # +angle = CCW around **-X** (lifts arm **rightward** sideways)
+            "RightElbow": [0, 0, -1],    # +angle = CCW around -Z (bends elbow inward, mirrors left)
+            "RightForearm": [0, -1, 0]   # +angle = CCW around -Y (mirrors left)
+       }
+    
+
+Note: 
+A positive angle always follows the right-hand rule around the given axis. 
+That means for an axis like [-1, 0, 0], a positive angle rotates clockwise when looking along -X (as expected). 
+You should not flip the angle sign based on axis direction — just follow the axis and right-hand rule.
+
+
+Task:
+
+    Make the robot perform a T-pose (arms extended horizontally to the sides, forming a "T").
+    Specify the joint angles needed, ensuring they respect the limits.
+
+    or
+
+    Task: Make the robot perform a 'hero pose' (hands firmly on your hips, elbows bent at roughly a 90-degree angle). 
+    Specify the joint angles needed, ensuring they respect the limits.
+
+    or
+
+    Make the robot perform a military salute (The right upper arm should swing far forward close to face.
+    The elbow should bend sharply to bring the hand near the right eyebrow. The hand should face down or slightly inward.) 
+    Specify the joint angles needed, ensuring they respect the limits
+
+

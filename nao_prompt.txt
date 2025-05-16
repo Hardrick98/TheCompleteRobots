@@ -1,0 +1,99 @@
+Robot Description:
+
+The NAO robot, that now has the arms at its sides, has the following joints with their default angles:
+{"HeadYaw": 0.0,
+"RHipPitch": 0.12741918861865997, 
+"RElbowYaw": 1.2022771835327148,
+"RShoulderPitch": 1.4425842761993408,
+"LShoulderRoll": 0.22445663809776306,
+"LKneePitch": -0.09231,
+"RAnkleRoll": 0.11078902333974838,
+"LShoulderPitch": 1.4425839185714722,
+"LHipPitch": 0.12741895020008087,
+"LElbowYaw": -1.2022771835327148,
+"LAnklePitch": 0.08741939812898636,
+"RHipYawPitch": -0.17000968754291534,
+"HeadPitch": -0.17000003159046173,
+"LElbowRoll": -0.4172717034816742,
+"RShoulderRoll": -0.2244565635919571,
+"LAnkleRoll": -0.11079317331314087,
+"LHipYawPitch": -0.17000968754291534,
+"RAnklePitch": 0.08741933107376099,
+"LHipRoll": 0.11910843849182129,
+"RHipRoll": -0.11910243332386017,
+"RElbowRoll": 0.41727155447006226,
+"RKneePitch": -0.09231,
+"LWristYaw": 0.09999997913837433,
+"RWristYaw": 0.09999997913837433}
+
+Joint Limits (radians):
+{"HeadYaw": [-2.08567, 2.08567], "HeadPitch": [-0.671952, 0.514872], "RShoulderPitch": [-2.08567, 2.08567], 
+"RShoulderRoll": [-1.32645, 0.314159], "RElbowYaw": [-2.08567, 2.08567], "RElbowRoll": [0.0, 1.54462], 
+"RWristYaw": [-1.82387, 1.82387], "LShoulderPitch": [-2.08567, 2.08567], "LShoulderRoll": [-0.314159, 1.32645], 
+"LElbowYaw": [-2.08567, 2.08567], "LElbowRoll": [-1.54462, 0.0], "LWristYaw": [-1.82387, 1.82387], 
+"RHipYawPitch": [-1.14529, 0.740718], "RHipRoll": [-0.738274, 0.449597], "RHipPitch": [-1.77378, 0.48398], 
+"RKneePitch": [-0.0923279, 2.11255], "RAnklePitch": [-1.1863, 0.932006], "RAnkleRoll": [-0.768992, 0.397935], 
+"LHipYawPitch": [-1.14529, 0.740718], "LHipRoll": [-0.379435, 0.79046], 
+"LHipPitch": [-1.77378, 0.48398], "LKneePitch": [-0.0923279, 2.11255], "LAnklePitch": [-1.18944, 0.922581], 
+"LAnkleRoll": [-0.39788, 0.769001]}
+
+All axes are defined in a right-handed robot-fixed frame (attached to the torso) where:
+
+    +X = Forward (direction the robot faces).
+    +Y = Left.
+    +Z = Up.
+
+
+Joint Rotation Axes:
+
+    Each joint rotates around its specified axis locally (relative to the robot’s frame):
+    
+{ "HeadYaw": [0, 0, 1], # +angle = CCW around Z (yaw left) 
+"HeadPitch": [0, 1, 0], # +angle = CCW around Y (nod down) 
+"RightShoulderPitch": [0, 1, 0], # +angle = CCW around Y (forward arm raise) 
+"RightShoulderRoll": [0, 0, 1], # +angle = CCW around Z (abduction - arm moves away from body) 
+"RightElbowYaw": [1, 0, 0], # +angle = CCW around X (elbow moves outward) 
+"RightElbowRoll": [0, 0, 1],# +angle = CCW around Z (pronation - palm down) 
+"LeftShoulderPitch": [0, 1, 0],# +angle = CCW around Y (forward arm raise) 
+"LeftShoulderRoll": [0, 0, 1], # +angle = CCW around Z (abduction - arm moves away from body) 
+"LeftElbowYaw": [1, 0, 0], # +angle = CCW around X (elbow moves outward) 
+"LeftElbowRoll": [0, 0, 1], # +angle = CCW around Z (pronation - palm down) 
+"RightHipYawPitch": [0, 0.707107, 0.707107] # Combined rotation around Y and Z axes }
+
+Note: 
+A positive angle always follows the right-hand rule around the given axis. 
+That means for an axis like [-1, 0, 0], a positive angle rotates clockwise when looking along -X (as expected). 
+You should not flip the angle sign based on axis direction — just follow the axis and right-hand rule.
+
+
+Task:
+
+    Make the robot perform a T-pose (arms extended horizontally to the sides, forming a "T").
+    Specify the joint angles needed, ensuring they respect the limits.
+
+    or
+
+    Task: Make the robot perform a 'hero pose' (hands firmly on your hips, elbows bent at roughly a 90-degree angle). 
+    Specify the joint angles needed, ensuring they respect the limits.
+
+    or
+
+    Make the robot perform a military salute (The right upper arm should swing far forward close to face.
+    The elbow should bend sharply to bring the hand near the right eyebrow. The hand should face down or slightly inward.) 
+    Specify the joint angles needed, ensuring they respect the limits
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
