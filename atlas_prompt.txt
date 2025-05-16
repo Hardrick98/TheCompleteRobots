@@ -23,7 +23,6 @@ All axes are defined in a right-handed robot-fixed frame (attached to the torso)
     +Y = Left.
     +Z = Up.
 
-
 Joint Rotation Axes:
 
     Each joint rotates around its specified axis locally (relative to the robot’s frame):

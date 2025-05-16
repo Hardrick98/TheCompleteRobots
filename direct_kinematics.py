@@ -14,9 +14,9 @@ if __name__ == "__main__":
 
     
     
-    #viz = MeshcatVisualizer(robot.model, robot.collision_model, robot.visual_model)
-    #viz.initViewer(open=True) 
-    #viz.loadViewerModel()
+    viz = MeshcatVisualizer(robot.model, robot.collision_model, robot.visual_model)
+    viz.initViewer(open=True) 
+    viz.loadViewerModel()
 
     
     pose_dict = get_joints(robot)
@@ -58,50 +58,6 @@ if __name__ == "__main__":
     
     q0 = robot.q0
 
-    class MLP(nn.Module):
-        
-        def __init__(self, input_dim, hidden_dim, output_dim):
-            super(MLP, self).__init__()
-            self.fc1 = nn.Linear(input_dim, hidden_dim*2)
-            self.fc2 = nn.Linear(hidden_dim*2, hidden_dim)
-            self.fc3 = nn.Linear(hidden_dim, output_dim)
-
-        def forward(self, x):
-            x = torch.relu(self.fc1(x))
-            x = torch.relu(self.fc2(x))
-            x = self.fc3(x)
-            return x
-        
-    
-    model = MLP(input_dim=3, hidden_dim=80, output_dim=1)
-    loss = nn.MSELoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
-    output = torch.zeros(27,1)
-    
-    robot_pose2 = torch.tensor(robot_pose2, dtype=torch.float32)[1:,:]
-    robot_pose1 = torch.tensor(robot_pose1, dtype=torch.float32)[1:,:]
-    
-    q = torch.tensor(q, dtype=torch.float32).unsqueeze(1)
-    
-    loss_value = torch.tensor([100])
-    
-    print(robot_pose1.shape)
-    print(q.shape)
-    
-    while loss_value.item() > 0.002:
-        
-        optimizer.zero_grad()
-        output = model(robot_pose1)
-        loss_value = loss(output, q)
-        print(loss_value)
-        loss_value.backward()
-        optimizer.step()
-       
-    diff = (output - q)
-    mse_manual = (diff * diff).mean()
-    print(f"Manual MSE: {mse_manual.item()}")
-    print(output)
-    print(q-output)
 #    for i in range(len(sample["dof_pos"])):
 #        q = sample["dof_pos"][i]
 #        forwardK(robot, q)
