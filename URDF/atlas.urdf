@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<robot name="/home/rcatalini/Napoli/Atlas.urdf" xmlns:xacro="http://ros.org/wiki/xacro">
+<robot name="atlas.urdf" xmlns:xacro="http://ros.org/wiki/xacro">
   <link name="base_link">
   </link>
   <joint name="RLegUhz" type="revolute">
@@ -16,7 +16,7 @@
     <child link="solid"/>
     <axis xyz="1 0 0"/>
     <limit effort="180" lower="-0.495" upper="0.47" velocity="12"/>
-    <origin xyz="0 0 0" rpy="-0.000004 0 0"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
   </joint>
   <link name="solid">
   </link>
@@ -25,7 +25,7 @@
     <child link="solid_0"/>
     <axis xyz="0 1 0"/>
     <limit effort="260" lower="-1.745" upper="0.524" velocity="12"/>
-    <origin xyz="0.05 0 -0.05" rpy="0 0.000002 0"/>
+    <origin xyz="0.05 0 -0.05" rpy="0 0 0"/>
   </joint>
   <link name="solid_0">
   </link>
@@ -34,7 +34,7 @@
     <child link="solid_1"/>
     <axis xyz="0 1 0"/>
     <limit effort="220" lower="0" upper="2.45" velocity="12"/>
-    <origin xyz="-0.05 0 -0.374" rpy="0 0.000001 0"/>
+    <origin xyz="-0.05 0 -0.374" rpy="0 0 0"/>
   </joint>
   <link name="solid_1">
   </link>
@@ -254,7 +254,7 @@
     <child link="solid_4"/>
     <axis xyz="1 0 0"/>
     <limit effort="180" lower="-0.47" upper="0.495" velocity="12"/>
-    <origin xyz="0 0 0" rpy="0.000005 0 0"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
   </joint>
   <link name="solid_4">
   </link>
@@ -263,7 +263,7 @@
     <child link="solid_5"/>
     <axis xyz="0 1 0"/>
     <limit effort="260" lower="-1.75" upper="0.524" velocity="12"/>
-    <origin xyz="0.05 0 -0.05" rpy="0 -0.000001 0"/>
+    <origin xyz="0.05 0 -0.05" rpy="0 0 0"/>
   </joint>
   <link name="solid_5">
   </link>
@@ -272,7 +272,7 @@
     <child link="solid_6"/>
     <axis xyz="0 1 0"/>
     <limit effort="220" lower="0" upper="2.45" velocity="12"/>
-    <origin xyz="-0.05 0 -0.374" rpy="0 -0.000001 0"/>
+    <origin xyz="-0.05 0 -0.374" rpy="0 0 0"/>
   </joint>
   <link name="solid_6">
   </link>
@@ -519,7 +519,7 @@
     <child link="solid_11"/>
     <axis xyz="1 0 0"/>
     <limit effort="170" lower="-1.74533" upper="1.39626" velocity="12"/>
-    <origin xyz="0 -0.075 0.036" rpy="-0.75758 0 0"/>
+    <origin xyz="0 -0.075 0.036" rpy="1.373484 0 0"/>
   </joint>
   <link name="solid_11">
   </link>
@@ -537,7 +537,7 @@
     <child link="solid_13"/>
     <axis xyz="1 0 0"/>
     <limit effort="114" lower="-2.35619" upper="0" velocity="12"/>
-    <origin xyz="0 -0.121 0.013" rpy="-0.41889 0 0"/>
+    <origin xyz="0 -0.121 0.013" rpy="0 0 0"/>
   </joint>
   <link name="solid_13">
   </link>
@@ -789,17 +789,6 @@
     <origin xyz="0.01 0 0.43" rpy="0 0 0"/>
   </joint>
   <link name="NeckAy">
-  </link>
-  <link name="NeckAy">
-    <visual>
-      <geometry>
-        <cylinder radius="0.02" length="0.1"/>
-      </geometry>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <material name="gray">
-        <color rgba="0.5 0.5 0.5 1"/>
-      </material>
-   </visual>
   </link>
   <joint name="LArmUsy" type="revolute">
     <parent link="solid_10"/>

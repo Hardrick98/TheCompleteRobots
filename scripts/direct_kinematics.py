@@ -3,14 +3,14 @@ from pinocchio.visualize import MeshcatVisualizer
 import pinocchio as pin
 import numpy as np
 import torch.nn as nn
-import torch   
+import time
 
 
 if __name__ == "__main__":
     
 
     
-    robot = load_robot("URDF/h1_2_handless.urdf")
+    robot = load_robot("/home/rcatalini/TheCompleteRobot/URDF/nao.urdf")
 
     
     
@@ -18,10 +18,10 @@ if __name__ == "__main__":
     viz.initViewer(open=True) 
     viz.loadViewerModel()
 
-    
+    viz.display(robot.q0)
     pose_dict = get_joints(robot)
     
-    pin.forwardKinematics(robot.model, robot.data, robot.q0)
+    #pin.forwardKinematics(robot.model, robot.data, robot.q0)
     
     robot_pose = []
     
@@ -41,6 +41,10 @@ if __name__ == "__main__":
     
     q = sample[10]
     
+    input("PRESS ENTER TO CONTINUE")
+    
+    
+
     forwardK(robot, q)
     robot_pose = []
     
@@ -64,14 +68,14 @@ if __name__ == "__main__":
 #        viz.display(q)
 #        time.sleep(0.05) 
 
-    """
+   
 
     for i in range(len(sample)):
         q = sample[i]
         forwardK(robot, q)
         viz.display(q)
         time.sleep(0.05) 
-    """
+
     
     
     #viz.clean()
