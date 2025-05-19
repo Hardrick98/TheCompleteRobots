@@ -8,6 +8,13 @@ CONSTRAINTS:
 - The joint name convention must be coherent with the urdf file. 
 - Avoid writing comments
 
+All axes are defined in a right-handed robot-fixed frame where:
+
+    +X = Forward (direction the robot faces).
+    +Y = Left.
+    +Z = Up.
+
+
 
 pose = ["T-pose","superhero pose", "military salute", "dab pose"]
 
