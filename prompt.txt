@@ -1,0 +1,14 @@
+TASK:
+Given this URDF file of a humanoid robot, give me the joint angles to set on the robot in order to assume a <pose> pose. 
+The robot default position is arms at its sides.
+
+CONSTRAINTS:
+- Give me the list of joint angles in radians
+- Embed the joint angles of the pose in a dictionary with the name of the joint as Key and its radians as Value
+- The joint name convention must be coherent with the urdf file. 
+- Avoid writing comments
+
+
+pose = ["T-pose","superhero pose", "military salute", "dab pose"]
+
+Per la superhero specificherei (hands firmly on your hips, elbows bent at roughly a 90-degree angle)
