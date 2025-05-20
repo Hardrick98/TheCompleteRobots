@@ -19,3 +19,6 @@ All axes are defined in a right-handed robot-fixed frame where:
 pose = ["T-pose","superhero pose", "military salute", "dab pose"]
 
 Per la superhero specificherei (hands firmly on your hips, elbows bent at roughly a 90-degree angle)
+
+
+The robot default position is upper arms at its sides, forearms bent forward 90 degrees, hand palms facing each other
