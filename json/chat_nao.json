@@ -51,16 +51,51 @@
     "RAnkleRoll": 0.05
 },
  "salute": {
-    
-    "LShoulderPitch": 0.3,
-    "LShoulderRoll": 1.2,
-    "LElbowYaw": -1.5,
+    "RShoulderPitch": -0.3,
+    "RShoulderRoll": -1.0,
+    "RElbowYaw": 1.5,
+    "RElbowRoll": 0.5,
+    "RWristYaw": 0.0,
+    "RHand": 0.0,
+    "LShoulderPitch": 1.5,
+    "LShoulderRoll": 0.2,
+    "LElbowYaw": -1.2,
+    "LElbowRoll": -0.3,
+    "LWristYaw": 0.0,
+    "LHand": 0.0,
+    "HeadYaw": 0.0,
+    "HeadPitch": 0.0
+},
+"sit_down": {
+    "LHipYawPitch": -0.6,
+    "LHipRoll": 0.0,
+    "LHipPitch": -1.2,
+    "LKneePitch": 2.1,
+    "LAnklePitch": -1.0,
+    "LAnkleRoll": 0.0,
+    "RHipYawPitch": -0.6,
+    "RHipRoll": 0.0,
+    "RHipPitch": -1.2,
+    "RKneePitch": 2.1,
+    "RAnklePitch": -1.0,
+    "RAnkleRoll": 0.0,
+    "LShoulderPitch": 1.5,
+    "LShoulderRoll": 0.3,
+    "LElbowYaw": -1.0,
     "LElbowRoll": -1.2,
     "LWristYaw": 0.0,
-    "LHand": 0.6,
+    "RShoulderPitch": 1.5,
+    "RShoulderRoll": -0.3,
+    "RElbowYaw": 1.0,
+    "RElbowRoll": 1.2,
+    "RWristYaw": 0.0,
     "HeadYaw": 0.0,
-    "HeadPitch": -0.2
- }
+    "HeadPitch": 0.3
+}
+
+
+
+
 
 }
 ]
