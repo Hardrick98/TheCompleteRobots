@@ -83,7 +83,7 @@
     "RAnklePitch": 0.0,
     "RAnkleRoll": 0.0
     },
- "sit_down": {
+ "sit": {
         "HeadYaw": 0.0,
         "HeadPitch": 0.3,
         "LShoulderPitch": 1.2,
