@@ -104,7 +104,7 @@
   <joint name="RightFemur" type="revolute">
     <parent link="solid"/>
     <child link="solid_0"/>
-    <axis xyz="1 0 0"/>
+    <axis xyz="0 1 0"/>
     <limit effort="1.3729" lower="-2.356" upper="2.356" velocity="7.48"/>
     <origin xyz="-0.0008 -0.0113 -0.0387" rpy="0 0 0"/>
   </joint>
@@ -149,7 +149,7 @@
   <joint name="RightCrus" type="revolute">
     <parent link="solid_0"/>
     <child link="solid_1"/>
-    <axis xyz="1 0 0"/>
+    <axis xyz="0 1 0"/>
     <limit effort="1.3729" lower="-2.356" upper="2.356" velocity="7.48"/>
     <origin xyz="0.00015 0 -0.06375" rpy="0 0 0"/>
   </joint>
@@ -269,7 +269,7 @@
   <joint name="LeftFemurHead2" type="revolute">
     <parent link="LeftFemur"/>
     <child link="solid_4"/>
-    <axis xyz="1 0 0"/>
+    <axis xyz="0 1 0"/>
     <limit effort="1.3729" lower="-2.356" upper="2.356" velocity="7.48"/>
     <origin xyz="0 -0.00455 -0.02235" rpy="0 0 0"/>
   </joint>
@@ -302,7 +302,7 @@
   <joint name="LeftFemur" type="revolute">
     <parent link="solid_4"/>
     <child link="solid_5"/>
-    <axis xyz="1 0 0"/>
+    <axis xyz="0 1 0"/>
     <limit effort="1.3729" lower="-2.356" upper="2.356" velocity="7.48"/>
     <origin xyz="-0.0008 0.0113 -0.0387" rpy="0 0 0"/>
   </joint>
@@ -347,7 +347,7 @@
   <joint name="LeftCrus" type="revolute">
     <parent link="solid_5"/>
     <child link="solid_6"/>
-    <axis xyz="1 0 0"/>
+    <axis xyz="0 1 0"/>
     <limit effort="1.3729" lower="-2.356" upper="2.356" velocity="7.48"/>
     <origin xyz="0.00015 0 -0.06375" rpy="0 0 0"/>
   </joint>
