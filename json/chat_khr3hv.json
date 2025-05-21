@@ -67,30 +67,18 @@
     "LeftCrus": 0.0,
     "LeftAnkle": 0.0,
     "LeftFoot": 0.0
-}, "dab": {
-    "Waist": 0.0,
-    "RightFemurHead1": -0.5,
-    "RightFemurHead2": 0.3,
-    "RightFemur": -1.2,
-    "RightCrus": 0.0,
-    "RightAnkle": 0.0,
-    "LeftFemurHead1": 0.3,
-    "LeftFemurHead2": -1.0,
-    "LeftFemur": 0.3,
-    "LeftCrus": 0.0,
-    "LeftAnkle": 0.0,
-    "RightShoulderPitch": -1.5,
-    "RightShoulderRoll": -0.3,
-    "RightElbowYaw": 1.2,
-    "RightElbowRoll": 1.0,
-    "RightWristYaw": 0.0,
-    "LeftShoulderPitch": 0.5,
-    "LeftShoulderRoll": 1.5,
-    "LeftElbowYaw": -0.5,
-    "LeftElbowRoll": -1.0,
-    "LeftWristYaw": 0.0,
-    "NeckYaw": -0.3,
-    "NeckPitch": 0.2
+}, "sit": {
+  "Waist": 0.0,
+  "RightFemurHead1": 0.0,
+  "RightFemurHead2": 0.0,
+  "RightFemur": 1.57,
+  "RightCrus": -1.57,
+  "RightAnkle": 0.5,
+  "LeftFemurHead1": 0.0,
+  "LeftFemurHead2": 0.0,
+  "LeftFemur": 1.57,
+  "LeftCrus": -1.57,
+  "LeftAnkle": 0.5
 }
 
 }]

@@ -69,7 +69,7 @@
         "RAnklePitch": 0.0,
         "RAnkleRoll": 0.0
     },
-    "sit_down": 
+    "sit": 
     { "HeadYaw": 0.0,
     "HeadPitch": 0.0,
     "LHipYawPitch": -0.5,
