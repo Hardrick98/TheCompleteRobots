@@ -41,17 +41,16 @@
     "LArmElx": 0.0,
     "LArmUwy": -0.5,
     "LArmMwx": -0.3
-}, "dab": {
-    "LArmShoulderPitch": 0.5,
-    "LArmShoulderRoll": 1.3,
-    "LArmElbowYaw": -1.0,
-    "LArmElbowPitch": -0.5,
-    "RArmShoulderPitch": -0.5,
-    "RArmShoulderRoll": -0.5,
-    "RArmElbowYaw": 1.2,
-    "RArmElbowPitch": -1.5,
-    "HeadYaw": 0.3,
-    "HeadPitch": 0.2
+}, "sit": {
+  "RLegLhy": -1.4,
+  "RLegKny": 1.4,
+  "RLegUay": 0.0,
+  "RLegLax": -0.4,
+  "LLegLhy": -1.4,
+  "LLegKny": 1.4,
+  "LLegUay": 0.0,
+  "LLegLax": -0.4,
+  "BackMby": 0.3
 }, "salute": {
   "RArmShx": -1.57,
   "RArmUsy": 0.3,
