@@ -33,22 +33,11 @@ for robot in ["nao", "atlas","h12","khr3hv"]:
                     pred_pose_array.append(0)
                     
                    
-                
-            
             gt_pose = np.array(gt_pose_array)
             pred_pose = np.array(pred_pose_array)
+            
             mask = (gt_pose != 0)
-            mask2 = (pred_pose != 0) 
-            
-            a = np.sum(mask)
-            b = np.sum(mask2)
-            
-            data["Robot"].append(robot)
-            data["LLM"].append(llm)
-            data["Pose"].append(p)
-            data["GT_count"].append(a)
-            data["Pred_count"].append(b)
-            """
+
             if np.sum(mask) == 0:
                 total_error_mean = 0
                 total_error_sum = 0
@@ -71,9 +60,9 @@ for robot in ["nao", "atlas","h12","khr3hv"]:
             data["Avg2"].append(total_error_mean2)           
             data["Sum1"].append(total_error_sum)
             data["Sum2"].append(total_error_sum2) 
-            """
+         
 
-pd.DataFrame(data).to_csv("analysis_count.csv", index=False)
+pd.DataFrame(data).to_csv("analysis_joints.csv", index=False)
         
     
     

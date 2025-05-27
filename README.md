@@ -1,17 +1,13 @@
-# Come condurre la sperimentazione
-
-## 1. Prendere l'URDF dalla cartella
-## 2. Promptare l'LLM con il prompt (da definire) sarà nel file prompt.txt
-## 3. Creare il file .json
-Inserire le pose con lo STESSO FORMATO del file GT. Rinominarlo {LLM}_{nome_robot}.json
-## 4. Testarlo su webots
-Lo posso fare io tranquillamente una volta ottenuti i .json
+# The Complete Robots
 
 
-## Per visualizzare i robot
-
-Dopo aver installato l'environment.yml:
+## To visualize robots 
 
 ```
-python display_robot.py --urdf nao.urdf
+python display_robot.py --urdf nao --visualize
 ```
+
+<p align="center">
+  <img src="images/robot_joints.png" alt="Pyplot" width="300"/>
+  <img src="images/robot_view.png" alt="Meshcat" width="300"/>
+</p>
