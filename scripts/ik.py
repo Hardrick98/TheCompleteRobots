@@ -8,7 +8,7 @@
 
 import meshcat_shapes
 import numpy as np
-from utils import load_robot
+from URDF.utils import load_robot
 import pinocchio as pin
 import qpsolvers
 
