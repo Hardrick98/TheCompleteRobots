@@ -2,3 +2,6 @@ old_stuff/*
 __pycache__/*
 URDF/t-pose.npy
 */__pycache__/
+SMPLX_NEUTRAL.npz
+*.npy
+graph_net.py

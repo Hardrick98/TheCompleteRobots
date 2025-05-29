@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<robot name="atlas.urdf" xmlns:xacro="http://ros.org/wiki/xacro">
+<robot name="/home/rcatalini/TheCompleteRobot/URDF/atlas.urdf" xmlns:xacro="http://ros.org/wiki/xacro">
   <link name="base_link">
   </link>
   <joint name="RLegUhz" type="revolute">
@@ -519,7 +519,7 @@
     <child link="solid_11"/>
     <axis xyz="1 0 0"/>
     <limit effort="170" lower="-1.74533" upper="1.39626" velocity="12"/>
-    <origin xyz="0 -0.075 0.036" rpy="1.373484 0 0"/>
+    <origin xyz="0 -0.075 0.036" rpy="0 0 0"/>
   </joint>
   <link name="solid_11">
   </link>
@@ -804,7 +804,7 @@
     <child link="solid_16"/>
     <axis xyz="1 0 0"/>
     <limit effort="170" lower="-1.39626" upper="1.74533" velocity="12"/>
-    <origin xyz="0 0.075 0.036" rpy="-1.373484 0 0"/>
+    <origin xyz="0 0.075 0.036" rpy="0 0 0"/>
   </joint>
   <link name="solid_16">
   </link>
