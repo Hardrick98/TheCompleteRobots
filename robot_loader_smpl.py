@@ -64,40 +64,21 @@ if __name__ == "__main__":
             ax.plot(x_coords, y_coords, z_coords, c="red", linewidth=2)
     
     
+    #LOAD SIMPLE
+        
+    arr = np.load("/datasets/HumanoidX/human_pose/youtube/red_dot_scary_maze_prank_on_my_son_for_his_reaction_shorts_clip_1.npz", allow_pickle=True)
     
-    human_joints = np.load("t-pose.npy", allow_pickle=True)
-    human_joints = np.load("human_test_3d_gt.npy", allow_pickle=True)[1506,0]
-    
-    
-    human_joints[:,2] = -human_joints[:,2] 
-    human_joints[:,1] = -human_joints[:,1]  # Flip the y-axis to match the robot's coordinate system
-    human_joints[:,0] = -human_joints[:,0]  # Flip the x-axis to match the robot's coordinate system
-    human_joints[:,[1,2]] = human_joints[:,[2,1]]
-    human_joints[:,[0,1]] = human_joints[:,[1,0]]
-    
-    human_joints -= human_joints[0:1,:]  # Centering the joints around the root joint
-    
-    
-    human36m_limbs = [
-    (0, 7), (7, 8), (8, 9), (9, 10), (8, 11),
-    (11, 12), (12, 13), (8, 14), (14, 15), (15, 16),
-    (0, 1), (1, 2), (2, 3), (0, 4), (4, 5), (5, 6)
-]   
-    
-    human_joints = rotate_human(human_joints)
-    
-    
-    ax.set_xlim(-1,1)
-    ax.set_ylim(-1,1)
-    ax.set_zlim(-1,1)
-    ax.scatter(human_joints[:, 0], human_joints[:, 1], human_joints[:, 2], c='r', marker='o')
-    for joint1_idx, joint2_idx in human36m_limbs:
-        if all(len(joint) == 3 for joint in (human_joints[joint1_idx], human_joints[joint2_idx])):
-            x_coords, y_coords, z_coords = zip(human_joints[joint1_idx], human_joints[joint2_idx])
-            ax.plot(x_coords, y_coords, z_coords, c="blue", linewidth=2)
-    
+    joint_positions, orientations = load_simple(arr)    
 
-    
+    index_keypoints = [
+    1, 4, 7,            # left hip, knee, ankle
+    2, 5, 8,            # right hip, knee, ankle
+    16, 18, 20,         # left shoulder, elbow, wrist
+    17, 19, 21          # right shoulder, elbow, wrist
+    ]
+
+    orientations = orientations.view(-1,3) 
+     
     links_positions = robot.get_links_positions(q0)
    
         
@@ -120,10 +101,20 @@ if __name__ == "__main__":
     plt.show()
         
     
-    human36m_names = ['root','rhip','rkne','rank', 'lhip', 'lkne', 'lank',
-    'belly', 'neck','nose', 'head', 'lsho', 'lelb', 'lwri',
-    'rsho', 'relb', 'rwri']
+    joint_positions[:,:] -= joint_positions[:1,:]
+    joint_positions[:,[1,2]] = joint_positions[:,[2,1]]
+    human_joints = joint_positions
     
+    
+    
+    ax = plt.figure(figsize=(10, 10)).add_subplot(projection='3d')
+    
+    
+    ax.set_xlim(-1,1)
+    ax.set_ylim(-1,1)
+    ax.set_zlim(-1,1)
+    ax.scatter(human_joints[:, 0], human_joints[:, 1], human_joints[:, 2], c='r', marker='o')
+
     """
     mapper = HumanoidJointMapper()
     (mapping, quality, similarity_matrix, human_names, robot_names, 
@@ -150,14 +141,14 @@ if __name__ == "__main__":
     ## Link lenghts
     
     
-    torsoH = np.linalg.norm(human_joints[11]-human_joints[8])
-    torsoR = np.linalg.norm(robot_joints[5]-robot_joints[1])
-    spineH = np.linalg.norm(human_joints[8]-human_joints[0])
-    spineR = np.linalg.norm(robot_joints[1]-robot_joints[0])
-    femorH = np.linalg.norm(human_joints[2]-human_joints[1])
-    tibiaH = np.linalg.norm(human_joints[3]-human_joints[2])
-    upper_armH = np.linalg.norm(human_joints[15]-human_joints[14])
-    forearmH = np.linalg.norm(human_joints[16]-human_joints[15])
+    #torsoH = np.linalg.norm(human_joints[11]-human_joints[8])
+    #torsoR = np.linalg.norm(robot_joints[5]-robot_joints[1])
+    #spineH = np.linalg.norm(human_joints[8]-human_joints[0])
+    #spineR = np.linalg.norm(robot_joints[1]-robot_joints[0])
+    femorH = np.linalg.norm(human_joints[4]-human_joints[1])
+    tibiaH = np.linalg.norm(human_joints[7]-human_joints[4])
+    upper_armH = np.linalg.norm(human_joints[18]-human_joints[16])
+    forearmH = np.linalg.norm(human_joints[20]-human_joints[18])
     femorR = np.linalg.norm(robot_joints[18]-robot_joints[17])
     tibiaR = np.linalg.norm(robot_joints[19]-robot_joints[18])
     upper_armR = np.linalg.norm(robot_joints[6]-robot_joints[5])
@@ -171,34 +162,34 @@ if __name__ == "__main__":
     s_tibia = tibiaR / tibiaH
     s_upper_arm = upper_armR / upper_armH
     s_forearm = forearmR / forearmH
-    s_spine = spineR / spineH
-    s_torso = torsoR / torsoH
+    #s_spine = spineR / spineH
+    #s_torso = torsoR / torsoH
 
 
     #Scaling
     
-    robot_joints[1] = robot_joints[0] + (human_joints[8]-human_joints[0]) * s_spine
+    #robot_joints[1] = robot_joints[0] + (human_joints[8]-human_joints[0]) * s_spine
     #robot_joints[0] = robot_joints[17] + (human_joints[1]-human_joints[0]) *s_spine
 
-    robot_joints[5] = robot_joints[1] + (human_joints[11]-human_joints[8]) * s_torso
-    robot_joints[20] = robot_joints[1] + (human_joints[14]-human_joints[8]) * s_torso
+    #robot_joints[5] = robot_joints[1] + (human_joints[11]-human_joints[8]) * s_torso
+    #robot_joints[20] = robot_joints[1] + (human_joints[14]-human_joints[8]) * s_torso
     
-    robot_joints[18] = robot_joints[17] + (human_joints[2] - human_joints[1]) * s_femor
-    robot_joints[19] = robot_joints[18] + (human_joints[3] - human_joints[2]) * s_tibia
-    robot_joints[3] = robot_joints[2] + (human_joints[5] - human_joints[4]) * s_femor
-    robot_joints[4] = robot_joints[3] + (human_joints[6] - human_joints[5]) * s_tibia
+    robot_joints[18] = robot_joints[17] + (human_joints[4] - human_joints[1]) * s_femor
+    robot_joints[19] = robot_joints[18] + (human_joints[7] - human_joints[4]) * s_tibia
+    robot_joints[3] = robot_joints[2] + (human_joints[5] - human_joints[2]) * s_femor
+    robot_joints[4] = robot_joints[3] + (human_joints[8] - human_joints[5]) * s_tibia
     
     
-    robot_joints[21] = robot_joints[20] + (human_joints[12] - human_joints[11]) * s_upper_arm
-    robot_joints[22] = robot_joints[21] + (human_joints[13] - human_joints[12]) * s_forearm
-    robot_joints[6] = robot_joints[5] + (human_joints[15] - human_joints[14]) * s_upper_arm
-    robot_joints[7] = robot_joints[6] + (human_joints[16] - human_joints[15]) * s_forearm    
+    robot_joints[21] = robot_joints[20] + (human_joints[18] - human_joints[16]) * s_upper_arm
+    robot_joints[22] = robot_joints[21] + (human_joints[20] - human_joints[18]) * s_forearm
+    robot_joints[6] = robot_joints[5] + (human_joints[19] - human_joints[17]) * s_upper_arm
+    robot_joints[7] = robot_joints[6] + (human_joints[21] - human_joints[19]) * s_forearm    
 
     
     print(robot_joints)
 
     
-    ax = plt.figure(figsize=(10, 10)).add_subplot(projection='3d')
+    #ax = plt.figure(figsize=(10, 10)).add_subplot(projection='3d')
     ax.set_xlim(-1,1)
     ax.set_ylim(-1,1)
     ax.set_zlim(-1,1)
@@ -215,12 +206,10 @@ if __name__ == "__main__":
     links = robot.body
     print("Robot frames:", links)
     
-    
-    rotations = pose3d_to_rotations(human_joints)
-    print("Rotations:", rotations)
+
     
     
-    frame_names = ["l_wrist", "r_wrist", "LElbow", "RElbow", "LThigh","RThigh","l_ankle", "r_ankle", "Neck", "RShoulder", "LShoulder"]
+    frame_names = ["l_wrist", "r_wrist", "LElbow", "RElbow", "LThigh","RThigh","l_ankle", "r_ankle", "RShoulder", "LShoulder"]
     frame_ids = [links[name]for name in frame_names]
     
     target_positions = {
@@ -228,19 +217,35 @@ if __name__ == "__main__":
         "RElbow": robot_joints[21], 
         "l_wrist": robot_joints[7],  
         "r_wrist": robot_joints[22],
-        "LThigh" : robot_joints[18],
-        "RThigh" : robot_joints[3],
-        "l_ankle": robot_joints[19],
-        "r_ankle": robot_joints[4],
-        "Neck" : robot_joints[1],
+        "LThigh" : robot_joints[3],
+        "RThigh" : robot_joints[18],
+        "l_ankle": robot_joints[4],
+        "r_ankle": robot_joints[19],
+        #"Neck" : robot_joints[1],
         "RShoulder": robot_joints[20],
         "LShoulder" : robot_joints[5]
     }
 
-    neck_frame_id = model.getFrameId("Neck")
-    torso_frame_id = model.getFrameId("torso")
-    target_torso = rotations["belly"]
-    target_neck = rotations["neck"] 
+    target_orientations = {
+        "LElbow": orientations[18], 
+        "RElbow": orientations[19], 
+        "l_wrist": orientations[20],  
+        "r_wrist": orientations[21],
+        "LThigh" : orientations[4],
+        "RThigh" : orientations[5],
+        "l_ankle": orientations[7],
+        "r_ankle": orientations[8],
+        #"Neck" : robot_joints[1],
+        "RShoulder": orientations[17],
+        "LShoulder" : orientations[16]
+    }
+    
+    index_keypoints = [
+    1, 4, 7,            # left hip, knee, ankle
+    2, 5, 8,            # right hip, knee, ankle
+    16, 18, 20,         # left shoulder, elbow, wrist
+    17, 19, 21          # right shoulder, elbow, wrist
+    ]
     
     def ik_cost(q):
         pin.forwardKinematics(model, data, q)
@@ -249,12 +254,14 @@ if __name__ == "__main__":
         for name, frame_id in zip(frame_names, frame_ids):
             oMf = data.oMf[frame_id]  
             pos = oMf.translation
+            ori = oMf.orientation
             target = target_positions[name]
+            target_ori = target_orientations[name]
             cost += np.linalg.norm(pos - target)**2
         
-        pred_torso = data.oMf[torso_frame_id].rotation
-        pred_neck = data.oMf[neck_frame_id].rotation
-        rot_error = pin.log3(pred_torso.T @ target_torso) + pin.log3(pred_neck.T @ target_neck)  # Logaritmo della rotazione
+        #pred_torso = data.oMf[torso_frame_id].rotation
+        #pred_neck = data.oMf[neck_frame_id].rotation
+        #rot_error = pin.log3(pred_torso.T @ target_torso) + pin.log3(pred_neck.T @ target_neck)  # Logaritmo della rotazione
         #orientation_cost = np.linalg.norm(rot_error)**2
         
         return cost #+ 10.0 * orientation_cost
