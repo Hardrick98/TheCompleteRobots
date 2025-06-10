@@ -255,6 +255,8 @@ def pose3d_to_rotations(joints_3d):
     
     return rotations
 
+
+
 def load_simple(arr):
     smpl = arr["smpl"][()]
     global_orient = torch.from_numpy(smpl['global_orient'][0]).reshape(1, -1).to(torch.float32)
@@ -284,4 +286,118 @@ def load_simple(arr):
     joints = output.joints[0].detach().cpu().numpy()  # (N_joints, 3)
     faces = smpl_model.faces   # (N_faces, 3)
 
-    return joints, body_pose_raw
+    return joints, body_pose_raw, transl.cpu().numpy()
+
+
+"""
+class Retargeting():
+    
+    def __init__(self):
+        self.robot = HumanoidRobot("URDF/nao.urdf")
+        self.robot.node_names = self.robot.kinematics.mjcf_data['node_names']
+        self.robot.parent_indices = self.robot.kinematics.mjcf_data['parent_indices']
+        self.robot.local_translation = self.robot.kinematics.mjcf_data['local_translation'].to(torch.float32).to(self.device)
+        self.robot.local_rotation = self.robot.kinematics.mjcf_data['local_rotation'].to(torch.float32).to(self.device)
+        self.robot.joints_range = self.robot.kinematics.mjcf_data['joints_range'].to(torch.float32).to(self.device)
+        self.robot.num_joints = 27
+        self.robot.num_bodies = 32
+
+    def retarget(self):
+        print('Total frames to retarget with:', self.data.num_frames)
+        # initialize the data with the data input
+        joint_pos = torch.zeros(1, 27, device=self.device, dtype=torch.float32, requires_grad=True)
+        root_ori = torch.zeros(1, 3, device=self.device, dtype=torch.float32, requires_grad=True)
+        root_trans = torch.zeros(1, 3, device=self.device, dtype=torch.float32, requires_grad=True)
+
+        rotations = R.from_quat(self.data.root_orient).as_rotvec()
+        root_ori_init = torch.from_numpy(rotations).to(self.device).to(torch.float32)
+        root_trans_init = torch.from_numpy(self.data.root_translation).to(self.device).to(torch.float32)
+
+        root_ori.data = root_ori_init
+        root_trans.data = root_trans_init
+
+        optimizer = torch.optim.Adam([joint_pos, root_trans], lr=0.005)
+
+        for i in range(self.num_iterations):
+            optimizer.zero_grad()   # Clear the gradients
+            loss = self.loss(
+                joint_pos=joint_pos,
+                root_trans=root_trans,
+                root_ori=root_ori
+            )
+            loss.backward()         # Compute gradients
+            optimizer.step()        # Update parameters
+            
+            if i % 500 == 0:
+                print(f"Iteration {i}: Loss = {loss.item()}, Loss per frame = {loss.item() / self.data.num_frames}")
+        
+        return joint_pos, root_trans, root_ori 
+
+    def loss_smoothing(self, joint_pos):
+        last = joint_pos[0: -2, :]
+        this = joint_pos[1: -1, :]
+        next = joint_pos[2:   , :]
+        unsmooth = torch.abs(this - (last + next) * 0.5)
+        return torch.sum(unsmooth)
+
+    def loss(self, joint_pos, root_trans, root_ori, lamb=0.05):
+        loss_smooth = self.loss_smoothing(joint_pos)
+        loss_retarget = self.loss_retarget(joint_pos, root_trans, root_ori)
+        return lamb * loss_smooth + loss_retarget
+
+
+
+    def loss_retarget(self, joint_pos, root_trans, root_ori):
+        '''
+            keypoint: (batch_length, num_keypoints, 3)
+            keypoint_gt: (batch_length, num_keypoints, 3)
+        '''
+        keypoint = self.forward(
+            joint_pos=joint_pos,
+            root_trans=root_trans,
+            root_ori=root_ori
+        )
+        keypoint_gt = torch.from_numpy(self.data.keypoint_trans).to(self.device).to(torch.float32)
+
+        error = torch.norm(keypoint - keypoint_gt, dim=-1, p=1)
+        return torch.sum(error)
+
+    def forward(self, joint_pos=None, root_trans=None, root_ori=None):
+        '''
+            Forward the kinematics model to get the keypoint translation
+            Input: 
+                joint_pos       (batch_length, num_joints)
+            Output:
+                keypoint_trans  (batch_length, num_keypoints, 3)
+        '''
+        joint_pos = self.set_clamp(joint_pos)
+        
+
+        # reshape the joint_pos to fit the input of the kinematics model
+        # the output is the description of the rotations starting from the root body in axis-angle format
+        pose_batch = self.joint_pos_to_pose_batch(joint_pos=joint_pos, root_ori=root_ori)
+
+        output = self.robot.kinematics.fk_batch(
+            pose=pose_batch,
+            trans=root_trans.unsqueeze(0),
+            convert_to_mat=True,
+            return_full=False)
+        
+        output_trans = output['global_translation'][0, :, :, :]
+
+        keypoint_trans = torch.zeros(batch_len, 12, 3, dtype=torch.float32, device=self.device)
+        keypoint_trans[:, 0] = output_trans[:, 3]      # left_hip 
+        keypoint_trans[:, 1] = output_trans[:, 4]      # left_knee
+        keypoint_trans[:, 2] = output_trans[:, 5]      # left_ankle
+        keypoint_trans[:, 3] = output_trans[:, 9]      # right_hip
+        keypoint_trans[:, 4] = output_trans[:, 10]     # right_knee
+        keypoint_trans[:, 5] = output_trans[:, 11]     # right_ankle
+        keypoint_trans[:, 6] = output_trans[:, 16]     # left_shoulder
+        keypoint_trans[:, 7] = output_trans[:, 19]     # left_elbow
+        keypoint_trans[:, 8] = output_trans[:, 21]     # left_hand
+        keypoint_trans[:, 9] = output_trans[:, 25]     # right_shoulder
+        keypoint_trans[:, 10] = output_trans[:, 28]    # right_elbow
+        keypoint_trans[:, 11] = output_trans[:, 30]    # right_hand        
+
+        return keypoint_trans
+"""

@@ -4,16 +4,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
-arr = np.load("/datasets/HumanoidX/human_pose/youtube/red_dot_scary_maze_prank_on_my_son_for_his_reaction_shorts_clip_1.npz", allow_pickle=True)
+arr = np.load("/home/rick/red_dot_scary_maze_prank_on_my_son_for_his_reaction_shorts_clip_1.npz", allow_pickle=True)
 
 
 
-"""
 
-print(smpl["body_pose"].shape) #(77,23,3)
-print(smpl["global_orient"].shape) # (77,3)
-print(smpl["betas"].shape) # (77,10)
-print(smpl["root_transl"].shape) # (77,3)
+
 
 
 index_keypoints = [
@@ -23,7 +19,7 @@ index_keypoints = [
     17, 19, 21          # right shoulder, elbow, wrist
 ]
 
-print(smpl["body_pose"][0][index_keypoints])
+
 
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -52,11 +48,11 @@ def visualize_mesh_and_joints(vertices, joints, faces, title="SMPLX Mesh + Joint
     ax.set_title(title)
     ax.view_init(elev=20, azim=-70)
     plt.show()
-"""
+
 def load_simple(arr):
     smpl = arr["smpl"][()]
     global_orient = torch.from_numpy(smpl['global_orient'][0]).reshape(1, -1).to(torch.float32)
-    body_pose_raw = torch.from_numpy(smpl['body_pose'][0]).reshape(1, -1).to(torch.float32)
+    body_pose_raw = torch.from_numpy(smpl['body_pose'][0][:21]).reshape(1, -1).to(torch.float32)
     transl        = torch.from_numpy(smpl['root_transl'][0]).reshape(1, -1).to(torch.float32)
     betas        = torch.from_numpy(smpl['betas'][0]).reshape(1, 10).to(torch.float32)
 
@@ -80,5 +76,9 @@ def load_simple(arr):
     verts = output.vertices[0].detach().cpu().numpy()  # (N_verts, 3)
     joints = output.joints[0].detach().cpu().numpy()  # (N_joints, 3)
     faces = smpl_model.faces   # (N_faces, 3)
-
+    
+    visualize_mesh_and_joints(verts, joints, faces)
+    
     return joints, body_pose_raw
+
+load_simple(arr)
