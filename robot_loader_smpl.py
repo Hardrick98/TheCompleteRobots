@@ -5,8 +5,15 @@ import argparse
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import qpsolvers
 #from graph_net import HumanoidJointMapper
 from scipy.optimize import minimize
+from ik import tasks
+import pink
+from pink import solve_ik
+from pink.tasks import FrameTask
+import time
+from loop_rate_limiters import RateLimiter
 
 
 if __name__ == "__main__":
@@ -50,7 +57,7 @@ if __name__ == "__main__":
     q0 = robot.q0  
     print("Robot joints:", pose_dict)
    
-    
+    """
     ax = plt.figure(figsize=(10, 10)).add_subplot(projection='3d')
     
     
@@ -62,13 +69,14 @@ if __name__ == "__main__":
         if all(len(joint) == 3 for joint in (robot_joints[joint1_idx], robot_joints[joint2_idx])):
             x_coords, y_coords, z_coords = zip(robot_joints[joint1_idx], robot_joints[joint2_idx])
             ax.plot(x_coords, y_coords, z_coords, c="red", linewidth=2)
-    
+    """
     
     #LOAD SIMPLE
         
-    arr = np.load("/home/rick/red_dot_scary_maze_prank_on_my_son_for_his_reaction_shorts_clip_1.npz", allow_pickle=True)
+    #arr = np.load("/datasets/HumanoidX/human_pose/kinetics700/pADXOvpw1CM_000028_000038_clip_1.npz", allow_pickle=True)
+    arr = np.load("/datasets/HumanoidX/human_pose/youtube/zoo_yoga_for_hampton_primary_clip_1.npz", allow_pickle=True)
     
-    joint_positions, orientations, translation = load_simple(arr)    
+    joint_positions, orientations, translation, global_orient = load_simple(arr, 20)    
 
     translation[:,[1,2]] = translation[:,[2,1]]
 
@@ -189,27 +197,26 @@ if __name__ == "__main__":
                 ax.plot(x_coords, y_coords, z_coords, c="green", linewidth=2)
         except:
             pass
-    plt.show()
+    
     
     links = robot.body
     print("Robot frames:", links)
     
-
     
     
-    frame_names = [ "torso", "RShoulder", "LShoulder", "LElbow", "RElbow", "l_wrist", "r_wrist", "RPelvis", "LPelvis","LThigh","RThigh", "l_ankle", "r_ankle", "Neck"]
+    frame_names = [ "RShoulder", "LShoulder", "LElbow", "RElbow", "l_wrist", "r_wrist", "RHip", "LHip","LTibia","RTibia", "l_ankle", "r_ankle", "Neck"]
     frame_ids = [links[name]for name in frame_names]
     
     target_positions = {
-        "torso" :robot_joints[0],
-        "LPelvis": robot_joints[2],
-        "RPelvis" : robot_joints[17],
+        #"torso" :robot_joints[0],
+        "LHip": robot_joints[2],
+        "RHip" : robot_joints[17],
         "LElbow": robot_joints[6], 
         "RElbow": robot_joints[21], 
         "l_wrist": robot_joints[7],  
         "r_wrist": robot_joints[22],
-        "LThigh" : robot_joints[3],
-        "RThigh" : robot_joints[18],
+        "LTibia" : robot_joints[3],
+        "RTibia" : robot_joints[18],
         "l_ankle": robot_joints[4],
         "r_ankle": robot_joints[19],
         "Neck" : robot_joints[1],
@@ -218,22 +225,22 @@ if __name__ == "__main__":
     }
 
     target_orientations = {
-        "torso" : orientations[0],
-        "LPelvis": orientations[1],
-        "RPelvis": orientations[2],
-        "LElbow": orientations[18], 
-        "RElbow": orientations[19], 
+        #"torso": orientations[9],
         "l_wrist": orientations[20],  
         "r_wrist": orientations[21],
-        "LThigh" : orientations[4],
-        "RThigh" : orientations[5],
-        "l_ankle": orientations[7],
-        "r_ankle": orientations[8],
-        "Neck" : orientations[12],
-        "LShoulder" : orientations[16],
-        "RShoulder": orientations[17]
+        #"l_ankle": orientations[7],
+        #"r_ankle": orientations[8],
+        #"Neck" : orientations[12],
     }
-    
+
+    import scipy.spatial.transform
+
+    def rotation_error(R, R_target):
+        R_diff = R_target.T @ R
+        rotvec = scipy.spatial.transform.Rotation.from_matrix(R_diff).as_rotvec()
+        return np.linalg.norm(rotvec)**2  
+
+        #tasks[name].set_target_position(pos.tolist())
     index_keypoints = [
     1, 4, 7,            # left hip, knee, ankle
     2, 5, 8,            # right hip, knee, ankle
@@ -241,18 +248,42 @@ if __name__ == "__main__":
     17, 19, 21          # right shoulder, elbow, wrist
     ]
     
-    def ik_cost(q, w_pos=1.0, w_ori=0.5):
-        """
-        Inverse Kinematics cost function with position and orientation terms.
+    
+    global_orientations_matrices = get_smplx_global_orientations(global_orient, joint_positions)
+
+    # 2. Mappa le orientazioni SMPL-X ai frame del tuo robot
+    # Mapping da indici SMPL-X a nomi dei tuoi frame
+    smplx_to_robot_mapping = {
+        #9: "torso",      
+        1: "LHip",       
+        2: "RHip",       
+        12: "Neck",       
+        4: "LTibia",     # left_knee -> left_thigh
+        5: "RTibia",     # right_knee -> right_thigh
+        7: "l_ankle",    # left_ankle
+        8: "r_ankle",    # right_ankle
+        16: "LShoulder", # left_shoulder
+        17: "RShoulder", # right_shoulder
+        18: "LElbow",    # left_elbow
+        19: "RElbow",    # right_elbow
+        20: "l_wrist",   # left_wrist
+        21: "r_wrist"    # right_wrist
+    }
+
+    # 3. Aggiorna target_orientations con le orientazioni globali
+    target_orientations_global = {}
+    for smplx_idx, robot_frame in smplx_to_robot_mapping.items():
+        if robot_frame in target_orientations:  
+            # Converti da matrice di rotazione a angle-axis per Pinocchio
+            rot_matrix = global_orientations_matrices[smplx_idx].numpy()
+            # Usa scipy o implementazione custom per convertire
+            
+            target_orientations_global[robot_frame] = rot_matrix
         
-        Args:
-            q: joint configuration
-            w_pos: weight for position cost (default: 1.0)
-            w_ori: weight for orientation cost (default: 0.5)
-        
-        Returns:
-            total cost (position + orientation)
-        """
+    
+    print(target_orientations_global)
+    
+    def ik_cost(q, w_pos=1, w_ori=0.0001):
         pin.forwardKinematics(model, data, q)
         pin.updateFramePlacements(model, data)
         
@@ -261,58 +292,115 @@ if __name__ == "__main__":
         
         for name, frame_id in zip(frame_names, frame_ids):
             oMf = data.oMf[frame_id]
-        
             pos = oMf.translation
-            ori = model.frames[frame_id].placement.rotation
-            
-            
+            ori = oMf.rotation#model.frames[frame_id].placement.rotation 
             target_pos = target_positions[name]
-            target_ori = target_orientations[name]
-            target_ori = pin.exp3(target_ori.numpy())
-            
-            # Position cost
             cost_pos += np.linalg.norm(pos - target_pos)**2
             
-            # Orientation cost - using rotation matrix difference
-            # Method 1: Frobenius norm of rotation difference
-            R_diff = ori @ target_ori.T
-            cost_ori += np.linalg.norm(R_diff - np.eye(3), 'fro')**2
-            
-            # Alternative Method 2: Using angle-axis representation
-            #R_diff = ori @ target_ori.T
-            #angle_axis = pin.log3(R_diff)
-            #cost_ori += np.linalg.norm(angle_axis)**2
-        
-        total_cost = w_pos * cost_pos + w_ori * cost_ori
-        
-        return total_cost
+            if name in target_orientations_global:
+                
+                target_ori = target_orientations_global[name]
+                #target_ori = pin.exp3(target_ori.numpy())
+                cost_ori += rotation_error(ori, target_ori)
+                
+        return w_pos * cost_pos + w_ori * cost_ori
     
     
-   
+    
+    
+    
+    
+
     q_lower_limits = model.lowerPositionLimit
     q_upper_limits = model.upperPositionLimit
     bounds = []
     for i in range(model.nq):
         bounds.append((q_lower_limits[i], q_upper_limits[i]))
 
-    res = minimize(ik_cost, q0, bounds=bounds, method='L-BFGS-B')
-    q1 = res.x  # co
-    q1 = np.array(res.x).reshape(-1)
-    assert q1.shape[0] == model.nq
-    pin.forwardKinematics(model, data, q1)
-    pin.updateFramePlacements(model, data)
-    
     
 
-    print("Lower limits of q:\n", q_lower_limits)
-    print("\nUpper limits of q:\n", q_upper_limits)
+    res = minimize(ik_cost, q0, bounds=bounds, method='SLSQP', options={'maxiter': 1000, 'disp': True})
     
-    print(q1.shape)
+
+        
+    q1 = np.array(res.x).reshape(-1)
+    assert q1.shape[0] == model.nq
+    
+    
+    joint_name = "RWristYaw"
+    joint_id = model.getJointId(joint_name)
+    idx = model.joints[joint_id].idx_q  # indice nel vettore q
+
+    target_ori = target_orientations_global["r_wrist"]
+
+    def rotation_error(R1, R2):
+        R_diff = R1.T @ R2
+        angle = np.arccos(np.clip((np.trace(R_diff) - 1) / 2, -1.0, 1.0))
+        return angle
+
+    # Funzione costo: ottimizzi solo il valore q[idx]
+    def cost(theta):
+        q_tmp = q1.copy()
+        q_tmp[idx] = theta[0] 
+        print(q_tmp[idx])
+        # solo il grado di libertà del giunto
+        pin.forwardKinematics(model, data, q_tmp)
+        pin.updateFramePlacements(model, data)
+        R = data.oMi[joint_id].rotation
+        return rotation_error(R, target_ori)
+
+    # Ottimizza solo q1[idx]
+    res = minimize(cost, q1[idx], method='SLSQP', options={'maxiter': 1000, 'disp': True})
+    q1[idx] = res.x[0]  
+    
+    
+    joint_name = "LWristYaw"
+    joint_id = model.getJointId(joint_name)
+    idx = model.joints[joint_id].idx_q  # indice nel vettore q
+
+    target_ori = target_orientations_global["l_wrist"]
+
+    def rotation_error(R1, R2):
+        R_diff = R1.T @ R2
+        angle = np.arccos(np.clip((np.trace(R_diff) - 1) / 2, -1.0, 1.0))
+        return angle
+
+    # Funzione costo: ottimizzi solo il valore q[idx]
+    def cost(theta):
+        q_tmp = q1.copy()
+        q_tmp[idx] = theta[0] 
+        print(q_tmp[idx])
+        # solo il grado di libertà del giunto
+        pin.forwardKinematics(model, data, q_tmp)
+        pin.updateFramePlacements(model, data)
+        R = data.oMi[joint_id].rotation
+        return rotation_error(R, target_ori)
+
+    # Ottimizza solo q1[idx]
+    res = minimize(cost, q1[idx], method='SLSQP', options={'maxiter': 1000, 'disp': True})
+    q1[idx] = res.x[0]  
+    
+    
+    pin.forwardKinematics(model, data, q1)
+    pin.updateFramePlacements(model, data)
+
+    final_positions = []
+
+    for name, frame_id in zip(frame_names, frame_ids):
+        final_positions.append(data.oMf[frame_id].translation)
+    
+    final_positions = np.array(final_positions)
+    ax.scatter(final_positions[:, 0], final_positions[:, 1], final_positions[:, 2], c='b', marker='x')
+    plt.show()
     
     viz = MeshcatVisualizer(model, robot.collision_model, robot.visual_model)
-    viz.initViewer(open=False) 
+    viz.initViewer(open=True) 
     viz.loadViewerModel()
+    
+    print(q1.shape)
+   
     viz.display(q1)
+    plt.show()
     input("Press Enter to reset the visualization...")
     viz.reset()
     

@@ -28,7 +28,7 @@ class HumanoidRobot:
         robot = pin.RobotWrapper.BuildFromURDF(
             filename=urdf_path,
             package_dirs=["."],
-            root_joint=pin.JointModelFreeFlyer(),
+            root_joint=pin.JointModelSpherical() 
         )
         print(f"URDF description successfully loaded in {robot}")
         
@@ -48,7 +48,7 @@ class HumanoidRobot:
         for i, frame in enumerate(self.model.frames):
             if frame.type == pin.FrameType.BODY:
                 body[frame.name] = i
-            elif frame.type == pin.FrameType.JOINT:
+            if frame.type == pin.FrameType.JOINT:
                 joints[frame.name] = i
             
         return body, joints
@@ -149,120 +149,13 @@ def rotate_human(human_joints):
     
 
 
-def calculate_bone_rotation(parent_pos, child_pos, reference_vector=np.array([0, 1, 0])):
-    """
-    Calcola la matrice di rotazione per orientare un osso dalla posizione parent a child
-    
-    Args:
-        parent_pos: posizione 3D del joint padre
-        child_pos: posizione 3D del joint figlio  
-        reference_vector: direzione di riferimento dell'osso nel modello (default: +Y)
-    """
-    # Vettore osso attuale
-    bone_vector = child_pos - parent_pos
-    bone_vector = bone_vector / np.linalg.norm(bone_vector)  # normalizza
-    
-    # Calcola la rotazione per allineare reference_vector con bone_vector
-    # Usa la formula di Rodrigues o quaternioni
-    
-    # Metodo semplice con cross product
-    v = np.cross(reference_vector, bone_vector)
-    s = np.linalg.norm(v)
-    c = np.dot(reference_vector, bone_vector)
-    
-    if s < 1e-6:  # Vettori paralleli
-        if c > 0:
-            return np.eye(3)  # Stessa direzione
-        else:
-            # Direzioni opposte - ruota di 180°
-            return -np.eye(3)
-    
-    # Matrice di rotazione usando la formula di Rodrigues
-    vx = np.array([[0, -v[2], v[1]], 
-                   [v[2], 0, -v[0]], 
-                   [-v[1], v[0], 0]])
-    
-    R = np.eye(3) + vx + np.dot(vx, vx) * ((1 - c) / (s * s))
-    
-    return R
 
-def pose3d_to_rotations(joints_3d):
-    """
-    Converte una posa 3D Human3.6M in rotazioni per ogni joint
-    
-    Args:
-        joints_3d: array (N, 3) con le posizioni 3D dei joint
-        skeleton_hierarchy: dizionario che definisce parent-child relationships
-    
-    Returns:
-        rotations: dizionario con le matrici di rotazione per ogni joint
-    """
-    rotations = {}
-    
-    # Definisci la gerarchia scheletrica di Human3.6M
-    # (questo dipende dall'ordine specifico del tuo dataset)
-    h36m_joints = [
-        'hip',           # 0
-        'right_hip',     # 1  
-        'right_knee',    # 2
-        'right_ankle',   # 3
-        'left_hip',      # 4
-        'left_knee',     # 5
-        'left_ankle',    # 6
-        'belly',         # 7
-        'neck',        # 8
-        'nose',     # 9
-        'head',          # 10
-        'left_shoulder', # 11
-        'left_elbow',    # 12
-        'left_wrist',    # 13
-        'right_shoulder',# 14
-        'right_elbow',   # 15
-        'right_wrist'    # 16
-    ]
-    
-    
-    # Parent-child relationships per Human3.6M
-    parent_child_pairs = [
-        (0, 1),   # hip -> right_hip
-        (1, 2),   # right_hip -> right_knee  
-        (2, 3),   # right_knee -> right_ankle
-        (0, 4),   # hip -> left_hip
-        (4, 5),   # left_hip -> left_knee
-        (5, 6),   # left_knee -> left_ankle
-        (0, 7),   # hip -> spine
-        (7, 8),   # spine -> thorax
-        (8, 9),   # thorax -> neck_base
-        (9, 10),  # neck_base -> head
-        (8, 11),  # thorax -> left_shoulder
-        (11, 12), # left_shoulder -> left_elbow
-        (12, 13), # left_elbow -> left_wrist
-        (8, 14),  # thorax -> right_shoulder
-        (14, 15), # right_shoulder -> right_elbow
-        (15, 16), # right_elbow -> right_wrist
-    ]
-    
-    for parent_idx, child_idx in parent_child_pairs:
-        parent_name = h36m_joints[parent_idx]
-        child_name = h36m_joints[child_idx]
-        
-        parent_pos = joints_3d[parent_idx]
-        child_pos = joints_3d[child_idx]
-        
-        # Calcola rotazione per questo osso
-        rotation = calculate_bone_rotation(parent_pos, child_pos)
-        rotations[parent_name] = rotation
-    
-    return rotations
-
-
-
-def load_simple(arr):
+def load_simple(arr, index=0):
     smpl = arr["smpl"][()]
-    global_orient = torch.from_numpy(smpl['global_orient'][0]).reshape(1, -1).to(torch.float32)
-    body_pose_raw = torch.from_numpy(smpl['body_pose'][0])
-    transl        = torch.from_numpy(smpl['root_transl'][0]).reshape(1, -1).to(torch.float32)
-    betas        = torch.from_numpy(smpl['betas'][0]).reshape(1, 10).to(torch.float32)
+    global_orient = torch.from_numpy(smpl['global_orient'][index]).reshape(1, -1).to(torch.float32)
+    body_pose_raw = torch.from_numpy(smpl['body_pose'][index])
+    transl        = torch.from_numpy(smpl['root_transl'][index]).reshape(1, -1).to(torch.float32)
+    betas        = torch.from_numpy(smpl['betas'][index]).reshape(1, 10).to(torch.float32)
 
     # Carica il modello SMPL
     smpl_model = SMPLX(
@@ -286,7 +179,8 @@ def load_simple(arr):
     joints = output.joints[0].detach().cpu().numpy()  # (N_joints, 3)
     faces = smpl_model.faces   # (N_faces, 3)
 
-    return joints, body_pose_raw, transl.cpu().numpy()
+    return joints, body_pose_raw, transl.cpu().numpy(), global_orient.cpu()
+
 
 
 """
@@ -401,3 +295,92 @@ class Retargeting():
 
         return keypoint_trans
 """
+
+def compute_global_orientations_smplx(global_orient, body_pose):
+    """
+    Computa le orientazioni globali dei giunti SMPL-X da global_orient e body_pose.
+    
+    Args:
+        global_orient: torch.Tensor di shape (1, 3) - rotazione globale del root (pelvis)
+        body_pose: torch.Tensor di shape (1, 63) - rotazioni locali dei 21 giunti corpo (21*3=63)
+    
+    Returns:
+        global_orientations: torch.Tensor di shape (22, 3, 3) - matrici di rotazione globali
+    """
+    
+    # Reshape body_pose da (1, 63) a (21, 3)
+    body_pose = body_pose.reshape(-1, 3)  # (21, 3)
+    
+    # Combina global_orient (root) con body_pose
+    all_poses = torch.cat([global_orient.reshape(-1, 3), torch.from_numpy(body_pose)], dim=0)  # (22, 3)
+    
+    # Converti angle-axis in matrici di rotazione
+    def rodrigues(rvec):
+        """Converte angle-axis in matrice di rotazione usando la formula di Rodrigues"""
+        theta = torch.norm(rvec, dim=-1, keepdim=True)
+        k = rvec / (theta + 1e-8)
+        
+        # Matrice skew-symmetric
+        K = torch.zeros(rvec.shape[0], 3, 3, device=rvec.device, dtype=rvec.dtype)
+        K[:, 0, 1] = -k[:, 2]
+        K[:, 0, 2] = k[:, 1]
+        K[:, 1, 0] = k[:, 2]
+        K[:, 1, 2] = -k[:, 0]
+        K[:, 2, 0] = -k[:, 1]
+        K[:, 2, 1] = k[:, 0]
+        
+        # Formula di Rodrigues
+        I = torch.eye(3, device=rvec.device, dtype=rvec.dtype).unsqueeze(0).repeat(rvec.shape[0], 1, 1)
+        R = I + torch.sin(theta).unsqueeze(-1) * K + (1 - torch.cos(theta)).unsqueeze(-1) * torch.bmm(K, K)
+        
+        return R
+    
+    local_rotations = rodrigues(all_poses)  # (22, 3, 3)
+    
+    # Gerarchia SMPL-X (parent per ogni joint)
+    # 0: pelvis (root) - parent: None
+    parents = [-1,  # 0: pelvis (root)
+               0,   # 1: left_hip
+               0,   # 2: right_hip  
+               0,   # 3: spine1
+               1,   # 4: left_knee
+               2,   # 5: right_knee
+               3,   # 6: spine2
+               4,   # 7: left_ankle
+               5,   # 8: right_ankle
+               6,   # 9: spine3
+               7,   # 10: left_foot
+               8,   # 11: right_foot
+               9,   # 12: neck
+               9,   # 13: left_collar
+               9,   # 14: right_collar
+               12,  # 15: head
+               13,  # 16: left_shoulder
+               14,  # 17: right_shoulder
+               16,  # 18: left_elbow
+               17,  # 19: right_elbow
+               18,  # 20: left_wrist
+               19]  # 21: right_wrist
+    
+    # Computa orientazioni globali propagando lungo la gerarchia
+    global_orientations = torch.zeros_like(local_rotations)
+    
+    for i in range(len(parents)):
+        if parents[i] == -1:  # Root joint
+            global_orientations[i] = local_rotations[0]
+        else:
+            # Orientazione globale = orientazione_globale_parent * orientazione_locale_corrente
+            parent_idx = parents[i]
+            global_orientations[i] = torch.bmm(
+                global_orientations[parent_idx].unsqueeze(0), 
+                local_rotations[i].unsqueeze(0)
+            ).squeeze(0)
+    
+    return global_orientations
+
+
+def get_smplx_global_orientations(global_orient, body_pose_raw):
+    
+    global_rot_matrices = compute_global_orientations_smplx(global_orient, body_pose_raw)
+    
+    return global_rot_matrices
