@@ -12,8 +12,8 @@ from URDF.utils import load_robot
 import pinocchio as pin
 import qpsolvers
 
-import ik
-from ik import solve_ik
+import ik_pin
+from ik_pin import solve_ik
 from pink.tasks import FrameTask, JointCouplingTask, PostureTask
 from pink.visualization import start_meshcat_visualizer
 
@@ -71,7 +71,7 @@ if __name__ == "__main__":
     meshcat_shapes.frame(wrist_frame)
 
     # Set initial robot configuration
-    configuration = ik.Configuration(robot.model, robot.data, robot.q0)
+    configuration = ik_pin.Configuration(robot.model, robot.data, robot.q0)
     viz.display(configuration.q)
 
     # Tasks initialization for IK

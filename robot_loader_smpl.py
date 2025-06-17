@@ -5,14 +5,10 @@ import argparse
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-import qpsolvers
+from inverse_kinematics import InverseKinematicSolver
 #from graph_net import HumanoidJointMapper
 from scipy.optimize import minimize
-from ik import tasks
-import pink
-from pink import solve_ik
-from pink.tasks import FrameTask
-import time
+from ik_pin import tasks
 from loop_rate_limiters import RateLimiter
 
 
@@ -73,8 +69,8 @@ if __name__ == "__main__":
     
     #LOAD SIMPLE
         
-    #arr = np.load("/datasets/HumanoidX/human_pose/kinetics700/pADXOvpw1CM_000028_000038_clip_1.npz", allow_pickle=True)
-    arr = np.load("/datasets/HumanoidX/human_pose/youtube/zoo_yoga_for_hampton_primary_clip_1.npz", allow_pickle=True)
+    arr = np.load("/home/rick/red_dot_scary_maze_prank_on_my_son_for_his_reaction_shorts_clip_1.npz", allow_pickle=True)
+    #arr = np.load("/datasets/HumanoidX/human_pose/youtube/zoo_yoga_for_hampton_primary_clip_1.npz", allow_pickle=True)
     
     joint_positions, orientations, translation, global_orient = load_simple(arr, 20)    
 
@@ -228,19 +224,14 @@ if __name__ == "__main__":
         #"torso": orientations[9],
         "l_wrist": orientations[20],  
         "r_wrist": orientations[21],
+        "LElbow": orientations[18],
+        #"LShoulder": orientations[17]
         #"l_ankle": orientations[7],
         #"r_ankle": orientations[8],
         #"Neck" : orientations[12],
     }
 
-    import scipy.spatial.transform
 
-    def rotation_error(R, R_target):
-        R_diff = R_target.T @ R
-        rotvec = scipy.spatial.transform.Rotation.from_matrix(R_diff).as_rotvec()
-        return np.linalg.norm(rotvec)**2  
-
-        #tasks[name].set_target_position(pos.tolist())
     index_keypoints = [
     1, 4, 7,            # left hip, knee, ankle
     2, 5, 8,            # right hip, knee, ankle
@@ -280,106 +271,15 @@ if __name__ == "__main__":
             
             target_orientations_global[robot_frame] = rot_matrix
         
-    
-    print(target_orientations_global)
-    
-    def ik_cost(q, w_pos=1, w_ori=0.0001):
-        pin.forwardKinematics(model, data, q)
-        pin.updateFramePlacements(model, data)
-        
-        cost_pos = 0.0
-        cost_ori = 0.0
-        
-        for name, frame_id in zip(frame_names, frame_ids):
-            oMf = data.oMf[frame_id]
-            pos = oMf.translation
-            ori = oMf.rotation#model.frames[frame_id].placement.rotation 
-            target_pos = target_positions[name]
-            cost_pos += np.linalg.norm(pos - target_pos)**2
-            
-            if name in target_orientations_global:
-                
-                target_ori = target_orientations_global[name]
-                #target_ori = pin.exp3(target_ori.numpy())
-                cost_ori += rotation_error(ori, target_ori)
-                
-        return w_pos * cost_pos + w_ori * cost_ori
-    
-    
-    
-    
-    
-    
-
-    q_lower_limits = model.lowerPositionLimit
-    q_upper_limits = model.upperPositionLimit
-    bounds = []
-    for i in range(model.nq):
-        bounds.append((q_lower_limits[i], q_upper_limits[i]))
 
     
-
-    res = minimize(ik_cost, q0, bounds=bounds, method='SLSQP', options={'maxiter': 1000, 'disp': True})
+    solver = InverseKinematicSolver(model,data,target_positions,target_orientations_global,frame_names, frame_ids)
     
+    q1 = solver.inverse_kinematics_position(q0)
 
-        
-    q1 = np.array(res.x).reshape(-1)
-    assert q1.shape[0] == model.nq
-    
-    
-    joint_name = "RWristYaw"
-    joint_id = model.getJointId(joint_name)
-    idx = model.joints[joint_id].idx_q  # indice nel vettore q
-
-    target_ori = target_orientations_global["r_wrist"]
-
-    def rotation_error(R1, R2):
-        R_diff = R1.T @ R2
-        angle = np.arccos(np.clip((np.trace(R_diff) - 1) / 2, -1.0, 1.0))
-        return angle
-
-    # Funzione costo: ottimizzi solo il valore q[idx]
-    def cost(theta):
-        q_tmp = q1.copy()
-        q_tmp[idx] = theta[0] 
-        print(q_tmp[idx])
-        # solo il grado di libertà del giunto
-        pin.forwardKinematics(model, data, q_tmp)
-        pin.updateFramePlacements(model, data)
-        R = data.oMi[joint_id].rotation
-        return rotation_error(R, target_ori)
-
-    # Ottimizza solo q1[idx]
-    res = minimize(cost, q1[idx], method='SLSQP', options={'maxiter': 1000, 'disp': True})
-    q1[idx] = res.x[0]  
-    
-    
-    joint_name = "LWristYaw"
-    joint_id = model.getJointId(joint_name)
-    idx = model.joints[joint_id].idx_q  # indice nel vettore q
-
-    target_ori = target_orientations_global["l_wrist"]
-
-    def rotation_error(R1, R2):
-        R_diff = R1.T @ R2
-        angle = np.arccos(np.clip((np.trace(R_diff) - 1) / 2, -1.0, 1.0))
-        return angle
-
-    # Funzione costo: ottimizzi solo il valore q[idx]
-    def cost(theta):
-        q_tmp = q1.copy()
-        q_tmp[idx] = theta[0] 
-        print(q_tmp[idx])
-        # solo il grado di libertà del giunto
-        pin.forwardKinematics(model, data, q_tmp)
-        pin.updateFramePlacements(model, data)
-        R = data.oMi[joint_id].rotation
-        return rotation_error(R, target_ori)
-
-    # Ottimizza solo q1[idx]
-    res = minimize(cost, q1[idx], method='SLSQP', options={'maxiter': 1000, 'disp': True})
-    q1[idx] = res.x[0]  
-    
+    q1 = solver.end_effector_cost(q1, joint_name="RWristYaw", target_name="r_wrist")
+    q1 = solver.end_effector_cost(q1, joint_name="LWristYaw", target_name="l_wrist")
+    #q1 = solver.end_effector_cost(q1, joint_name="LElbowYaw", target_name="LElbow")
     
     pin.forwardKinematics(model, data, q1)
     pin.updateFramePlacements(model, data)
