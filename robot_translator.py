@@ -11,12 +11,14 @@ if __name__ == "__main__":
     
     robot_list = [r.removesuffix(".urdf") for r in os.listdir("/home/rick/TheCompleteRobots/URDF") if r.endswith(".urdf") or r.endswith(".urdf")]
     
+    robot_string = "Available robots:\n" + "\n".join(f"- {r}" for r in robot_list)
+    
     parser = argparse.ArgumentParser(description="Visualize a humanoid robot model.")
     parser.add_argument(
         "--robot",
         type=str,
         default="nao",
-        help="The robot to visualize.",
+        help=robot_string,
     )
     parser.add_argument("--visualize",
                         action="store_true",
@@ -28,9 +30,7 @@ if __name__ == "__main__":
         robot = HumanoidRobot(f"/home/rick/TheCompleteRobots/URDF/{args.robot}.urdf")
     except Exception as e:
         print(f"Error loading robot {robot_name}: {e}")
-        print("Available robots:")
-        for r in robot_list:
-            print(f"- {r}")
+        print(robot_string)
         exit(1)
     
     if args.visualize:
@@ -121,8 +121,6 @@ for chain in chains:
 print("Before Rectifing End-effector")
 print(new_chains)
 
-### Questo serve per togliere end-effector minori, tipo le dita, ma se il root non è il vero root crea problemi. VEDASI ATLAS. Atlas non ha le
-### catene cinematiche delle braccia attaccate al root questo vanifica queste righe di codice dopo.
 
 def longest_common_prefix(lists):
     if not lists:
@@ -158,7 +156,7 @@ def reduce_lists(input_lists, max_groups=5):
 
 
 
-if len(new_chains) > 5: #è probabile che ci siano più end-effector del necessario
+if len(new_chains) > 5: #è probabile che ci siano più end-effector del necessario quindi riduci
     new_chains = reduce_lists(new_chains, max_groups=5)
     
 
@@ -169,7 +167,7 @@ if len(new_chains) > 5: #è probabile che ci siano più end-effector del necessa
 print("After Rectifing End-effector")
 print(new_chains)
 
-## HANDLING DUPLICATE ORIGIN JOINTS DIFFERENT FROM ROOT (PROBLEM ATLAS CASE)
+## HANDLING DUPLICATE ORIGIN JOINTS DIFFERENT FROM ROOT (ATLAS CASE)
 
 filter = []
 for chain in new_chains:
