@@ -154,9 +154,15 @@ def reduce_lists(input_lists, max_groups=5):
         reduced.append(longest_common_prefix(group))
         groups.append(group)
 
-    return reduced[:max_groups], groups[:max_groups]
+    return reduced[:max_groups]
 
-new_chains, groups = reduce_lists(new_chains, max_groups=5)
+
+
+if len(new_chains) > 5: #è probabile che ci siano più end-effector del necessario
+    new_chains = reduce_lists(new_chains, max_groups=5)
+    
+
+
 
 
 
@@ -167,18 +173,21 @@ print(new_chains)
 
 filter = []
 for chain in new_chains:
-    filter.append(chain[0])
+    for i in range(len(chain)):
+        filter.append(chain[i])
 
 values_to_remove = set()
 for chain in new_chains:
-    if filter.count(chain[0]) > 1:
-        values_to_remove.add(chain[0])
+    for i in range(len(chain)):
+        if filter.count(chain[i]) > 1:
+            values_to_remove.add(chain[i])
         
 for chain in new_chains:
     for v in values_to_remove:
         if v in chain:
             chain.remove(v)
  
+print(values_to_remove)
 
 positions = []
 for chain in new_chains:
