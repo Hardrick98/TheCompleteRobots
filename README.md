@@ -19,7 +19,7 @@ conda activate Robots
 python robot_translator.py --robot ROBOT_NAME         # --help to see list of available robots
 ```
 
-This code will print the kinematic associations
+This code will print the kinematic associations.
 
 ## TO visualize the INVERSE KINEMATICS PROCESS run
 
