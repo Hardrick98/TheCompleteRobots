@@ -371,11 +371,8 @@ def compute_global_orientations_smplx(global_orient, body_pose):
         else:
             # Orientazione globale = orientazione_globale_parent * orientazione_locale_corrente
             parent_idx = parents[i]
-            global_orientations[i] = torch.bmm(
-                global_orientations[parent_idx].unsqueeze(0), 
-                local_rotations[i].unsqueeze(0)
-            ).squeeze(0)
-    
+            global_orientations[i] = global_orientations[parent_idx].unsqueeze(0)@local_rotations[i].unsqueeze(0)
+        
     return global_orientations
 
 
