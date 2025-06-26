@@ -3,8 +3,8 @@ from smplx import SMPL, SMPLX
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-
-arr = np.load("/datasets/HumanoidX/human_pose/youtube/zoo_yoga_for_hampton_primary_clip_1.npz", allow_pickle=True)
+from scipy.spatial.transform import Rotation as Rot
+arr = np.load("/datasets/HumanoidX/human_pose/youtube/ab_exercises_ranked_best_to_worst_clip_1.npz", allow_pickle=True)
 
 
 
@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 
-def visualize_mesh_and_joints(vertices, joints, faces, title="SMPLX Mesh + Joints"):
+def visualize_mesh_and_joints(vertices, joints, faces, direction, title="SMPLX Mesh + Joints"):
 
     fig = plt.figure(figsize=(10,10))
     ax = fig.add_subplot(111, projection='3d')
@@ -37,8 +37,16 @@ def visualize_mesh_and_joints(vertices, joints, faces, title="SMPLX Mesh + Joint
     ax.add_collection3d(mesh)
 
     # Joints
-    ax.scatter(joints[:, 0], joints[:, 1], joints[:, 2], c='r', s=40)
-
+    #ax.scatter(joints[:, 0], joints[:, 1], joints[:, 2], c='r', s=40)
+    ax.quiver(
+        joints[0,0], joints[0,1],joints[0,2],                    # Punto di origine
+        direction[0],              # Componente x della direzione
+        direction[1],              # Componente y della direzione
+        direction[2],              # Componente z della direzione
+        length=2.0,                # Lunghezza della freccia
+        color='yellow',
+        normalize=True             # Normalizza la direzione
+    )
     # Setup view
     scale = vertices.flatten()
     ax.auto_scale_xyz(scale, scale, scale)
@@ -63,6 +71,15 @@ def load_simple(arr):
         batch_size=1
     )
 
+    print("Global Orient:", global_orient)
+    rotvec = global_orient.numpy().flatten()
+    rotation = Rot.from_rotvec(rotvec)
+    initial_vector = np.array([0, 0, 1])
+    direction = rotation.apply(initial_vector)
+    direction = direction / np.linalg.norm(direction)
+    print("Direzione:", direction)
+
+
     
     output = smpl_model(
         global_orient=global_orient,
@@ -77,8 +94,8 @@ def load_simple(arr):
     joints = output.joints[0].detach().cpu().numpy()  # (N_joints, 3)
     faces = smpl_model.faces   # (N_faces, 3)
     
-    visualize_mesh_and_joints(verts, joints, faces)
+    visualize_mesh_and_joints(verts, joints, faces, direction)
     
-    return joints, body_pose_raw
+    return joints, body_pose_raw, direction
 
 load_simple(arr)

@@ -164,6 +164,8 @@ def load_simple(arr, index=0):
         batch_size=1
     )
     
+    print("Global Orient:", global_orient)
+    
     body_pose = body_pose_raw[:21].reshape(1, -1).to(torch.float32)
 
     output = smpl_model(
@@ -296,6 +298,8 @@ class Retargeting():
         return keypoint_trans
 """
 
+import kornia
+
 def compute_global_orientations_smplx(global_orient, body_pose):
     """
     Computa le orientazioni globali dei giunti SMPL-X da global_orient e body_pose.
@@ -314,28 +318,12 @@ def compute_global_orientations_smplx(global_orient, body_pose):
     # Combina global_orient (root) con body_pose
     all_poses = torch.cat([global_orient.reshape(-1, 3), torch.from_numpy(body_pose)], dim=0)  # (22, 3)
     
-    # Converti angle-axis in matrici di rotazione
-    def rodrigues(rvec):
-        """Converte angle-axis in matrice di rotazione usando la formula di Rodrigues"""
-        theta = torch.norm(rvec, dim=-1, keepdim=True)
-        k = rvec / (theta + 1e-8)
-        
-        # Matrice skew-symmetric
-        K = torch.zeros(rvec.shape[0], 3, 3, device=rvec.device, dtype=rvec.dtype)
-        K[:, 0, 1] = -k[:, 2]
-        K[:, 0, 2] = k[:, 1]
-        K[:, 1, 0] = k[:, 2]
-        K[:, 1, 2] = -k[:, 0]
-        K[:, 2, 0] = -k[:, 1]
-        K[:, 2, 1] = k[:, 0]
-        
-        # Formula di Rodrigues
-        I = torch.eye(3, device=rvec.device, dtype=rvec.dtype).unsqueeze(0).repeat(rvec.shape[0], 1, 1)
-        R = I + torch.sin(theta).unsqueeze(-1) * K + (1 - torch.cos(theta)).unsqueeze(-1) * torch.bmm(K, K)
-        
-        return R
+
+
+    def rodrigues_kornia(rvecs: torch.Tensor) -> torch.Tensor:
+        return kornia.geometry.axis_angle_to_rotation_matrix(rvecs)[:, :3, :3]  # (N, 3, 3)
     
-    local_rotations = rodrigues(all_poses)  # (22, 3, 3)
+    local_rotations = rodrigues_kornia(all_poses)  # (22, 3, 3)
     
     # Gerarchia SMPL-X (parent per ogni joint)
     # 0: pelvis (root) - parent: None

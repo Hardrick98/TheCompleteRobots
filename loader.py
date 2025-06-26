@@ -7,9 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from inverse_kinematics import InverseKinematicSolver
 from robotoid import Robotoid
-from scipy.optimize import minimize
-from ik_pin import tasks
-from loop_rate_limiters import RateLimiter
+
 
 
 if __name__ == "__main__":
@@ -55,27 +53,13 @@ if __name__ == "__main__":
     data = robot.data
     q0 = robot.q0  
 
-   
-    """
-    ax = plt.figure(figsize=(10, 10)).add_subplot(projection='3d')
-    
-    
-    ax.set_xlim(-1,1)
-    ax.set_ylim(-1,1)
-    ax.set_zlim(-1,1)
-    ax.scatter(robot_joints[:, 0], robot_joints[:, 1], robot_joints[:, 2], c='r', marker='o')
-    for joint1_idx, joint2_idx in robot_limbs:
-        if all(len(joint) == 3 for joint in (robot_joints[joint1_idx], robot_joints[joint2_idx])):
-            x_coords, y_coords, z_coords = zip(robot_joints[joint1_idx], robot_joints[joint2_idx])
-            ax.plot(x_coords, y_coords, z_coords, c="red", linewidth=2)
-    """
     
     #LOAD SIMPLE
         
     arr = np.load(args.human_pose, allow_pickle=True)
-    #arr = np.load("/datasets/HumanoidX/human_pose/youtube/zoo_yoga_for_hampton_primary_clip_1.npz", allow_pickle=True)
     
-    joint_positions, orientations, translation, global_orient = load_simple(arr, 20)    
+    
+    joint_positions, orientations, translation, global_orient = load_simple(arr, 0)    
 
     translation[:,[1,2]] = translation[:,[2,1]]
 
@@ -84,13 +68,7 @@ if __name__ == "__main__":
     links_positions = robot.get_links_positions(q0)
    
         
-    new = []
-    
-    robot_limbs = [(2, 3), (3, 4), (5, 6), (6, 7), (17, 18), (18, 19),
-                   (20, 21), (21, 22), (0, 1), (0, 17), (1, 20), (0, 2), (1, 5)]
-    
-
-        
+    new = []        
     
     joint_positions[:,:] -= joint_positions[:1,:]
     joint_positions[:,[1,2]] = joint_positions[:,[2,1]]
@@ -105,25 +83,6 @@ if __name__ == "__main__":
     ax.set_ylim(-1,1)
     ax.set_zlim(-1,1)
     ax.scatter(human_joints[:, 0], human_joints[:, 1], human_joints[:, 2], c='r', marker='o')
-
-    """
-    mapper = HumanoidJointMapper()
-    (mapping, quality, similarity_matrix, human_names, robot_names, 
-     unused_joints) = mapper.find_optimal_mapping(
-        human_joints, human36m_limbs,
-        robot_joints, robot_limbs, human_joint_names=human36m_names
-    )
-
-    mapper.visualize_mapping_with_links(
-        human_joints, human36m_limbs,
-        robot_joints, robot_limbs,
-        mapping, quality, unused_joints,human_joint_names=human36m_names
-        
-    )
-    
-    mapper.get_detailed_report(mapping, quality, unused_joints)
-    
-    """
 
 
 
@@ -154,6 +113,12 @@ if __name__ == "__main__":
     robotoid = Robotoid(robot)
     F, R = robotoid.build()
 
+        
+    robot_limbs = [(R["LHip"],R["LKnee"]), (R["LKnee"], R["LAnkle"]), (R["RHip"],R["RKnee"]), 
+                   (R["RKnee"], R["RAnkle"]),(R["LShoulder"],R["LElbow"]), (R["LElbow"], R["LWrist"]), 
+                   (R["RShoulder"],R["RElbow"]), (R["RElbow"], R["RWrist"]), (R["Head"], R["RShoulder"]), 
+                   (R["Head"], R["LShoulder"]), (R["Head"], R["RHip"]),(R["Head"], R["LHip"])]
+    
     
     hipH = np.linalg.norm(human_joints[H["LHip"]]-human_joints[H["root_joint"]])
     hipR = np.linalg.norm(robot_joints[R["LHip"]]-robot_joints[R["root_joint"]])
@@ -214,7 +179,7 @@ if __name__ == "__main__":
     ax.set_ylim(-1,1)
     ax.set_zlim(-1,1)
     ax.scatter(robot_joints[indices, 0], robot_joints[indices, 1], robot_joints[indices, 2], c='g', marker='o')
-    """
+    
     for joint1_idx, joint2_idx in robot_limbs:
         try:
             if all(len(joint) == 3 for joint in (robot_joints[joint1_idx], robot_joints[joint2_idx])):
@@ -222,18 +187,14 @@ if __name__ == "__main__":
                 ax.plot(x_coords, y_coords, z_coords, c="green", linewidth=2)
         except:
             pass
-    """
     
-    links = robot.joints
-    print("Robot frames:", links)
     
+    links = robot.joints  
     
     
     frame_names = [v for k,v in F.items() if v != "root_joint"]
     frame_ids = [links[name]for name in frame_names]
-    
-    
-    print(F)
+
     
     target_positions = {
         #F["root_joint"]: robot_joints[R["root_joint"]],
@@ -251,8 +212,6 @@ if __name__ == "__main__":
         F["RShoulder"] : robot_joints[R["LShoulder"]],
         F["LShoulder"] : robot_joints[R["RShoulder"]],
     }
-
-    print("Target positions:", target_positions)
 
     target_orientations = {
         #F["root_joint"]: orientations[H["pelvis"]],
@@ -272,20 +231,31 @@ if __name__ == "__main__":
     ]
     
     theta = -np.pi / 2  # -90 gradi
-    R = np.array([
+    R = torch.Tensor([
         [1, 0, 0],
-        [0, np.cos(theta), -np.sin(theta)],
-        [0, np.sin(theta),  np.cos(theta)]
+        [0, 0, 1],
+        [0, 1, 0]
     ])
 
-    print(global_orient)
-    global_orient = R @ pin.exp3(global_orient.numpy().flatten())
+    from scipy.spatial.transform import Rotation as Rot
+
     
-    
+    rotvec = global_orient.numpy().flatten()
+    rotation = torch.from_numpy(Rot.from_rotvec(rotvec).as_matrix()).float()
+    print(rotation)
+    initial_vector = np.array([0, 0, 1])
+    v = torch.tensor(initial_vector)
+    rotation = R @ rotation
+    direction = rotation @ v.float()
+    direction = direction / torch.linalg.norm(direction)
+    print("Direzione:", direction)
+
+
+        
+    global_orient = rotation.numpy() @ pin.exp3(global_orient.numpy().flatten())
     global_orientations_matrices = get_smplx_global_orientations(torch.from_numpy(global_orient).unsqueeze(0), joint_positions)
 
-    # 2. Mappa le orientazioni SMPL-X ai frame del tuo robot
-    # Mapping da indici SMPL-X a nomi dei tuoi frame
+
     smplx_to_robot_mapping = {
         9: F["root_joint"],      
         1: F["LHip"],       
@@ -307,7 +277,6 @@ if __name__ == "__main__":
     target_orientations_global = {}
     for smplx_idx, robot_frame in smplx_to_robot_mapping.items():
         if robot_frame in target_orientations:  
-            # Converti da matrice di rotazione a angle-axis per Pinocchio
             rot_matrix = global_orientations_matrices[smplx_idx].numpy()
             target_orientations_global[robot_frame] = rot_matrix
     
@@ -330,17 +299,28 @@ if __name__ == "__main__":
         final_positions.append(data.oMf[frame_id].translation)
     
     final_positions = np.array(final_positions)
+    
+    ax.quiver(
+        0, 0,0,                    # Punto di origine
+        direction[0],              # Componente x della direzione
+        direction[1],              # Componente y della direzione
+        direction[2],              # Componente z della direzione
+        length=2.0,                # Lunghezza della freccia
+        color='yellow',
+        normalize=True             # Normalizza la direzione
+    )
+    
     ax.scatter(final_positions[:, 0], final_positions[:, 1], final_positions[:, 2], c='b', marker='x')
-    plt.show()
+    ax.view_init(azim=0, elev=0)
     
     viz = MeshcatVisualizer(model, robot.collision_model, robot.visual_model)
     viz.initViewer(open=True) 
     viz.loadViewerModel()
     
-    print(q1.shape)
    
     viz.display(q1)
     plt.show()
+    
     input("Press Enter to reset the visualization...")
     viz.reset()
     
