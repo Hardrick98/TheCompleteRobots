@@ -73,7 +73,7 @@ if __name__ == "__main__":
     #LOAD SIMPLE
         
     arr = np.load(args.human_pose, allow_pickle=True)
-    #arr = np.load("/datasets/HumanoidX/human_pose/youtube/zoo_yoga_for_hampton_primary_clip_1.npz", allow_pickle=True)
+    #arr = np.load("/datasets/HumanoidX/human_pose/youtube/q.npz", allow_pickle=True)
     
     joint_positions, orientations, translation, global_orient = load_simple(arr, 20)    
 
@@ -168,7 +168,6 @@ if __name__ == "__main__":
     s_hip = hipR / hipH
 
 
-    #Scaling
     robot_joints[1] = robot_joints[0] + (human_joints[12]-human_joints[9]) * s_spine
     robot_joints[17] = robot_joints[0] + (human_joints[1]-human_joints[9]) * s_hip
     robot_joints[18] = robot_joints[17] + (human_joints[4] - human_joints[1]) * s_femor
@@ -183,7 +182,6 @@ if __name__ == "__main__":
     robot_joints[6] = robot_joints[5] + (human_joints[19] - human_joints[17]) * s_upper_arm
     robot_joints[7] = robot_joints[6] + (human_joints[21] - human_joints[19]) * s_forearm    
 
-    
 
     ax.set_xlim(-1,1)
     ax.set_ylim(-1,1)
@@ -198,36 +196,41 @@ if __name__ == "__main__":
             pass
     
     
-    links = robot.body
+    links = robot.joints
     print("Robot frames:", links)
     
     
     
-    frame_names = [ "RShoulder", "LShoulder", "LElbow", "RElbow", "l_wrist", "r_wrist", "RHip", "LHip","LTibia","RTibia", "l_ankle", "r_ankle", "Neck"]
+    #frame_names = [ "RShoulder", "LShoulder", "LElbow", "RElbow", "l_wrist", "r_wrist", "RHip", "LHip","LTibia","RTibia", "l_ankle", "r_ankle", "Neck"]
+    frame_names = ['HeadYaw', 'LShoulderPitch', 'LElbowYaw', 'LWristYaw', 'RShoulderPitch', 'RElbowYaw', 
+                   'RWristYaw', 'LHipYawPitch', 'LKneePitch','LAnklePitch', 'RHipYawPitch', 
+                   'RKneePitch', 'RAnklePitch']
     frame_ids = [links[name]for name in frame_names]
     
     target_positions = {
         #"torso" :robot_joints[0],
-        "LHip": robot_joints[2],
-        "RHip" : robot_joints[17],
-        "LElbow": robot_joints[6], 
-        "RElbow": robot_joints[21], 
-        "l_wrist": robot_joints[7],  
-        "r_wrist": robot_joints[22],
-        "LTibia" : robot_joints[3],
-        "RTibia" : robot_joints[18],
-        "l_ankle": robot_joints[4],
-        "r_ankle": robot_joints[19],
-        "Neck" : robot_joints[1],
-        "RShoulder": robot_joints[20],
-        "LShoulder" : robot_joints[5]
+        "LHipYawPitch": robot_joints[2],
+        "RHipYawPitch" : robot_joints[17],
+        "LElbowYaw": robot_joints[6], 
+        "RElbowYaw": robot_joints[21], 
+        "LWristYaw": robot_joints[7],  
+        "RWristYaw": robot_joints[22],
+        "LKneePitch" : robot_joints[3],
+        "RKneePitch" : robot_joints[18],
+        "LAnklePitch": robot_joints[4],
+        "RAnklePitch": robot_joints[19],
+        "HeadYaw" : robot_joints[1],
+        "RShoulderPitch": robot_joints[20],
+        "LShoulderPitch" : robot_joints[5]
     }
 
+    print("Target positions:", target_positions)
+    
     target_orientations = {
         #"torso": orientations[9],
-        "l_wrist": orientations[20],  
-        "r_wrist": orientations[21],
-        "LElbow": orientations[18],
+        "LWristYaw": orientations[20],  
+        "RWristYaw": orientations[21],
+        #"LElbow": orientations[18],
         #"LShoulder": orientations[17]
         #"l_ankle": orientations[7],
         #"r_ankle": orientations[8],
@@ -260,8 +263,8 @@ if __name__ == "__main__":
         17: "RShoulder", # right_shoulder
         18: "LElbow",    # left_elbow
         19: "RElbow",    # right_elbow
-        20: "l_wrist",   # left_wrist
-        21: "r_wrist"    # right_wrist
+        20: "LWristYaw",   # left_wrist
+        21: "RWristYaw"    # right_wrist
     }
 
     # 3. Aggiorna target_orientations con le orientazioni globali
@@ -280,8 +283,8 @@ if __name__ == "__main__":
     
     q1 = solver.inverse_kinematics_position(q0)
 
-    q1 = solver.end_effector_cost(q1, joint_name="RWristYaw", target_name="r_wrist")
-    q1 = solver.end_effector_cost(q1, joint_name="LWristYaw", target_name="l_wrist")
+    q1 = solver.end_effector_cost(q1, joint_name="RWristYaw", target_name="RWristYaw")
+    q1 = solver.end_effector_cost(q1, joint_name="LWristYaw", target_name="LWristYaw")
     #q1 = solver.end_effector_cost(q1, joint_name="LElbowYaw", target_name="LElbow")
     
     pin.forwardKinematics(model, data, q1)
@@ -306,4 +309,27 @@ if __name__ == "__main__":
     plt.show()
     input("Press Enter to reset the visualization...")
     viz.reset()
+    
+    
+    
+    ###Convert to WEBOTS pose
+    
+    DoF = ['HeadYaw', 'HeadPitch', 'RShoulderPitch', 'RShoulderRoll', 'RElbowYaw', 'RElbowRoll', 
+     'RWristYaw', 'LShoulderPitch', 'LShoulderRoll', 'LElbowYaw', 'LElbowRoll', 'LWristYaw', 
+     'RHipYawPitch', 'RHipRoll', 'RHipPitch', 'RKneePitch', 'RAnklePitch', 'RAnkleRoll', 
+     'LHipYawPitch', 'LHipRoll', 'LHipPitch', 'LKneePitch', 'LAnklePitch', 'LAnkleRoll']
+    
+    webots_pose = {}
+    
+    for joint_name in DoF:
+        joint_id = model.getJointId(joint_name)
+        idx = model.joints[joint_id].idx_q
+    
+        webots_pose[joint_name] = q1[idx]
+        
+    import json
+    
+    json_path = f"{robot_name}_pose.json"
+    with open(json_path, 'w') as f:
+        json.dump([webots_pose], f, indent=4)
     

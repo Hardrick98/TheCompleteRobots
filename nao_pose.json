@@ -1,0 +1,28 @@
+[
+    {
+        "HeadYaw": 0.0,
+        "HeadPitch": 0.0,
+        "RShoulderPitch": -0.10491293709855497,
+        "RShoulderRoll": -0.27063314939887606,
+        "RElbowYaw": -1.2183779829088413,
+        "RElbowRoll": 0.0349066,
+        "RWristYaw": -1.3973691609856416,
+        "LShoulderPitch": 0.3862888655278963,
+        "LShoulderRoll": 0.6281477282143697,
+        "LElbowYaw": -0.1959382548402247,
+        "LElbowRoll": -0.7436100140718814,
+        "LWristYaw": 2.5665744813812137,
+        "RHipYawPitch": -0.9373564636035262,
+        "RHipRoll": 0.2554190904078706,
+        "RHipPitch": -1.53589,
+        "RKneePitch": 0.8580009095592455,
+        "RAnklePitch": 0.0,
+        "RAnkleRoll": 0.0,
+        "LHipYawPitch": 0.12586469560118466,
+        "LHipRoll": -0.379435,
+        "LHipPitch": -1.53589,
+        "LKneePitch": -0.0923279,
+        "LAnklePitch": 0.0,
+        "LAnkleRoll": 0.0
+    }
+]

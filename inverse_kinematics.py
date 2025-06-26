@@ -20,7 +20,7 @@ class InverseKinematicSolver():
         return angle
 
 
-    def ik_cost(self, q, w_pos=1, w_ori=0.0001):
+    def ik_cost(self, q, w_pos=1, w_ori=0.001):
         pin.forwardKinematics(self.model, self.data, q)
         pin.updateFramePlacements(self.model, self.data)
         

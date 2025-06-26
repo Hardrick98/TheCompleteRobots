@@ -43,7 +43,7 @@ if __name__ == "__main__":
     
     if args.visualize:
         viz = MeshcatVisualizer(robot.model, robot.collision_model, robot.visual_model)
-        viz.initViewer(open=True) 
+        viz.initViewer(open=False) 
         viz.loadViewerModel()
         viz.display(robot.q0)
     pose_dict, robot_joints = robot.get_joints(robot.q0)
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     model = robot.model
     data = robot.data
     q0 = robot.q0  
-    print("Robot joints:", pose_dict)
+
    
     """
     ax = plt.figure(figsize=(10, 10)).add_subplot(projection='3d')
@@ -153,9 +153,7 @@ if __name__ == "__main__":
 
     robotoid = Robotoid(robot)
     F, R = robotoid.build()
-    
-    print(R)
-    print(robot_joints)
+
     
     hipH = np.linalg.norm(human_joints[H["LHip"]]-human_joints[H["root_joint"]])
     hipR = np.linalg.norm(robot_joints[R["LHip"]]-robot_joints[R["root_joint"]])
@@ -163,8 +161,8 @@ if __name__ == "__main__":
     spineH = np.linalg.norm(human_joints[H["Neck"]]-human_joints[H["root_joint"]])
     spineR = np.linalg.norm(robot_joints[R["Head"]]-robot_joints[R["root_joint"]])
     
-    shoulH = np.linalg.norm(human_joints[H["LShoulder"]]-human_joints[H["root_joint"]])
-    shoulR = np.linalg.norm(robot_joints[R["LShoulder"]]-robot_joints[R["root_joint"]])
+    shoulH = np.linalg.norm(human_joints[H["LShoulder"]]-human_joints[H["Neck"]])
+    shoulR = np.linalg.norm(robot_joints[R["LShoulder"]]-robot_joints[R["Head"]])
     
     femorH = np.linalg.norm(human_joints[H["LKnee"]]-human_joints[H["LHip"]])
     femorR = np.linalg.norm(robot_joints[R["LKnee"]]-robot_joints[R["LHip"]])
@@ -193,22 +191,25 @@ if __name__ == "__main__":
 
     #Scaling
     robot_joints[R["Head"]] = robot_joints[R["root_joint"]] + (human_joints[H["Neck"]] - human_joints[H["root_joint"]]) * s_spine
-    robot_joints[R["LHip"]] = robot_joints[R["root_joint"]] + (human_joints[H["LHip"]] - human_joints[H["root_joint"]]) * s_hip
-    robot_joints[R["LKnee"]] = robot_joints[R["LHip"]] + (human_joints[H["LKnee"]] - human_joints[H["LHip"]]) * s_femor
-    robot_joints[R["LAnkle"]] = robot_joints[R["LKnee"]] + (human_joints[H["LAnkle"]] - human_joints[H["LKnee"]]) * s_tibia
     robot_joints[R["RHip"]] = robot_joints[R["root_joint"]] + (human_joints[H["RHip"]] - human_joints[H["root_joint"]]) * s_hip
     robot_joints[R["RKnee"]] = robot_joints[R["RHip"]] + (human_joints[H["RKnee"]] - human_joints[H["RHip"]]) * s_femor
     robot_joints[R["RAnkle"]] = robot_joints[R["RKnee"]] + (human_joints[H["RAnkle"]] - human_joints[H["RKnee"]]) * s_tibia
     robot_joints[R["LShoulder"]] = robot_joints[R["Head"]] + (human_joints[H["LShoulder"]] - human_joints[H["Neck"]]) * s_shoulder
     robot_joints[R["LElbow"]] = robot_joints[R["LShoulder"]] + (human_joints[H["LElbow"]] - human_joints[H["LShoulder"]]) * s_upper_arm
     robot_joints[R["LWrist"]] = robot_joints[R["LElbow"]] + (human_joints[H["LWrist"]] - human_joints[H["LElbow"]]) * s_forearm
+    robot_joints[R["LHip"]] = robot_joints[R["root_joint"]] + (human_joints[H["LHip"]] - human_joints[H["root_joint"]]) * s_hip
+    robot_joints[R["LKnee"]] = robot_joints[R["LHip"]] + (human_joints[H["LKnee"]] - human_joints[H["LHip"]]) * s_femor
+    robot_joints[R["LAnkle"]] = robot_joints[R["LKnee"]] + (human_joints[H["LAnkle"]] - human_joints[H["LKnee"]]) * s_tibia
     robot_joints[R["RShoulder"]] = robot_joints[R["Head"]] + (human_joints[H["RShoulder"]] - human_joints[H["Neck"]]) * s_shoulder
     robot_joints[R["RElbow"]] = robot_joints[R["RShoulder"]] + (human_joints[H["RElbow"]] - human_joints[H["RShoulder"]]) * s_upper_arm
     robot_joints[R["RWrist"]] = robot_joints[R["RElbow"]] + (human_joints[H["RWrist"]] - human_joints[H["RElbow"]]) * s_forearm
   
-
+    indices = [R["Head"],R["LHip"], R["LKnee"], R["LAnkle"], R["RHip"], R["RKnee"], R["RAnkle"],
+               R["LShoulder"], R["LElbow"], R["LWrist"],
+               R["RShoulder"], R["RElbow"], R["RWrist"]]
+  
+    print("Robot joints after scaling:", robot_joints[indices])
     
-    indices = [v for k,v in R.items()]
     ax.set_xlim(-1,1)
     ax.set_ylim(-1,1)
     ax.set_zlim(-1,1)
@@ -228,39 +229,41 @@ if __name__ == "__main__":
     
     
     
-    frame_names = [v for k,v in F.items()]
-    
+    frame_names = [v for k,v in F.items() if v != "root_joint"]
     frame_ids = [links[name]for name in frame_names]
     
+    
+    print(F)
+    
     target_positions = {
-        F["root_joint"]: robot_joints[R["root_joint"]],
+        #F["root_joint"]: robot_joints[R["root_joint"]],
+        F["LHip"] : robot_joints[R["RHip"]],
+        F["RHip"] : robot_joints[R["LHip"]], 
+        F["LElbow"]: robot_joints[R["RElbow"]],
+        F["RElbow"]: robot_joints[R["LElbow"]],
+        F["LWrist"]: robot_joints[R["RWrist"]], 
+        F["RWrist"]: robot_joints[R["LWrist"]], 
+        F["RKnee"]: robot_joints[R["LKnee"]], 
+        F["LKnee"]: robot_joints[R["RKnee"]], 
+        F["LAnkle"]: robot_joints[R["RAnkle"]], 
+        F["RAnkle"]: robot_joints[R["LAnkle"]], 
         F["Head"]: robot_joints[R["Head"]],
-        F["LHip"] : robot_joints[R["LHip"]],
-        F["LAnkle"]: robot_joints[R["LAnkle"]], 
-        F["LKnee"]: robot_joints[R["LKnee"]], 
-        F["RHip"] : robot_joints[R["RHip"]],
-        F["RAnkle"]: robot_joints[R["RAnkle"]], 
-        F["RKnee"]: robot_joints[R["RKnee"]], 
-        F["LWrist"]: robot_joints[R["LWrist"]],  
-        F["LElbow"]: robot_joints[R["LElbow"]],
-        F["LShoulder"] : robot_joints[R["LShoulder"]],
-        F["RWrist"]: robot_joints[R["RWrist"]],  
-        F["RElbow"]: robot_joints[R["RElbow"]],
-        F["RShoulder"] : robot_joints[R["RShoulder"]]
+        F["RShoulder"] : robot_joints[R["LShoulder"]],
+        F["LShoulder"] : robot_joints[R["RShoulder"]],
     }
 
+    print("Target positions:", target_positions)
 
     target_orientations = {
-        F["root_joint"]: orientations[H["pelvis"]],
-        F["LWrist"]: orientations[H["LWrist"]],  
-        F["RWrist"]: orientations[H["RWrist"]],
+        #F["root_joint"]: orientations[H["pelvis"]],
+        F["LWrist"]: orientations[H["RWrist"]],  
+        F["RWrist"]: orientations[H["LWrist"]],
         #F["LShoulder"]: orientations[H["LShoulder"]],
-        F["LAnkle"]: orientations[H["LAnkle"]],
-        F["RAnkle"]: orientations[H["RAnkle"]],
-        F["Head"] : orientations[H["Neck"]],
+        #F["LAnkle"]: orientations[H["LAnkle"]],
+        #F["RAnkle"]: orientations[H["RAnkle"]],
+        #F["Head"] : orientations[H["Neck"]],
     }
 
-    print(target_orientations)
     index_keypoints = [
     1, 4, 7,            # left hip, knee, ankle
     2, 5, 8,            # right hip, knee, ankle
@@ -268,8 +271,18 @@ if __name__ == "__main__":
     17, 19, 21          # right shoulder, elbow, wrist
     ]
     
+    theta = -np.pi / 2  # -90 gradi
+    R = np.array([
+        [1, 0, 0],
+        [0, np.cos(theta), -np.sin(theta)],
+        [0, np.sin(theta),  np.cos(theta)]
+    ])
+
+    print(global_orient)
+    global_orient = R @ pin.exp3(global_orient.numpy().flatten())
     
-    global_orientations_matrices = get_smplx_global_orientations(global_orient, joint_positions)
+    
+    global_orientations_matrices = get_smplx_global_orientations(torch.from_numpy(global_orient).unsqueeze(0), joint_positions)
 
     # 2. Mappa le orientazioni SMPL-X ai frame del tuo robot
     # Mapping da indici SMPL-X a nomi dei tuoi frame

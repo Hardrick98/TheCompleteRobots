@@ -295,9 +295,9 @@ class Robotoid:
         for k,v in final.items():
 
             final_reduced[k] = v[0]
-            final_values[k] = self.model.getJointId(v[0])
+            final_values[k] = self.model.getJointId(v[0])-1
 
         final_reduced["root_joint"] = "root_joint"
-        final_values["root_joint"] = self.model.getJointId("root_joint")
+        final_values["root_joint"] = self.model.getJointId("root_joint") - 1
 
         return final_reduced, final_values
