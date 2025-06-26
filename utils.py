@@ -325,7 +325,11 @@ def compute_global_orientations_smplx(global_orient, body_pose):
     
     local_rotations = rodrigues_kornia(all_poses)  # (22, 3, 3)
     
-    # Gerarchia SMPL-X (parent per ogni joint)
+    R = torch.Tensor([
+        [1, 0, 0],
+        [0, 0, 1],
+        [0, 1, 0]
+    ])
     # 0: pelvis (root) - parent: None
     parents = [-1,  # 0: pelvis (root)
                0,   # 1: left_hip
@@ -359,7 +363,7 @@ def compute_global_orientations_smplx(global_orient, body_pose):
         else:
             # Orientazione globale = orientazione_globale_parent * orientazione_locale_corrente
             parent_idx = parents[i]
-            global_orientations[i] = global_orientations[parent_idx].unsqueeze(0)@local_rotations[i].unsqueeze(0)
+            global_orientations[i] = global_orientations[parent_idx].unsqueeze(0)@ R.double() @ local_rotations[i].unsqueeze(0)
         
     return global_orientations
 

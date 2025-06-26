@@ -218,9 +218,9 @@ if __name__ == "__main__":
         F["LWrist"]: orientations[H["RWrist"]],  
         F["RWrist"]: orientations[H["LWrist"]],
         #F["LShoulder"]: orientations[H["LShoulder"]],
-        #F["LAnkle"]: orientations[H["LAnkle"]],
-        #F["RAnkle"]: orientations[H["RAnkle"]],
-        #F["Head"] : orientations[H["Neck"]],
+        F["LAnkle"]: orientations[H["LAnkle"]],
+        F["RAnkle"]: orientations[H["RAnkle"]],
+        #F["LKnee"] : orientations[H["LKnee"]],
     }
 
     index_keypoints = [
@@ -286,7 +286,7 @@ if __name__ == "__main__":
     
     q1 = solver.inverse_kinematics_position(q0)
 
-    #q1 = solver.end_effector_cost(q1, joint_name="RWrist", target_name="RWrist")gl
+    #q1 = solver.end_effector_cost(q1, joint_name="RWrist", target_name="RWrist")
     #q1 = solver.end_effector_cost(q1, joint_name="LWrist", target_name="LWrist")
     #q1 = solver.end_effector_cost(q1, joint_name="LElbowYaw", target_name="LElbow")
     
