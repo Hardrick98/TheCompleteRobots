@@ -245,15 +245,25 @@ if __name__ == "__main__":
     print(rotation)
     initial_vector = np.array([0, 0, 1])
     v = torch.tensor(initial_vector)
-    rotation = R @ rotation
-    direction = rotation @ v.float()
+    global_rotation = R @ rotation
+    direction = global_rotation @ v.float()
     direction = direction / torch.linalg.norm(direction)
     print("Direzione:", direction)
 
+        
+    ax.quiver(
+        0, 0,0,                    # Punto di origine
+        direction[0],              # Componente x della direzione
+        direction[1],              # Componente y della direzione
+        direction[2],              # Componente z della direzione
+        length=2.0,                # Lunghezza della freccia
+        color='yellow',
+        normalize=True             # Normalizza la direzione
+    )
 
         
-    global_orient = rotation.numpy() @ pin.exp3(global_orient.numpy().flatten())
-    global_orientations_matrices = get_smplx_global_orientations(torch.from_numpy(global_orient).unsqueeze(0), joint_positions)
+    #global_orient = rotation.numpy() @ pin.exp3(global_orient.numpy().flatten())
+    global_orientations_matrices = get_smplx_global_orientations(global_rotation.double(), joint_positions)
 
 
     smplx_to_robot_mapping = {
@@ -272,7 +282,47 @@ if __name__ == "__main__":
         20: F["LWrist"],   # left_wrist
         21: F["RWrist"]    # right_wrist
     }
+    
+    
+    rotation = global_orientations_matrices[21].float()
+    direction = rotation.float() @ v.float()
+    direction = direction / torch.linalg.norm(direction)
+    print("Direzione:", direction)
+    
+        
+    ax.quiver(
+        human_joints[H["RWrist"]][0], 
+        human_joints[H["RWrist"]][1],
+        human_joints[H["RWrist"]][2],                    # Punto di origine
+        direction[0],              # Componente x della direzione
+        direction[1],              # Componente y della direzione
+        direction[2],              # Componente z della direzione
+        length=1.0,                # Lunghezza della freccia
+        color='orange',
+        normalize=True             # Normalizza la direzione
+    )
+    
+    
+    rotation = global_orientations_matrices[20].float()
+    direction = rotation.float() @ v.float()
+    direction = direction / torch.linalg.norm(direction)
+    print("Direzione:", direction)
+    
+        
+    ax.quiver(
+        human_joints[H["LWrist"]][0], 
+        human_joints[H["LWrist"]][1],
+        human_joints[H["LWrist"]][2],                    # Punto di origine
+        direction[0],              # Componente x della direzione
+        direction[1],              # Componente y della direzione
+        direction[2],              # Componente z della direzione
+        length=1.0,                # Lunghezza della freccia
+        color='purple',
+        normalize=True             # Normalizza la direzione
+    )
 
+    
+    
     # 3. Aggiorna target_orientations con le orientazioni globali
     target_orientations_global = {}
     for smplx_idx, robot_frame in smplx_to_robot_mapping.items():
@@ -299,16 +349,7 @@ if __name__ == "__main__":
         final_positions.append(data.oMf[frame_id].translation)
     
     final_positions = np.array(final_positions)
-    
-    ax.quiver(
-        0, 0,0,                    # Punto di origine
-        direction[0],              # Componente x della direzione
-        direction[1],              # Componente y della direzione
-        direction[2],              # Componente z della direzione
-        length=2.0,                # Lunghezza della freccia
-        color='yellow',
-        normalize=True             # Normalizza la direzione
-    )
+
     
     ax.scatter(final_positions[:, 0], final_positions[:, 1], final_positions[:, 2], c='b', marker='x')
     ax.view_init(azim=0, elev=0)

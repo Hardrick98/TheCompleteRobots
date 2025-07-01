@@ -314,16 +314,16 @@ def compute_global_orientations_smplx(global_orient, body_pose):
     
     # Reshape body_pose da (1, 63) a (21, 3)
     body_pose = body_pose.reshape(-1, 3)  # (21, 3)
-    
-    # Combina global_orient (root) con body_pose
-    all_poses = torch.cat([global_orient.reshape(-1, 3), torch.from_numpy(body_pose)], dim=0)  # (22, 3)
+
     
 
 
     def rodrigues_kornia(rvecs: torch.Tensor) -> torch.Tensor:
         return kornia.geometry.axis_angle_to_rotation_matrix(rvecs)[:, :3, :3]  # (N, 3, 3)
     
-    local_rotations = rodrigues_kornia(all_poses)  # (22, 3, 3)
+    local_rotations = rodrigues_kornia(torch.from_numpy(body_pose))  # (22, 3, 3)
+    
+
     
     R = torch.Tensor([
         [1, 0, 0],
@@ -354,16 +354,15 @@ def compute_global_orientations_smplx(global_orient, body_pose):
                18,  # 20: left_wrist
                19]  # 21: right_wrist
     
-    # Computa orientazioni globali propagando lungo la gerarchia
     global_orientations = torch.zeros_like(local_rotations)
     
     for i in range(len(parents)):
         if parents[i] == -1:  # Root joint
-            global_orientations[i] = local_rotations[0]
+            global_orientations[i] = global_orient.unsqueeze(0).float() @ R.float() @ local_rotations[i].unsqueeze(0).float()
         else:
-            # Orientazione globale = orientazione_globale_parent * orientazione_locale_corrente
+            #Orientazione globale = orientazione_globale_parent * orientazione_locale_corrente
             parent_idx = parents[i]
-            global_orientations[i] = global_orientations[parent_idx].unsqueeze(0)@ R.double() @ local_rotations[i].unsqueeze(0)
+            global_orientations[i] = global_orientations[parent_idx].unsqueeze(0).float() @ R.float() @ local_rotations[i].unsqueeze(0).float()
         
     return global_orientations
 
