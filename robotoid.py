@@ -103,9 +103,7 @@ class Robotoid:
         for chain in chains:
             new_chains.append([self.model.getJointId(joint) for joint in chain if self.model.getJointId(joint)!=1])
 
-        print("Before Rectifing End-effector")
-        print(new_chains)
-            
+        
         #FIND KINEMATIC CHAINS
 
         
@@ -120,8 +118,6 @@ class Robotoid:
 
 
 
-        print("After Rectifing End-effector")
-        print(new_chains)
 
         ## HANDLING DUPLICATE ORIGIN JOINTS DIFFERENT FROM ROOT (ATLAS CASE)
 
@@ -141,7 +137,6 @@ class Robotoid:
                 if v in chain:
                     chain.remove(v)
         
-        print(values_to_remove)
 
         positions = []
         for chain in new_chains:
@@ -218,7 +213,7 @@ class Robotoid:
             for i in j:
                 order.append(i)
             
-        print("Order", order)
+        
 
         for chain_id in robotoid:
             centers = robotoid[chain_id]

@@ -73,8 +73,6 @@ for i, joint_name in enumerate(robot.model.names):
         parent_name = robot.model.names[parent_idx]
     parent_child[joint_name] = parent_name
 
-print(parent_child)
-
 
 all_parents = set(model.parents)
 
@@ -85,8 +83,6 @@ for i, joint_name in enumerate(model.names):
     if i not in all_parents or i == 0:
         if i != 0:
             end_effectors.append(joint_name)
-
-print(end_effectors)
 
 repeated = []
 
@@ -118,8 +114,6 @@ new_chains = []
 for chain in chains:
     new_chains.append([model.getJointId(joint) for joint in chain if model.getJointId(joint)!=1])
 
-print("Before Rectifing End-effector")
-print(new_chains)
 
 
 def longest_common_prefix(lists):
@@ -161,12 +155,6 @@ if len(new_chains) > 5: #è probabile che ci siano più end-effector del necessa
     
 
 
-
-
-
-print("After Rectifing End-effector")
-print(new_chains)
-
 ## HANDLING DUPLICATE ORIGIN JOINTS DIFFERENT FROM ROOT (ATLAS CASE)
 
 filter = []
@@ -185,7 +173,6 @@ for chain in new_chains:
         if v in chain:
             chain.remove(v)
  
-print(values_to_remove)
 
 positions = []
 for chain in new_chains:
@@ -262,8 +249,6 @@ for j in new_chains:
     for i in j:
         order.append(i)
     
-print("Order", order)
-
 for chain_id in robotoid:
     centers = robotoid[chain_id]
     labels = robotoid_labels[chain_id]
@@ -284,7 +269,6 @@ for chain_id in robotoid:
 
 sorted_chain_ids = sorted(robotoid.keys(), key=lambda i: robotoid[i][0, 2], reverse=True)
 
-print(sorted_chain_ids)
 robotoid = {i: robotoid[i] for i in sorted_chain_ids}
 robotoid_labels = {i: robotoid_labels[i] for i in sorted_chain_ids}
 

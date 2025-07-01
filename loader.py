@@ -176,7 +176,6 @@ if __name__ == "__main__":
                R["LShoulder"], R["LElbow"], R["LWrist"],
                R["RShoulder"], R["RElbow"], R["RWrist"]]
   
-    print("Robot joints after scaling:", robot_joints[indices])
     
     ax.set_xlim(-1,1)
     ax.set_ylim(-1,1)
@@ -200,7 +199,6 @@ if __name__ == "__main__":
 
     
     target_positions = {
-        #F["root_joint"]: robot_joints[R["root_joint"]],
         F["LHip"] : robot_joints[R["LHip"]],
         F["RHip"] : robot_joints[R["RHip"]], 
         F["LElbow"]: robot_joints[R["LElbow"]],
@@ -221,8 +219,8 @@ if __name__ == "__main__":
         F["RWrist"]: orientations[H["RWrist"]],  
         F["LWrist"]: orientations[H["LWrist"]],
         #F["LShoulder"]: orientations[H["LShoulder"]],
-        F["LAnkle"]: orientations[H["LAnkle"]],
-        F["RAnkle"]: orientations[H["RAnkle"]],
+        F["LAnkle"]: orientations[H["left_foot"]],
+        F["RAnkle"]: orientations[H["right_foot"]],
         #F["LKnee"] : orientations[H["LKnee"]],
     }
 
@@ -233,7 +231,7 @@ if __name__ == "__main__":
     17, 19, 21          # right shoulder, elbow, wrist
     ]
     
-    theta = -np.pi / 2  # -90 gradi
+
     R = torch.Tensor([
         [1, 0, 0],
         [0, 0, 1],
@@ -245,13 +243,12 @@ if __name__ == "__main__":
     
     rotvec = global_orient.numpy().flatten()
     rotation = torch.from_numpy(Rot.from_rotvec(rotvec).as_matrix()).float()
-    print(rotation)
     initial_vector = np.array([0, 0, 1])
     v = torch.tensor(initial_vector)
     global_rotation = R @ rotation
     direction = global_rotation @ v.float()
     direction = direction / torch.linalg.norm(direction)
-    print("Direzione:", direction)
+    
 
         
     ax.quiver(
@@ -265,7 +262,6 @@ if __name__ == "__main__":
     )
 
         
-    #global_orient = rotation.numpy() @ pin.exp3(global_orient.numpy().flatten())
     global_orientations_matrices = get_smplx_global_orientations(global_rotation.double(), joint_positions)
 
 
@@ -276,8 +272,8 @@ if __name__ == "__main__":
         12: F["Head"],       
         4: F["LKnee"],     # left_knee -> left_thigh
         5: F["RKnee"],     # right_knee -> right_thigh
-        7: F["LAnkle"],    # left_ankle
-        8: F["RAnkle"],    # right_ankle
+        10: F["LAnkle"],    # left_ankle
+        11: F["RAnkle"],    # right_ankle
         16: F["LShoulder"], # left_shoulder
         17: F["RShoulder"], # right_shoulder
         18: F["LElbow"],    # left_elbow
@@ -290,7 +286,7 @@ if __name__ == "__main__":
     rotation = global_orientations_matrices[21].float()
     direction = rotation.float() @ v.float()
     direction = direction / torch.linalg.norm(direction)
-    print("Direzione:", direction)
+    
     
         
     ax.quiver(
@@ -309,8 +305,7 @@ if __name__ == "__main__":
     rotation = global_orientations_matrices[20].float()
     direction = rotation.float() @ v.float()
     direction = direction / torch.linalg.norm(direction)
-    print("Direzione:", direction)
-    
+ 
         
     ax.quiver(
         human_joints[H["LWrist"]][0], 
@@ -327,7 +322,6 @@ if __name__ == "__main__":
     rotation = global_orientations_matrices[15].float()
     direction = rotation.float() @ v.float()
     direction = direction / torch.linalg.norm(direction)
-    print("Direzione:", direction)
     
         
     ax.quiver(
@@ -354,8 +348,8 @@ if __name__ == "__main__":
     
     q1 = solver.inverse_kinematics_position(q0)
 
-    #q1 = solver.end_effector_cost(q1, joint_name="RWrist", target_name="RWrist")
-    #q1 = solver.end_effector_cost(q1, joint_name="LWrist", target_name="LWrist")
+    #q1 = solver.end_effector_cost(q1, joint_name="RWristYaw", target_name="RWristYaw")
+    #q1 = solver.end_effector_cost(q1, joint_name="LWristYaw", target_name="LWristYaw")
     #q1 = solver.end_effector_cost(q1, joint_name="LElbowYaw", target_name="LElbow")
     
     pin.forwardKinematics(model, data, q1)
