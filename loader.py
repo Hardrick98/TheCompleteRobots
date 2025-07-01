@@ -61,6 +61,8 @@ if __name__ == "__main__":
     
     joint_positions, orientations, translation, global_orient = load_simple(arr, 0)    
 
+    print(joint_positions.shape)
+
     translation[:,[1,2]] = translation[:,[2,1]]
 
     orientations = orientations.view(-1,3) 
@@ -71,6 +73,7 @@ if __name__ == "__main__":
     new = []        
     
     joint_positions[:,:] -= joint_positions[:1,:]
+    joint_positions[:,0] *= -1
     joint_positions[:,[1,2]] = joint_positions[:,[2,1]]
     human_joints = joint_positions
     
@@ -82,7 +85,7 @@ if __name__ == "__main__":
     ax.set_xlim(-1,1)
     ax.set_ylim(-1,1)
     ax.set_zlim(-1,1)
-    ax.scatter(human_joints[:, 0], human_joints[:, 1], human_joints[:, 2], c='r', marker='o')
+    ax.scatter(human_joints[:22, 0], human_joints[:22, 1], human_joints[:22, 2], c='r', marker='o')
 
 
 
@@ -198,25 +201,25 @@ if __name__ == "__main__":
     
     target_positions = {
         #F["root_joint"]: robot_joints[R["root_joint"]],
-        F["LHip"] : robot_joints[R["RHip"]],
-        F["RHip"] : robot_joints[R["LHip"]], 
-        F["LElbow"]: robot_joints[R["RElbow"]],
-        F["RElbow"]: robot_joints[R["LElbow"]],
-        F["LWrist"]: robot_joints[R["RWrist"]], 
-        F["RWrist"]: robot_joints[R["LWrist"]], 
-        F["RKnee"]: robot_joints[R["LKnee"]], 
-        F["LKnee"]: robot_joints[R["RKnee"]], 
-        F["LAnkle"]: robot_joints[R["RAnkle"]], 
-        F["RAnkle"]: robot_joints[R["LAnkle"]], 
+        F["LHip"] : robot_joints[R["LHip"]],
+        F["RHip"] : robot_joints[R["RHip"]], 
+        F["LElbow"]: robot_joints[R["LElbow"]],
+        F["RElbow"]: robot_joints[R["RElbow"]],
+        F["LWrist"]: robot_joints[R["LWrist"]], 
+        F["RWrist"]: robot_joints[R["RWrist"]], 
+        F["RKnee"]: robot_joints[R["RKnee"]], 
+        F["LKnee"]: robot_joints[R["LKnee"]], 
+        F["LAnkle"]: robot_joints[R["LAnkle"]], 
+        F["RAnkle"]: robot_joints[R["RAnkle"]], 
         F["Head"]: robot_joints[R["Head"]],
-        F["RShoulder"] : robot_joints[R["LShoulder"]],
-        F["LShoulder"] : robot_joints[R["RShoulder"]],
+        F["RShoulder"] : robot_joints[R["RShoulder"]],
+        F["LShoulder"] : robot_joints[R["LShoulder"]],
     }
 
     target_orientations = {
         #F["root_joint"]: orientations[H["pelvis"]],
-        F["LWrist"]: orientations[H["RWrist"]],  
-        F["RWrist"]: orientations[H["LWrist"]],
+        F["RWrist"]: orientations[H["RWrist"]],  
+        F["LWrist"]: orientations[H["LWrist"]],
         #F["LShoulder"]: orientations[H["LShoulder"]],
         F["LAnkle"]: orientations[H["LAnkle"]],
         F["RAnkle"]: orientations[H["RAnkle"]],
@@ -252,13 +255,13 @@ if __name__ == "__main__":
 
         
     ax.quiver(
-        0, 0,0,                    # Punto di origine
-        direction[0],              # Componente x della direzione
-        direction[1],              # Componente y della direzione
-        direction[2],              # Componente z della direzione
-        length=2.0,                # Lunghezza della freccia
+        0, 0,0,                    
+        direction[0],              
+        direction[1],              
+        direction[2],              
+        length=2.0,                
         color='yellow',
-        normalize=True             # Normalizza la direzione
+        normalize=True             
     )
 
         
@@ -293,13 +296,13 @@ if __name__ == "__main__":
     ax.quiver(
         human_joints[H["RWrist"]][0], 
         human_joints[H["RWrist"]][1],
-        human_joints[H["RWrist"]][2],                    # Punto di origine
-        direction[0],              # Componente x della direzione
-        direction[1],              # Componente y della direzione
-        direction[2],              # Componente z della direzione
-        length=1.0,                # Lunghezza della freccia
+        human_joints[H["RWrist"]][2],
+        direction[0],              
+        direction[1],              
+        direction[2],              
+        length=1.0,                
         color='orange',
-        normalize=True             # Normalizza la direzione
+        normalize=True             
     )
     
     
@@ -312,18 +315,33 @@ if __name__ == "__main__":
     ax.quiver(
         human_joints[H["LWrist"]][0], 
         human_joints[H["LWrist"]][1],
-        human_joints[H["LWrist"]][2],                    # Punto di origine
-        direction[0],              # Componente x della direzione
-        direction[1],              # Componente y della direzione
-        direction[2],              # Componente z della direzione
-        length=1.0,                # Lunghezza della freccia
+        human_joints[H["LWrist"]][2],
+        direction[0],              
+        direction[1],              
+        direction[2],              
+        length=1.0,                
         color='purple',
-        normalize=True             # Normalizza la direzione
+        normalize=True             
     )
 
+    rotation = global_orientations_matrices[15].float()
+    direction = rotation.float() @ v.float()
+    direction = direction / torch.linalg.norm(direction)
+    print("Direzione:", direction)
     
+        
+    ax.quiver(
+        human_joints[H["Head"]][0], 
+        human_joints[H["Head"]][1],
+        human_joints[H["Head"]][2],                    
+        direction[0],              
+        direction[1],              
+        direction[2],            
+        length=1.0,                
+        color='purple',
+        normalize=True           
+    )
     
-    # 3. Aggiorna target_orientations con le orientazioni globali
     target_orientations_global = {}
     for smplx_idx, robot_frame in smplx_to_robot_mapping.items():
         if robot_frame in target_orientations:  

@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from scipy.spatial.transform import Rotation as Rot
-arr = np.load("/datasets/HumanoidX/human_pose/youtube/ab_exercises_ranked_best_to_worst_clip_1.npz", allow_pickle=True)
+arr = np.load("ab_exercises_ranked_best_to_worst_clip_1.npz", allow_pickle=True)
 
 
 

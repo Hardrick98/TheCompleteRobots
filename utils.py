@@ -330,7 +330,7 @@ def compute_global_orientations_smplx(global_orient, body_pose):
         [0, 0, 1],
         [0, 1, 0]
     ])
-    # 0: pelvis (root) - parent: None
+    
     parents = [-1,  # 0: pelvis (root)
                0,   # 1: left_hip
                0,   # 2: right_hip  
@@ -358,11 +358,13 @@ def compute_global_orientations_smplx(global_orient, body_pose):
     
     for i in range(len(parents)):
         if parents[i] == -1:  # Root joint
-            global_orientations[i] = global_orient.unsqueeze(0).float() @ R.float() @ local_rotations[i].unsqueeze(0).float()
+            rotation = R.float() @ local_rotations[i].unsqueeze(0).float()
+            global_orientations[i] = global_orient.unsqueeze(0).float() @ rotation
         else:
             #Orientazione globale = orientazione_globale_parent * orientazione_locale_corrente
             parent_idx = parents[i]
-            global_orientations[i] = global_orientations[parent_idx].unsqueeze(0).float() @ R.float() @ local_rotations[i].unsqueeze(0).float()
+            rotation = R.float() @ local_rotations[i].unsqueeze(0).float()
+            global_orientations[i] =  global_orientations[parent_idx].unsqueeze(0).float() @ rotation
         
     return global_orientations
 
