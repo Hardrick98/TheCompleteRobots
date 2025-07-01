@@ -7,4 +7,4 @@ models_smplx_v1_1/
 graph_net.py
 
 models_smplx_v1_1.zip
-zig_zag_jumps_continuouslong_clip_5.npz
+*.npz
