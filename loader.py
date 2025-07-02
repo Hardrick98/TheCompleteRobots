@@ -219,8 +219,8 @@ if __name__ == "__main__":
         F["RWrist"]: orientations[H["RWrist"]],  
         F["LWrist"]: orientations[H["LWrist"]],
         #F["LShoulder"]: orientations[H["LShoulder"]],
-        F["LAnkle"]: orientations[H["left_foot"]],
-        F["RAnkle"]: orientations[H["right_foot"]],
+        #F["LAnkle"]: orientations[H["left_foot"]],
+        #F["RAnkle"]: orientations[H["right_foot"]],
         #F["LKnee"] : orientations[H["LKnee"]],
     }
 
@@ -233,7 +233,7 @@ if __name__ == "__main__":
     
 
     R = torch.Tensor([
-        [1, 0, 0],
+        [-1, 0, 0],
         [0, 0, 1],
         [0, 1, 0]
     ])
@@ -245,24 +245,24 @@ if __name__ == "__main__":
     rotation = torch.from_numpy(Rot.from_rotvec(rotvec).as_matrix()).float()
     initial_vector = np.array([0, 0, 1])
     v = torch.tensor(initial_vector)
-    global_rotation = R @ rotation
+    global_rotation = rotation
     direction = global_rotation @ v.float()
     direction = direction / torch.linalg.norm(direction)
     
 
         
-    ax.quiver(
-        0, 0,0,                    
-        direction[0],              
-        direction[1],              
-        direction[2],              
-        length=2.0,                
-        color='yellow',
-        normalize=True             
-    )
+    global_orientations_matrices = get_smplx_global_orientations(global_rotation.double(), orientations.numpy())
 
-        
-    global_orientations_matrices = get_smplx_global_orientations(global_rotation.double(), joint_positions)
+    def look_at_direction(forward, up=np.array([0, 0, 1])):
+        """
+        Crea una matrice di rotazione che punta nella direzione `forward` usando `up` come asse y.
+        """
+        forward = forward / np.linalg.norm(forward)
+        right = np.cross(up, forward)
+        right = right / np.linalg.norm(right)
+        new_up = np.cross(forward, right)
+        rot_matrix = np.stack([right, new_up, forward], axis=1)  # columns are x, y, z
+        return rot_matrix
 
 
     smplx_to_robot_mapping = {
@@ -283,9 +283,28 @@ if __name__ == "__main__":
     }
     
     
-    rotation = global_orientations_matrices[21].float()
+    rotation = global_orientations_matrices[15].float()
     direction = rotation.float() @ v.float()
     direction = direction / torch.linalg.norm(direction)
+    
+        
+    ax.quiver(
+        human_joints[H["Head"]][0], 
+        human_joints[H["Head"]][1],
+        human_joints[H["Head"]][2],                    
+        direction[0],              
+        direction[1],              
+        direction[2],            
+        length=1.0,                
+        color='purple',
+        normalize=True           
+    )
+    
+    
+    v = torch.tensor([0,-1,0])
+    rotation = global_orientations_matrices[21].float()
+    direction = rotation.float() @ v.float()
+    direction_RHand = direction / torch.linalg.norm(direction)
     
     
         
@@ -304,7 +323,7 @@ if __name__ == "__main__":
     
     rotation = global_orientations_matrices[20].float()
     direction = rotation.float() @ v.float()
-    direction = direction / torch.linalg.norm(direction)
+    direction_LHand = direction / torch.linalg.norm(direction)
  
         
     ax.quiver(
@@ -319,22 +338,7 @@ if __name__ == "__main__":
         normalize=True             
     )
 
-    rotation = global_orientations_matrices[15].float()
-    direction = rotation.float() @ v.float()
-    direction = direction / torch.linalg.norm(direction)
-    
-        
-    ax.quiver(
-        human_joints[H["Head"]][0], 
-        human_joints[H["Head"]][1],
-        human_joints[H["Head"]][2],                    
-        direction[0],              
-        direction[1],              
-        direction[2],            
-        length=1.0,                
-        color='purple',
-        normalize=True           
-    )
+
     
     target_orientations_global = {}
     for smplx_idx, robot_frame in smplx_to_robot_mapping.items():
@@ -342,7 +346,26 @@ if __name__ == "__main__":
             rot_matrix = global_orientations_matrices[smplx_idx].numpy()
             target_orientations_global[robot_frame] = rot_matrix
     
+    import math
+    
+    angle = math.pi / 2  # 90 gradi in radianti
 
+    Rz_90 = torch.tensor([
+        [math.cos(angle), -math.sin(angle), 0],
+        [math.sin(angle),  math.cos(angle), 0],
+        [0,               0,               1]
+    ])
+    
+    angle = math.pi /2 
+    
+    Rz_minus_90 = torch.tensor([
+        [math.cos(angle), math.sin(angle), 0],
+        [-math.sin(angle),  math.cos(angle), 0],
+        [0,               0,               1]
+    ])
+
+    target_orientations_global[F["RWrist"]] = Rz_90.numpy() @ target_orientations_global[F["RWrist"]]
+    target_orientations_global[F["LWrist"]] = Rz_minus_90.numpy() @ target_orientations_global[F["LWrist"]]
     
     solver = InverseKinematicSolver(model,data,target_positions,target_orientations_global,frame_names, frame_ids)
     
@@ -367,7 +390,7 @@ if __name__ == "__main__":
     ax.view_init(azim=0, elev=0)
     
     viz = MeshcatVisualizer(model, robot.collision_model, robot.visual_model)
-    viz.initViewer(open=True) 
+    viz.initViewer(open=False) 
     viz.loadViewerModel()
     
    

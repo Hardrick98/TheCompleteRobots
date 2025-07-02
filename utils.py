@@ -180,42 +180,24 @@ def load_simple(arr, index=0):
     joints = output.joints[0].detach().cpu().numpy()  # (N_joints, 3)
     faces = smpl_model.faces   # (N_faces, 3)
 
-    return joints, body_pose_raw, transl.cpu().numpy(), global_orient.cpu()
+    return joints, body_pose_raw.reshape(1, -1).to(torch.float32), transl.cpu().numpy(), global_orient.cpu()
 
 
 
 import kornia
 
 def compute_global_orientations_smplx(global_orient, body_pose):
-    """
-    Computa le orientazioni globali dei giunti SMPL-X da global_orient e body_pose.
-    
-    Args:
-        global_orient: torch.Tensor di shape (1, 3) - rotazione globale del root (pelvis)
-        body_pose: torch.Tensor di shape (1, 63) - rotazioni locali dei 21 giunti corpo (21*3=63)
-    
-    Returns:
-        global_orientations: torch.Tensor di shape (22, 3, 3) - matrici di rotazione globali
-    """
-    
-    # Reshape body_pose da (1, 63) a (21, 3)
-    body_pose = body_pose.reshape(-1, 3)  # (21, 3)
-
-    
-
+   
+    print(body_pose)
 
     def rodrigues_kornia(rvecs: torch.Tensor) -> torch.Tensor:
         return kornia.geometry.axis_angle_to_rotation_matrix(rvecs)[:, :3, :3]  # (N, 3, 3)
     
-    local_rotations = rodrigues_kornia(torch.from_numpy(body_pose))  # (22, 3, 3)
-    
 
     
-    R = torch.Tensor([
-        [1, 0, 0],
-        [0, 0, 1],
-        [0, 1, 0]
-    ])
+    local_rotations = rodrigues_kornia(torch.from_numpy(body_pose))  # (22, 3, 3)
+    
+    
     
     parents = [-1,  # 0: pelvis (root)
                0,   # 1: left_hip
@@ -241,16 +223,22 @@ def compute_global_orientations_smplx(global_orient, body_pose):
                19]  # 21: right_wrist
     
     global_orientations = torch.zeros_like(local_rotations)
-    
-    for i in range(len(parents)):
-        if parents[i] == -1:  # Root joint
-            rotation = R.float() @ local_rotations[i].unsqueeze(0).float()
-            global_orientations[i] = global_orient.unsqueeze(0).float() @ rotation
-        else:
-            parent_idx = parents[i]
-            rotation = R.float() @ local_rotations[i].unsqueeze(0).float()
-            global_orientations[i] =  global_orientations[parent_idx].unsqueeze(0).float() @ rotation
-        
+    global_orientations[0] = global_orient
+    for i in range(1,22):
+        parent_idx = parents[i]
+        global_orientations[i] = global_orientations[parent_idx] @ local_rotations[i-1].float()
+
+
+    M = torch.tensor([
+        [-1, 0, 0],
+        [0, 0, 1],
+        [0, 1, 0]
+    ], dtype=torch.float32)
+
+
+    global_orientations = torch.stack([
+        M @ R for R in global_orientations
+    ])
     return global_orientations
 
 
@@ -259,3 +247,5 @@ def get_smplx_global_orientations(global_orient, body_pose_raw):
     global_rot_matrices = compute_global_orientations_smplx(global_orient, body_pose_raw)
     
     return global_rot_matrices
+
+

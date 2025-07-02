@@ -4,11 +4,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from scipy.spatial.transform import Rotation as Rot
-arr = np.load("ab_exercises_ranked_best_to_worst_clip_1.npz", allow_pickle=True)
+arr = np.load("/datasets/HumanoidX/human_pose/youtube/ladder_setup_and_placement_training_clip_3.npz", allow_pickle=True)
+from utils import compute_global_orientations_smplx
 
 
-
-
+import trimesh
 
 
 
@@ -25,8 +25,17 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 
-def visualize_mesh_and_joints(vertices, joints, faces, direction, title="SMPLX Mesh + Joints"):
+def visualize_mesh_and_joints(vertices, joints, faces, directions, title="SMPLX Mesh + Joints"):
 
+    mesh = trimesh.Trimesh(vertices=vertices, faces=faces)
+    
+    # Decima la mesh a ~20% dei vertici originali
+    target_faces = 0.05
+    mesh = mesh.simplify_quadric_decimation(target_faces)
+    
+    vertices = mesh.vertices
+    faces = mesh.faces
+    
     fig = plt.figure(figsize=(10,10))
     ax = fig.add_subplot(111, projection='3d')
 
@@ -36,17 +45,21 @@ def visualize_mesh_and_joints(vertices, joints, faces, direction, title="SMPLX M
     mesh.set_edgecolor('k')
     ax.add_collection3d(mesh)
 
+    #ax.scatter(joints[:,0], joints[:,1], joints[:,2])
+    
     # Joints
-    #ax.scatter(joints[:, 0], joints[:, 1], joints[:, 2], c='r', s=40)
-    ax.quiver(
-        joints[0,0], joints[0,1],joints[0,2],                    # Punto di origine
-        direction[0],              # Componente x della direzione
-        direction[1],              # Componente y della direzione
-        direction[2],              # Componente z della direzione
-        length=2.0,                # Lunghezza della freccia
-        color='yellow',
-        normalize=True             # Normalizza la direzione
-    )
+    print(len(directions))
+    for i in [0,15,20,21]:
+        ax.quiver(
+            joints[i,0], joints[i,1],joints[i,2],                    # Punto di origine
+            directions[i][0],              # Componente x della direzione
+            directions[i][1],              # Componente y della direzione
+            directions[i][2],              # Componente z della direzione
+            length=1.0,
+            linewidth = 3,# Lunghezza della freccia
+            color=[0,0,i/22],
+            normalize=True             # Normalizza la direzione
+        )
     # Setup view
     scale = vertices.flatten()
     ax.auto_scale_xyz(scale, scale, scale)
@@ -61,6 +74,7 @@ def load_simple(arr):
     smpl = arr["smpl"][()]
     global_orient = torch.from_numpy(smpl['global_orient'][0]).reshape(1, -1).to(torch.float32)
     body_pose_raw = torch.from_numpy(smpl['body_pose'][0][:21]).reshape(1, -1).to(torch.float32)
+    body_pose = torch.from_numpy(smpl['body_pose'][0][:]).reshape(1, -1).to(torch.float32)
     transl        = torch.from_numpy(smpl['root_transl'][0]).reshape(1, -1).to(torch.float32)
     betas        = torch.from_numpy(smpl['betas'][0]).reshape(1, 10).to(torch.float32)
 
@@ -71,14 +85,19 @@ def load_simple(arr):
         batch_size=1
     )
 
-    print("Global Orient:", global_orient)
+
     rotvec = global_orient.numpy().flatten()
-    rotation = Rot.from_rotvec(rotvec)
-    initial_vector = np.array([0, 0, 1])
-    direction = rotation.apply(initial_vector)
+    global_rotation = torch.from_numpy(Rot.from_rotvec(rotvec).as_matrix()).float()
+    
+
+    
+    v = torch.Tensor([0, 0, 1])
+    direction = global_rotation @ v
     direction = direction / np.linalg.norm(direction)
     print("Direzione:", direction)
 
+    orientations = compute_global_orientations_smplx(global_rotation, body_pose.view(-1,3).numpy())
+    
 
     
     output = smpl_model(
@@ -86,15 +105,27 @@ def load_simple(arr):
         body_pose=body_pose_raw,
         betas=betas,
         transl=transl,
-        return_verts=True  # Se vuoi solo i keypoints
+        return_verts=True  
     )
 
+    mask = [i for i in range(0, output.vertices[0].shape[0],3)]
+    mask2 = [i for i in range(0, smpl_model.faces[0].shape[0],3)]
 
-    verts = output.vertices[0].detach().cpu().numpy()  # (N_verts, 3)
+    verts = output.vertices[0].detach().cpu().numpy()[:] # (N_verts, 3)
     joints = output.joints[0].detach().cpu().numpy()  # (N_joints, 3)
-    faces = smpl_model.faces   # (N_faces, 3)
+    faces = smpl_model.faces  # (N_faces, 3)
     
-    visualize_mesh_and_joints(verts, joints, faces, direction)
+    directions = []
+    for ori in orientations:
+        direction = ori @ v
+        direction = direction / np.linalg.norm(direction)
+        directions.append(direction)
+        
+
+    print("Vertices shape:", verts.shape)
+    print("Faces shape:", faces.shape)
+    
+    visualize_mesh_and_joints(verts, joints, faces, directions)
     
     return joints, body_pose_raw, direction
 
