@@ -186,7 +186,7 @@ def load_simple(arr, index=0):
 
 import kornia
 
-def compute_global_orientations_smplx(global_orient, body_pose):
+def compute_global_orientations_smplx(global_orient, body_pose, change_ref = False):
    
     print(body_pose)
 
@@ -235,10 +235,12 @@ def compute_global_orientations_smplx(global_orient, body_pose):
         [0, 1, 0]
     ], dtype=torch.float32)
 
+    if change_ref:
 
-    global_orientations = torch.stack([
-        M @ R for R in global_orientations
-    ])
+        global_orientations = torch.stack([
+            M @ R for R in global_orientations
+        ])
+        
     return global_orientations
 
 

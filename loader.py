@@ -253,16 +253,7 @@ if __name__ == "__main__":
         
     global_orientations_matrices = get_smplx_global_orientations(global_rotation.double(), orientations.numpy())
 
-    def look_at_direction(forward, up=np.array([0, 0, 1])):
-        """
-        Crea una matrice di rotazione che punta nella direzione `forward` usando `up` come asse y.
-        """
-        forward = forward / np.linalg.norm(forward)
-        right = np.cross(up, forward)
-        right = right / np.linalg.norm(right)
-        new_up = np.cross(forward, right)
-        rot_matrix = np.stack([right, new_up, forward], axis=1)  # columns are x, y, z
-        return rot_matrix
+
 
 
     smplx_to_robot_mapping = {
@@ -346,35 +337,18 @@ if __name__ == "__main__":
             rot_matrix = global_orientations_matrices[smplx_idx].numpy()
             target_orientations_global[robot_frame] = rot_matrix
     
-    import math
     
-    angle = math.pi / 2  # 90 gradi in radianti
-
-    Rz_90 = torch.tensor([
-        [math.cos(angle), -math.sin(angle), 0],
-        [math.sin(angle),  math.cos(angle), 0],
-        [0,               0,               1]
-    ])
-    
-    angle = math.pi /2 
-    
-    Rz_minus_90 = torch.tensor([
-        [math.cos(angle), math.sin(angle), 0],
-        [-math.sin(angle),  math.cos(angle), 0],
-        [0,               0,               1]
-    ])
-
-    target_orientations_global[F["RWrist"]] = Rz_90.numpy() @ target_orientations_global[F["RWrist"]]
-    target_orientations_global[F["LWrist"]] = Rz_minus_90.numpy() @ target_orientations_global[F["LWrist"]]
     
     solver = InverseKinematicSolver(model,data,target_positions,target_orientations_global,frame_names, frame_ids)
     
     q1 = solver.inverse_kinematics_position(q0)
 
+
     #q1 = solver.end_effector_cost(q1, joint_name="RWristYaw", target_name="RWristYaw")
-    #q1 = solver.end_effector_cost(q1, joint_name="LWristYaw", target_name="LWristYaw")
-    #q1 = solver.end_effector_cost(q1, joint_name="LElbowYaw", target_name="LElbow")
-    
+
+    #q1 = solver.end_effector_cost(q1, joint_name="LWristYaw", target_name="LWristYaw")   
+
+
     pin.forwardKinematics(model, data, q1)
     pin.updateFramePlacements(model, data)
 

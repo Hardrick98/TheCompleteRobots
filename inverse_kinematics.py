@@ -14,12 +14,6 @@ class InverseKinematicSolver():
         self.frame_ids = frame_ids
 
 
-    def rotation_error(self,R1, R2):
-        R_diff = R1.T @ R2
-        angle = np.arccos(np.clip((np.trace(R_diff) - 1) / 2, -1.0, 1.0))
-        return angle
-
-
     def ik_cost(self, q, w_pos=1, w_ori=0.001):
         pin.forwardKinematics(self.model, self.data, q)
         pin.updateFramePlacements(self.model, self.data)
@@ -59,27 +53,76 @@ class InverseKinematicSolver():
         
         return q1
     
+    def rotation_error(self,R1, R2):
+        v = np.array([0, -1, 0])  # direzione "palmo" locale
+
+        pred = R1 @ v
+        pred = pred / np.linalg.norm(pred)
+
+        target = R2 @ v
+        target = target / np.linalg.norm(target)
+
+        # Proiettiamo pred e target nel piano XZ (piano di rotazione attorno a Y)
+        pred_proj = np.array([pred[0], pred[2]])
+        target_proj = np.array([target[0], target[2]])
+
+        # Normalizziamo le proiezioni
+        pred_proj /= np.linalg.norm(pred_proj)
+        target_proj /= np.linalg.norm(target_proj)
+
+        # Calcoliamo l’angolo firmato tra i due vettori proiettati
+        cross = pred_proj[0]*target_proj[1] - pred_proj[1]*target_proj[0]  # componente "z" del cross 2D
+        dot = np.dot(pred_proj, target_proj)
+        angle_error = np.arctan2(cross, dot)  # angolo con segno
+
+        # Minimizziamo il valore assoluto dell’errore angolare
+        return np.abs(angle_error)
+    
     def rotation_cost(self, theta, q1, idx, joint_id):
-        q_tmp = q1.copy()
-        q_tmp[idx] = theta[0]
-        pin.forwardKinematics(self.model, self.data, q_tmp)
+        
+        q1 = np.zeros(self.model.nq)
+        q1[idx] = theta[0]
+        pin.forwardKinematics(self.model, self.data, q1)
         pin.updateFramePlacements(self.model, self.data)
         R = self.data.oMi[joint_id].rotation
-        return self.rotation_error(R, self.target_ori_current)
+
+        v = np.array([0, -1, 0])  # direzione "palmo" locale
+
+        pred = R @ v
+        pred = pred / np.linalg.norm(pred)
+
+        target = self.target_ori_current @ v
+        target = target / np.linalg.norm(target)
+
+        # Proiettiamo pred e target nel piano XZ (piano di rotazione attorno a Y)
+        pred_proj = np.array([pred[0], pred[2]])
+        target_proj = np.array([target[0], target[2]])
+
+        # Normalizziamo le proiezioni
+        pred_proj /= np.linalg.norm(pred_proj)
+        target_proj /= np.linalg.norm(target_proj)
+
+        # Calcoliamo l’angolo firmato tra i due vettori proiettati
+        cross = pred_proj[0]*target_proj[1] - pred_proj[1]*target_proj[0]  # componente "z" del cross 2D
+        dot = np.dot(pred_proj, target_proj)
+        angle_error = np.arctan2(cross, dot)  # angolo con segno
+
+        # Minimizziamo il valore assoluto dell’errore angolare
+        return np.abs(angle_error)
 
     
     def end_effector_cost(self, q1, joint_name, target_name):
 
         joint_id = self.model.getJointId(joint_name)
         idx = self.model.joints[joint_id].idx_q  
-        self.target_ori_current = self.target_ori[target_name]  # salviamo temporaneamente la rotazione
-
+        self.target_ori_current = self.target_ori[target_name]  
         def cost(theta):
             return self.rotation_cost(theta, q1, idx, joint_id)
 
         res = minimize(cost, [q1[idx]], method='SLSQP', options={'maxiter': 1000, 'disp': True})
 
         q1_new = q1.copy()
+
         q1_new[idx] = res.x[0]
         return q1_new
 
