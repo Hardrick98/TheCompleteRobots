@@ -37,6 +37,27 @@ class InverseKinematicSolver():
         return w_pos * cost_pos + w_ori * cost_ori
 
 
+    def ik_cost_ori(self, q, w_pos=0, w_ori=1):
+        pin.forwardKinematics(self.model, self.data, q)
+        pin.updateFramePlacements(self.model, self.data)
+        
+        cost_pos = 0.0
+        cost_ori = 0.0
+        
+        for name, frame_id in zip(self.frame_names, self.frame_ids):
+            oMf = self.data.oMf[frame_id]
+            pos = oMf.translation
+            ori = oMf.rotation#model.frames[frame_id].placement.rotation 
+            target_pos = self.target_pos[name]
+            cost_pos += np.linalg.norm(pos - target_pos)**2
+            
+            if name in self.target_ori:
+                
+                target_ori = self.target_ori[name]
+                cost_ori += self.rotation_error(ori, target_ori)
+                
+        return w_pos * cost_pos + w_ori * cost_ori
+
 
     def inverse_kinematics_position(self, q0):
 
@@ -47,6 +68,21 @@ class InverseKinematicSolver():
             bounds.append((q_lower_limits[i], q_upper_limits[i]))
 
         res = minimize(self.ik_cost, q0, bounds=bounds, method='SLSQP', options={'maxiter': 1000, 'disp': True})
+        
+        q1 = np.array(res.x).reshape(-1)
+        assert q1.shape[0] == self.model.nq
+        
+        return q1
+
+    def inverse_kinematics_orientation(self, q0):
+
+        q_lower_limits = self.model.lowerPositionLimit
+        q_upper_limits = self.model.upperPositionLimit
+        bounds = []
+        for i in range(self.model.nq):
+            bounds.append((q_lower_limits[i], q_upper_limits[i]))
+
+        res = minimize(self.ik_cost_ori, q0, bounds=bounds, method='SLSQP', options={'maxiter': 1000, 'disp': True})
         
         q1 = np.array(res.x).reshape(-1)
         assert q1.shape[0] == self.model.nq

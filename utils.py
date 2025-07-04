@@ -244,9 +244,9 @@ def compute_global_orientations_smplx(global_orient, body_pose, change_ref = Fal
     return global_orientations
 
 
-def get_smplx_global_orientations(global_orient, body_pose_raw):
+def get_smplx_global_orientations(global_orient, body_pose_raw, change_ref=False):
     
-    global_rot_matrices = compute_global_orientations_smplx(global_orient, body_pose_raw)
+    global_rot_matrices = compute_global_orientations_smplx(global_orient, body_pose_raw, change_ref)
     
     return global_rot_matrices
 

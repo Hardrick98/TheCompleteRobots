@@ -251,7 +251,7 @@ if __name__ == "__main__":
     
 
         
-    global_orientations_matrices = get_smplx_global_orientations(global_rotation.double(), orientations.numpy())
+    global_orientations_matrices = get_smplx_global_orientations(global_rotation.double(), orientations.numpy(), change_ref = True)
 
 
 
@@ -312,7 +312,7 @@ if __name__ == "__main__":
     )
     
     
-    rotation = global_orientations_matrices[20].float()
+    rotation = global_orientations_matrices[H["LWrist"]].float()
     direction = rotation.float() @ v.float()
     direction_LHand = direction / torch.linalg.norm(direction)
  
@@ -342,11 +342,14 @@ if __name__ == "__main__":
     solver = InverseKinematicSolver(model,data,target_positions,target_orientations_global,frame_names, frame_ids)
     
     q1 = solver.inverse_kinematics_position(q0)
+    q2 = solver.inverse_kinematics_orientation(q0)
+       
 
 
-    #q1 = solver.end_effector_cost(q1, joint_name="RWristYaw", target_name="RWristYaw")
-
-    #q1 = solver.end_effector_cost(q1, joint_name="LWristYaw", target_name="LWristYaw")   
+    for joint_name in target_orientations:
+        joint_id = model.getJointId(joint_name)
+        idx = model.joints[joint_id].idx_q 
+        q1[idx] = q2[idx]
 
 
     pin.forwardKinematics(model, data, q1)
@@ -364,7 +367,7 @@ if __name__ == "__main__":
     ax.view_init(azim=0, elev=0)
     
     viz = MeshcatVisualizer(model, robot.collision_model, robot.visual_model)
-    viz.initViewer(open=False) 
+    viz.initViewer(open=True) 
     viz.loadViewerModel()
     
    
