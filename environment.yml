@@ -56,6 +56,7 @@ dependencies:
       - eigenpy==3.10.3
       - embreex==2.17.7.post6
       - executing==2.2.0
+      - fast-simplification==0.1.11
       - filelock==3.18.0
       - fonttools==4.58.2
       - fsspec==2025.3.2
@@ -77,6 +78,8 @@ dependencies:
       - jsonschema==4.23.0
       - jsonschema-specifications==2025.4.1
       - kiwisolver==1.4.8
+      - kornia==0.8.1
+      - kornia-rs==0.1.9
       - loop-rate-limiters==1.1.0
       - lxml==5.4.0
       - manifold3d==3.0.1
@@ -134,6 +137,7 @@ dependencies:
       - rospkg==1.6.0
       - rpds-py==0.24.0
       - rtree==1.4.0
+      - scikit-learn==1.7.0
       - scipy==1.15.3
       - scs==3.2.7.post2
       - shapely==2.1.0
@@ -145,6 +149,7 @@ dependencies:
       - stack-data==0.6.3
       - svg-path==6.3
       - sympy==1.14.0
+      - threadpoolctl==3.6.0
       - torch==2.7.0
       - tornado==6.4.2
       - tqdm==4.67.1
@@ -154,8 +159,9 @@ dependencies:
       - typing-extensions==4.13.2
       - u-msgpack-python==2.8.0
       - urdf2webots==2025.0.0
+      - vedo==2025.5.4
       - vhacdx==0.0.8.post2
+      - vtk==9.5.0
       - wcwidth==0.2.13
       - xxhash==3.5.0
       - yourdfpy==0.0.57
-      - kornia == 0.8.1
