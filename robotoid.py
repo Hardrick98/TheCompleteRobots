@@ -79,8 +79,6 @@ class Robotoid:
                 parent_name = self.model.names[parent_idx]
             parent_child[joint_name] = parent_name
 
-        print(parent_child)
-
 
         all_parents = set(self.model.parents)
 
@@ -92,8 +90,7 @@ class Robotoid:
                 if i != 0:
                     end_effectors.append(joint_name)
 
-        print(end_effectors)
-
+        
         repeated = []
 
         chains = self.get_kinematic_chains(end_effectors, parent_child)
@@ -235,7 +232,7 @@ class Robotoid:
 
         sorted_chain_ids = sorted(robotoid.keys(), key=lambda i: robotoid[i][0, 2], reverse=True)
 
-        print(sorted_chain_ids)
+
         robotoid = {i: robotoid[i] for i in sorted_chain_ids}
         robotoid_labels = {i: robotoid_labels[i] for i in sorted_chain_ids}
 

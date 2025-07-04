@@ -188,7 +188,6 @@ import kornia
 
 def compute_global_orientations_smplx(global_orient, body_pose, change_ref = False):
    
-    print(body_pose)
 
     def rodrigues_kornia(rvecs: torch.Tensor) -> torch.Tensor:
         return kornia.geometry.axis_angle_to_rotation_matrix(rvecs)[:, :3, :3]  # (N, 3, 3)

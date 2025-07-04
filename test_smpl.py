@@ -42,7 +42,7 @@ def load_simple(arr, idx):
     # Carica il modello SMPL
     smpl_model = SMPLX(
         model_path='models_smplx_v1_1/models/smplx/SMPLX_MALE.npz',  # Deve contenere i file .pkl del modello
-        gender='male',  # oppure 'male', 'female'
+        gender='male', 
         batch_size=1
     )
 
@@ -55,7 +55,7 @@ def load_simple(arr, idx):
     v = torch.Tensor([0, 0, 1])
     direction = global_rotation @ v
     direction = direction / np.linalg.norm(direction)
-    print("Direzione:", direction)
+   
 
     orientations = compute_global_orientations_smplx(global_rotation, body_pose.view(-1,3).numpy())
     
@@ -87,11 +87,13 @@ def load_simple(arr, idx):
         direction = ori @ v
         direction = direction / np.linalg.norm(direction)
         directions.append(direction)
-        
     
-    visualize_mesh_and_joints_vedo(verts, joints, faces, directions)
+    mesh = Mesh([verts, faces])
+    mesh.c('lightblue').alpha(0.5).lw(0.5)
     
-    return joints, body_pose.reshape(1, -1).to(torch.float32), transl.cpu().numpy(), global_orient.cpu()
+    #visualize_mesh_and_joints_vedo(verts, joints, faces, directions)
+    
+    return joints, body_pose.reshape(1, -1).to(torch.float32), transl.cpu().numpy(), global_orient.cpu(), mesh
 
 if __name__ == "__main__":
     

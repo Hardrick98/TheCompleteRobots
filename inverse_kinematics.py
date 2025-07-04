@@ -4,24 +4,26 @@ from scipy.optimize import minimize
 
 class InverseKinematicSolver():
     
-    def __init__(self, model, data, target_pos, target_ori, frame_names, frame_ids):
+    def __init__(self, model, data, target_pos, target_ori, joint_names, joint_ids, frame_names, frame_ids):
         
         self.model = model
         self.data = data
         self.target_pos = target_pos
         self.target_ori = target_ori
+        self.joint_names = joint_names
+        self.joint_ids = joint_ids
         self.frame_names = frame_names 
         self.frame_ids = frame_ids
 
 
-    def ik_cost(self, q, w_pos=1, w_ori=0.001):
+    def ik_cost(self, q, w_pos=1, w_ori=0):
         pin.forwardKinematics(self.model, self.data, q)
         pin.updateFramePlacements(self.model, self.data)
         
         cost_pos = 0.0
         cost_ori = 0.0
         
-        for name, frame_id in zip(self.frame_names, self.frame_ids):
+        for name, frame_id in zip(self.joint_names, self.joint_ids):
             oMf = self.data.oMf[frame_id]
             pos = oMf.translation
             ori = oMf.rotation#model.frames[frame_id].placement.rotation 
@@ -38,6 +40,7 @@ class InverseKinematicSolver():
 
 
     def ik_cost_ori(self, q, w_pos=0, w_ori=1):
+        
         pin.forwardKinematics(self.model, self.data, q)
         pin.updateFramePlacements(self.model, self.data)
         
@@ -46,17 +49,11 @@ class InverseKinematicSolver():
         
         for name, frame_id in zip(self.frame_names, self.frame_ids):
             oMf = self.data.oMf[frame_id]
-            pos = oMf.translation
-            ori = oMf.rotation#model.frames[frame_id].placement.rotation 
-            target_pos = self.target_pos[name]
-            cost_pos += np.linalg.norm(pos - target_pos)**2
-            
-            if name in self.target_ori:
+            ori = oMf.rotation #model.frames[frame_id].placement.rotation 
+            target_ori = self.target_ori[name]
+            cost_ori += self.rotation_error(ori, target_ori)
                 
-                target_ori = self.target_ori[name]
-                cost_ori += self.rotation_error(ori, target_ori)
-                
-        return w_pos * cost_pos + w_ori * cost_ori
+        return w_ori * cost_ori
 
 
     def inverse_kinematics_position(self, q0):
@@ -98,7 +95,6 @@ class InverseKinematicSolver():
         target = R2 @ v
         target = target / np.linalg.norm(target)
 
-        # Proiettiamo pred e target nel piano XZ (piano di rotazione attorno a Y)
         pred_proj = np.array([pred[0], pred[2]])
         target_proj = np.array([target[0], target[2]])
 
@@ -106,12 +102,10 @@ class InverseKinematicSolver():
         pred_proj /= np.linalg.norm(pred_proj)
         target_proj /= np.linalg.norm(target_proj)
 
-        # Calcoliamo l’angolo firmato tra i due vettori proiettati
-        cross = pred_proj[0]*target_proj[1] - pred_proj[1]*target_proj[0]  # componente "z" del cross 2D
+        cross = pred_proj[0]*target_proj[1] - pred_proj[1]*target_proj[0]  
         dot = np.dot(pred_proj, target_proj)
-        angle_error = np.arctan2(cross, dot)  # angolo con segno
+        angle_error = np.arctan2(cross, dot) 
 
-        # Minimizziamo il valore assoluto dell’errore angolare
         return np.abs(angle_error)
     
     def rotation_cost(self, theta, q1, idx, joint_id):

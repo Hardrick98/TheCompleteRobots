@@ -60,7 +60,7 @@ if __name__ == "__main__":
     arr = np.load(args.human_pose, allow_pickle=True)
     
     
-    joint_positions, orientations, translation, global_orient = load_simple(arr, 0)    
+    joint_positions, orientations, translation, global_orient, human_mesh = load_simple(arr, 0)    
 
     print(joint_positions.shape)
 
@@ -72,7 +72,7 @@ if __name__ == "__main__":
    
         
     new = []        
-    
+    human_origin = translation[0]
     joint_positions[:,:] -= joint_positions[:1,:]
     joint_positions[:,0] *= -1
     joint_positions[:,[1,2]] = joint_positions[:,[2,1]]
@@ -146,9 +146,6 @@ if __name__ == "__main__":
     forearmR = np.linalg.norm(robot_joints[R["LWrist"]]-robot_joints[R["LElbow"]])
     
     
-    
-    
-    
     s_femor = femorR / femorH
     s_tibia = tibiaR / tibiaH
     s_upper_arm = upper_armR / upper_armH
@@ -192,12 +189,15 @@ if __name__ == "__main__":
             pass
     
     
-    links = robot.joints  
+    links = robot.get_frames()
+    joints = robot.joints
+    print(links)
     
-    
-    frame_names = [v for k,v in F.items() if v != "root_joint"]
-    frame_ids = [links[name]for name in frame_names]
+    joint_names = [v for k,v in F.items() if v != "root_joint"]
+    joint_ids = [joints[name]for name in joint_names]
 
+    frame_names = ["RHand","LHand"]
+    frame_ids = [143,83]
     
     target_positions = {
         F["LHip"] : robot_joints[R["LHip"]],
@@ -216,10 +216,10 @@ if __name__ == "__main__":
     }
 
     target_orientations = {
-        F["RWrist"]: orientations[H["RWrist"]],  
-        F["LWrist"]: orientations[H["LWrist"]],
-        #F["LShoulder"]: orientations[H["LShoulder"]],
-        #F["LAnkle"]: orientations[H["left_foot"]],
+        #"RHand": orientations[H["RWrist"]],  
+        #"LHand": orientations[H["LWrist"]],
+        #F["LElbow"]: orientations[H["LElbow"]],
+        #F["RElbow"]: orientations[H["RElbow"]],
         #F["RAnkle"]: orientations[H["right_foot"]],
         #F["LKnee"] : orientations[H["LKnee"]],
     }
@@ -252,8 +252,8 @@ if __name__ == "__main__":
         17: F["RShoulder"], # right_shoulder
         18: F["LElbow"],    # left_elbow
         19: F["RElbow"],    # right_elbow
-        20: F["LWrist"],   # left_wrist
-        21: F["RWrist"]    # right_wrist
+        20: "LHand",   # left_wrist
+        21: "RHand"    # right_wrist
     }
     
     
@@ -324,41 +324,92 @@ if __name__ == "__main__":
     
     
     
-    solver = InverseKinematicSolver(model,data,target_positions,target_orientations_global,frame_names, frame_ids)
+    solver = InverseKinematicSolver(model,data,target_positions,target_orientations_global,joint_names, joint_ids, frame_names, frame_ids)
     
 
     q1 = solver.inverse_kinematics_position(q0)
+    
+    """
     q2 = solver.inverse_kinematics_orientation(q0)       
 
-
-    for joint_name in target_orientations:
+    print(q1)
+    for joint_name, _ in target_orientations.items():
+        print(joint_name)
         joint_id = model.getJointId(joint_name)
         idx = model.joints[joint_id].idx_q 
         q1[idx] = q2[idx]
-
-
+    print(q1)
+    """
     pin.forwardKinematics(model, data, q1)
     pin.updateFramePlacements(model, data)
 
-    final_positions = []
-
-    for name, frame_id in zip(frame_names, frame_ids):
-        final_positions.append(data.oMf[frame_id].translation)
-    
-    final_positions = np.array(final_positions)
-
-    
-    ax.scatter(final_positions[:, 0], final_positions[:, 1], final_positions[:, 2], c='b', marker='x')
-    ax.view_init(azim=0, elev=0)
     
     viz = MeshcatVisualizer(model, robot.collision_model, robot.visual_model)
-    viz.initViewer(open=True) 
-    viz.loadViewerModel()
+    #viz.initViewer(open=True) 
+    #viz.loadViewerModel()
+    #viz.display(q1)
+    #plt.show()
     
-   
-    viz.display(q1)
-    plt.show()
     
-    input("Press Enter to reset the visualization...")
-    viz.reset()
+    visual_model = robot.visual_model
+
+    from vedo import Plotter, Mesh
+    
+
+
+    vp = Plotter(title="NAO Robot", axes=1, interactive=False)
+
+    for visual in visual_model.geometryObjects:
+        
+        mesh_path = os.path.join(visual.meshPath.replace(".dae","_0.10.stl"))
+        if not os.path.exists(mesh_path):
+            print(f"Mesh non trovata: {mesh_path}")
+            continue
+
+        try:
+            m = Mesh(mesh_path)
+        except Exception as e:
+            print(f"Errore nel caricare {mesh_path}: {e}")
+            continue
+
+        color = visual.meshColor
+        m.color(color[:3])
+        # ottieni trasformazione del frame
+        placement = data.oMf[visual.parentFrame]
+
+        import pinocchio as pin
+        placement_world = placement.act(visual.placement)
+        R = placement_world.rotation
+        p = placement_world.translation
+
+        
+        T = np.eye(4)
+        T[:3, :3] = R
+        T[:3, 3] = p
+
+        m.scale(visual.meshScale[0])
+        m.apply_transform(T)
+
+        vp += m
+
+
+        M = np.array([
+        [-1, 0, 0],
+        [0, 0, 1],
+        [0, 1, 0]
+    ])
+    T = np.eye(4)
+    T[:3, :3] = M
+    human_origin[0] *= -1
+
+    T[:3, 3] = -human_origin + (np.array([0.7,0,1]))
+    human_mesh.apply_transform(T)
+    vp += human_mesh
+    vp.camera.SetPosition([0, 3, 1])        
+    vp.camera.SetFocalPoint([0, 0, 0])      
+    vp.camera.SetViewUp([0, 0, 1])         
+
+    vp.show(axes=1, interactive=True)
+    #input("Press Enter to reset the visualization...")
+    #viz.reset()
     
