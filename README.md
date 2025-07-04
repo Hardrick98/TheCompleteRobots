@@ -30,7 +30,7 @@ Download SMPL models here: https://drive.google.com/file/d/1eF2DCk7GhbSAYfC8eKVF
 Put the models_smplx_v1_1 in the main folder and the sample pose wherever you want
 
 ```
-python robot_loader_smpl.py --human_pose PATH_TO_SMPL_POSE
+python loader.py --human_pose PATH_TO_SMPL_POSE --robot ROBOT_NAME
 ```
 
 
