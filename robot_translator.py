@@ -9,7 +9,8 @@ from scipy.optimize import minimize
 
 
     
-robot_list = [r.removesuffix(".urdf") for r in os.listdir("/home/rick/TheCompleteRobots/URDF") if r.endswith(".urdf") or r.endswith(".urdf")]
+urdf_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "URDF")
+robot_list = [r.removesuffix(".urdf") for r in os.listdir(urdf_dir) if r.endswith(".urdf")]
 
 robot_string = "Available robots:\n" + "\n".join(f"- {r}" for r in robot_list)
 
@@ -27,7 +28,8 @@ args  = parser.parse_args()
 robot_name = args.robot.lower()    
 print(robot_name)
 try:
-    robot = HumanoidRobot(f"/home/rick/TheCompleteRobots/URDF/{args.robot}.urdf")
+    urdf_path = os.path.join(urdf_dir, f"{args.robot}.urdf")
+    robot = HumanoidRobot(urdf_path)
 except Exception as e:
     print(f"Error loading robot {robot_name}: {e}")
     print(robot_string)
