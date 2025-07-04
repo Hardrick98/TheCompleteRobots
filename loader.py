@@ -345,10 +345,12 @@ if __name__ == "__main__":
 
     
     viz = MeshcatVisualizer(model, robot.collision_model, robot.visual_model)
-    #viz.initViewer(open=True) 
-    #viz.loadViewerModel()
-    #viz.display(q1)
+    viz.initViewer(open=True) 
+    viz.loadViewerModel()
+    viz.display(q1)
     #plt.show()
+    input("Press Enter to reset the visualization...")
+    viz.reset()
     
     
     visual_model = robot.visual_model
@@ -361,7 +363,7 @@ if __name__ == "__main__":
 
     for visual in visual_model.geometryObjects:
         
-        mesh_path = os.path.join(visual.meshPath.replace(".dae","_0.10.stl"))
+        mesh_path = os.path.join(visual.meshPath.replace(".dae",".stl"))
         if not os.path.exists(mesh_path):
             print(f"Mesh non trovata: {mesh_path}")
             continue
@@ -410,6 +412,5 @@ if __name__ == "__main__":
     vp.camera.SetViewUp([0, 0, 1])         
 
     vp.show(axes=1, interactive=True)
-    #input("Press Enter to reset the visualization...")
-    #viz.reset()
+
     
