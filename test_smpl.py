@@ -31,13 +31,13 @@ def visualize_mesh_and_joints_vedo(vertices, joints, faces, directions, title="S
 
 
 
-def load_simple(arr):
+def load_simple(arr, idx):
     smpl = arr["smpl"][()]
-    global_orient = torch.from_numpy(smpl['global_orient'][0]).reshape(1, -1).to(torch.float32)
-    body_pose_raw = torch.from_numpy(smpl['body_pose'][0][:21]).reshape(1, -1).to(torch.float32)
-    body_pose = torch.from_numpy(smpl['body_pose'][0][:]).reshape(1, -1).to(torch.float32)
-    transl        = torch.from_numpy(smpl['root_transl'][0]).reshape(1, -1).to(torch.float32)
-    betas        = torch.from_numpy(smpl['betas'][0]).reshape(1, 10).to(torch.float32)
+    global_orient = torch.from_numpy(smpl['global_orient'][idx]).reshape(1, -1).to(torch.float32)
+    body_pose_raw = torch.from_numpy(smpl['body_pose'][idx][:21]).reshape(1, -1).to(torch.float32)
+    body_pose = torch.from_numpy(smpl['body_pose'][idx][:]).reshape(1, -1).to(torch.float32)
+    transl        = torch.from_numpy(smpl['root_transl'][idx]).reshape(1, -1).to(torch.float32)
+    betas        = torch.from_numpy(smpl['betas'][idx]).reshape(1, 10).to(torch.float32)
 
     # Carica il modello SMPL
     smpl_model = SMPLX(
@@ -88,13 +88,10 @@ def load_simple(arr):
         direction = direction / np.linalg.norm(direction)
         directions.append(direction)
         
-
-    print("Vertices shape:", verts.shape)
-    print("Faces shape:", faces.shape)
     
     visualize_mesh_and_joints_vedo(verts, joints, faces, directions)
     
-    return joints, body_pose_raw, direction
+    return joints, body_pose.reshape(1, -1).to(torch.float32), transl.cpu().numpy(), global_orient.cpu()
 
 if __name__ == "__main__":
     
@@ -104,4 +101,4 @@ if __name__ == "__main__":
     arr = np.load(args.file, allow_pickle=True)
 
 
-    load_simple(arr)
+    load_simple(arr, 0)

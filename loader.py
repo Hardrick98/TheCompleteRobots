@@ -1,4 +1,5 @@
 from utils import *
+from test_smpl import load_simple
 from pinocchio.visualize import MeshcatVisualizer
 import pinocchio as pin
 import argparse
@@ -215,7 +216,6 @@ if __name__ == "__main__":
     }
 
     target_orientations = {
-        #F["root_joint"]: orientations[H["pelvis"]],
         F["RWrist"]: orientations[H["RWrist"]],  
         F["LWrist"]: orientations[H["LWrist"]],
         #F["LShoulder"]: orientations[H["LShoulder"]],
@@ -224,30 +224,14 @@ if __name__ == "__main__":
         #F["LKnee"] : orientations[H["LKnee"]],
     }
 
-    index_keypoints = [
-    1, 4, 7,            # left hip, knee, ankle
-    2, 5, 8,            # right hip, knee, ankle
-    16, 18, 20,         # left shoulder, elbow, wrist
-    17, 19, 21          # right shoulder, elbow, wrist
-    ]
-    
 
-    R = torch.Tensor([
-        [-1, 0, 0],
-        [0, 0, 1],
-        [0, 1, 0]
-    ])
 
     from scipy.spatial.transform import Rotation as Rot
 
     
     rotvec = global_orient.numpy().flatten()
-    rotation = torch.from_numpy(Rot.from_rotvec(rotvec).as_matrix()).float()
-    initial_vector = np.array([0, 0, 1])
-    v = torch.tensor(initial_vector)
-    global_rotation = rotation
-    direction = global_rotation @ v.float()
-    direction = direction / torch.linalg.norm(direction)
+    global_rotation = torch.from_numpy(Rot.from_rotvec(rotvec).as_matrix()).float()
+    
     
 
         
@@ -256,8 +240,7 @@ if __name__ == "__main__":
 
 
 
-    smplx_to_robot_mapping = {
-        9: F["root_joint"],      
+    smplx_to_robot_mapping = {   
         1: F["LHip"],       
         2: F["RHip"],       
         12: F["Head"],       
@@ -274,6 +257,8 @@ if __name__ == "__main__":
     }
     
     
+    v = torch.tensor([0,0,1])
+
     rotation = global_orientations_matrices[15].float()
     direction = rotation.float() @ v.float()
     direction = direction / torch.linalg.norm(direction)
@@ -341,9 +326,9 @@ if __name__ == "__main__":
     
     solver = InverseKinematicSolver(model,data,target_positions,target_orientations_global,frame_names, frame_ids)
     
+
     q1 = solver.inverse_kinematics_position(q0)
-    q2 = solver.inverse_kinematics_orientation(q0)
-       
+    q2 = solver.inverse_kinematics_orientation(q0)       
 
 
     for joint_name in target_orientations:
