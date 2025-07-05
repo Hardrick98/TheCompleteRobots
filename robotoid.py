@@ -285,11 +285,12 @@ class Robotoid:
         final_reduced = {}
         final_values = {}
         for k,v in final.items():
-
-            final_reduced[k] = v[0]
-            final_values[k] = self.model.getJointId(v[0])-1
+            if v[0] is not None:
+                final_reduced[k] = v[0]
+                final_values[k] = self.model.getJointId(v[0])-1
 
         final_reduced["root_joint"] = "root_joint"
         final_values["root_joint"] = self.model.getJointId("root_joint") - 1
+
 
         return final_reduced, final_values
