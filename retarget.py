@@ -135,9 +135,13 @@ if __name__ == "__main__":
     spineH = np.linalg.norm(human_joints[H["Neck"]]-human_joints[H["root_joint"]])
     spineR = np.linalg.norm(robot_joints[R["Head"]]-robot_joints[R["root_joint"]])
     
-    shoulH = np.linalg.norm(human_joints[H["LShoulder"]]-human_joints[H["Neck"]])
-    shoulR = np.linalg.norm(robot_joints[R["LShoulder"]]-robot_joints[R["Head"]])
-    
+    if not head_fixed:
+        shoulH = np.linalg.norm(human_joints[H["LShoulder"]]-human_joints[H["Neck"]])
+        shoulR = np.linalg.norm(robot_joints[R["LShoulder"]]-robot_joints[R["Head"]])
+    else:
+        shoulH = np.linalg.norm(human_joints[H["LShoulder"]]-human_joints[H["LHip"]])
+        shoulR = np.linalg.norm(robot_joints[R["LShoulder"]]-robot_joints[R["LHip"]])
+
     femorH = np.linalg.norm(human_joints[H["LKnee"]]-human_joints[H["LHip"]])
     femorR = np.linalg.norm(robot_joints[R["LKnee"]]-robot_joints[R["LHip"]])
     
