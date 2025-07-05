@@ -141,7 +141,7 @@ if __name__ == "__main__":
     else:
         shoulH = np.linalg.norm(human_joints[H["LShoulder"]]-human_joints[H["LHip"]])
         shoulR = np.linalg.norm(robot_joints[R["LShoulder"]]-robot_joints[R["LHip"]])
-
+    
     femorH = np.linalg.norm(human_joints[H["LKnee"]]-human_joints[H["LHip"]])
     femorR = np.linalg.norm(robot_joints[R["LKnee"]]-robot_joints[R["LHip"]])
     
@@ -155,14 +155,13 @@ if __name__ == "__main__":
     forearmR = np.linalg.norm(robot_joints[R["LWrist"]]-robot_joints[R["LElbow"]])
     
     
-    s_femor = femorR / femorH
-    s_tibia = tibiaR / tibiaH
     s_upper_arm = upper_armR / upper_armH
     s_forearm = forearmR / forearmH
     s_spine = spineR / spineH
     s_shoulder = shoulR / shoulH
     s_hip = hipR / hipH
-
+    s_femor = femorR / femorH
+    s_tibia = tibiaR / tibiaH
 
     #Scaling
     if not head_fixed:
@@ -174,14 +173,16 @@ if __name__ == "__main__":
         robot_joints[R["LShoulder"]] = robot_joints[R["LHip"]] + (human_joints[H["LShoulder"]] - human_joints[H["LHip"]]) * s_shoulder
         robot_joints[R["RShoulder"]] = robot_joints[R["RHip"]] + (human_joints[H["RShoulder"]] - human_joints[H["RHip"]]) * s_shoulder
     
-    robot_joints[R["RHip"]] = robot_joints[R["root_joint"]] + (human_joints[H["RHip"]] - human_joints[H["root_joint"]]) * s_hip
-    robot_joints[R["RKnee"]] = robot_joints[R["RHip"]] + (human_joints[H["RKnee"]] - human_joints[H["RHip"]]) * s_femor
-    robot_joints[R["RAnkle"]] = robot_joints[R["RKnee"]] + (human_joints[H["RAnkle"]] - human_joints[H["RKnee"]]) * s_tibia
-    robot_joints[R["LElbow"]] = robot_joints[R["LShoulder"]] + (human_joints[H["LElbow"]] - human_joints[H["LShoulder"]]) * s_upper_arm
-    robot_joints[R["LWrist"]] = robot_joints[R["LElbow"]] + (human_joints[H["LWrist"]] - human_joints[H["LElbow"]]) * s_forearm
+   
     robot_joints[R["LHip"]] = robot_joints[R["root_joint"]] + (human_joints[H["LHip"]] - human_joints[H["root_joint"]]) * s_hip
     robot_joints[R["LKnee"]] = robot_joints[R["LHip"]] + (human_joints[H["LKnee"]] - human_joints[H["LHip"]]) * s_femor
     robot_joints[R["LAnkle"]] = robot_joints[R["LKnee"]] + (human_joints[H["LAnkle"]] - human_joints[H["LKnee"]]) * s_tibia
+    robot_joints[R["RHip"]] = robot_joints[R["root_joint"]] + (human_joints[H["RHip"]] - human_joints[H["root_joint"]]) * s_hip
+    robot_joints[R["RKnee"]] = robot_joints[R["RHip"]] + (human_joints[H["RKnee"]] - human_joints[H["RHip"]]) * s_femor
+    robot_joints[R["RAnkle"]] = robot_joints[R["RKnee"]] + (human_joints[H["RAnkle"]] - human_joints[H["RKnee"]]) * s_tibia
+    
+    robot_joints[R["LElbow"]] = robot_joints[R["LShoulder"]] + (human_joints[H["LElbow"]] - human_joints[H["LShoulder"]]) * s_upper_arm
+    robot_joints[R["LWrist"]] = robot_joints[R["LElbow"]] + (human_joints[H["LWrist"]] - human_joints[H["LElbow"]]) * s_forearm
     robot_joints[R["RElbow"]] = robot_joints[R["RShoulder"]] + (human_joints[H["RElbow"]] - human_joints[H["RShoulder"]]) * s_upper_arm
     robot_joints[R["RWrist"]] = robot_joints[R["RElbow"]] + (human_joints[H["RWrist"]] - human_joints[H["RElbow"]]) * s_forearm
   
