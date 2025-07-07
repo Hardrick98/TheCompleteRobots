@@ -227,8 +227,6 @@ def compute_global_orientations_smplx(global_orient, body_pose, change_ref = Fal
         parent_idx = parents[i]
         global_orientations[i] = global_orientations[parent_idx] @ local_rotations[i-1].float()
 
-    print(global_orientations)
-
     M = torch.tensor([
         [-1, 0, 0],
         [0, 0, 1],

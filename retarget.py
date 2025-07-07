@@ -141,7 +141,6 @@ if __name__ == "__main__":
     
     links = robot.get_frames()
     joints = robot.joints
-    print(links)
     
     joint_names = [v for k,v in F.items() if v != "root_joint"]
     joint_ids = [joints[name]for name in joint_names]
