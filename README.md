@@ -35,7 +35,7 @@ python retarget.py --human_pose PATH_TO_SMPL_POSE --robot ROBOT_NAME
 
 Press ENTER to visualize the human side by side to the robot.
 
-<div style="display: flex; gap: 10px;">
-  <img src="images/image1.png" style="width: 50%;">
-  <img src="images/image2.png" style="width: 50%;">
-</div>
+<p align="center">
+  <img src="images/image1.png" width="400"/>
+  <img src="images/image2.png" width="400"/>
+</p>
