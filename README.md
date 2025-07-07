@@ -23,8 +23,7 @@ This code will print the kinematic associations.
 
 ## TO visualize the INVERSE KINEMATICS PROCESS run
 
-Download SAMPLE here: https://drive.google.com/file/d/1TjfyUXMrarAcnr8UCNNuf0zAdzOPrxK_/view?usp=sharing
-
+Download SAMPLE here: https://drive.google.com/file/d/1CSDqJGh7zWs2xjXEa533vCPEcINhP3NH/view?usp=sharing
 Download SMPL models here: https://drive.google.com/file/d/1eF2DCk7GhbSAYfC8eKVFCU27P4VeKNPV/view?usp=sharing
 
 Put the models_smplx_v1_1 in the main folder and the sample pose wherever you want
