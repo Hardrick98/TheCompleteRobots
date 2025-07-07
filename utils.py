@@ -221,12 +221,13 @@ def compute_global_orientations_smplx(global_orient, body_pose, change_ref = Fal
                18,  # 20: left_wrist
                19]  # 21: right_wrist
     
-    global_orientations = torch.zeros_like(local_rotations)
+    global_orientations = torch.zeros((22,3,3))
     global_orientations[0] = global_orient
     for i in range(1,22):
         parent_idx = parents[i]
         global_orientations[i] = global_orientations[parent_idx] @ local_rotations[i-1].float()
 
+    print(global_orientations)
 
     M = torch.tensor([
         [-1, 0, 0],

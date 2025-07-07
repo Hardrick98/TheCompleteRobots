@@ -1,5 +1,5 @@
 from utils import *
-from test_smpl import load_simple
+from test_smpl import load_simple_interx
 from pinocchio.visualize import MeshcatVisualizer
 import pinocchio as pin
 import argparse
@@ -59,7 +59,7 @@ if __name__ == "__main__":
     arr = np.load(args.human_pose, allow_pickle=True)
     
     
-    joint_positions, orientations, translation, global_orient, human_mesh = load_simple(arr, 0)    
+    joint_positions, orientations, translation, global_orient, human_mesh = load_simple_interx(arr, 0)    
 
     translation[:,[1,2]] = translation[:,[2,1]]
 
