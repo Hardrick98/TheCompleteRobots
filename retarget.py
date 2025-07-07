@@ -122,7 +122,7 @@ if __name__ == "__main__":
                 (R["RShoulder"],R["RElbow"]), (R["RElbow"], R["RWrist"]), (R["Head"], R["RShoulder"]), 
                 (R["Head"], R["LShoulder"]), (R["Head"], R["RHip"]),(R["Head"], R["LHip"])]
     
-    robot_joints = scale_human_to_robot(R,F, robot_joints, H, human_joints)
+    robot_joints = scale_human_to_robot(R,F, robot_joints, H, human_joints, head_fixed)
   
     indices = [R["Head"],R["LHip"], R["LKnee"], R["LAnkle"], R["RHip"], R["RKnee"], R["RAnkle"],
                R["LShoulder"], R["LElbow"], R["LWrist"],
@@ -253,7 +253,7 @@ if __name__ == "__main__":
     
 
 
-    vp = Plotter(title="NAO Robot", axes=1, interactive=False)
+    vp = Plotter(title="Human and Robot", axes=1, interactive=False)
 
     for visual in visual_model.geometryObjects:
         

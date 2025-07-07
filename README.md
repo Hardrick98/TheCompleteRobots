@@ -33,7 +33,7 @@ Put the models_smplx_v1_1 in the main folder and the sample pose wherever you wa
 python retarget.py --human_pose PATH_TO_SMPL_POSE --robot ROBOT_NAME
 ```
 
+Press ENTER to visualize the human side by side to the robot.
 
-You should see in RED the human pose, in GREEN the robot target pose, with BLUE Crosses the reached pose in pyplot.
-After that the MeshCat Visualizer will open on you local host.
-Press and key and ENTER to end the program.
+<img src="images/image1.png" style="width: 45%; display: inline-block;">
+<img src="images/image2.png" style="width: 45%; display: inline-block;">
