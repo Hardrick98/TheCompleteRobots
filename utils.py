@@ -250,3 +250,124 @@ def get_smplx_global_orientations(global_orient, body_pose_raw, change_ref=False
     return global_rot_matrices
 
 
+def scale_human_to_robot(R, F, robot_joints, H, human_joints, head_fixed = False):
+
+     
+    
+    hipH = np.linalg.norm(human_joints[H["LHip"]]-human_joints[H["root_joint"]])
+    hipR = np.linalg.norm(robot_joints[R["LHip"]]-robot_joints[R["root_joint"]])
+    
+    spineH = np.linalg.norm(human_joints[H["Neck"]]-human_joints[H["root_joint"]])
+    spineR = np.linalg.norm(robot_joints[R["Head"]]-robot_joints[R["root_joint"]])
+    
+    if not head_fixed:
+        shoulH = np.linalg.norm(human_joints[H["LShoulder"]]-human_joints[H["Neck"]])
+        shoulR = np.linalg.norm(robot_joints[R["LShoulder"]]-robot_joints[R["Head"]])
+    else:
+        shoulH = np.linalg.norm(human_joints[H["LShoulder"]]-human_joints[H["LHip"]])
+        shoulR = np.linalg.norm(robot_joints[R["LShoulder"]]-robot_joints[R["LHip"]])
+    
+    femorH = np.linalg.norm(human_joints[H["LKnee"]]-human_joints[H["LHip"]])
+    femorR = np.linalg.norm(robot_joints[R["LKnee"]]-robot_joints[R["LHip"]])
+    
+    tibiaH = np.linalg.norm(human_joints[H["LAnkle"]]-human_joints[H["LKnee"]])
+    tibiaR = np.linalg.norm(robot_joints[R["LAnkle"]]-robot_joints[R["LKnee"]])
+
+    upper_armH = np.linalg.norm(human_joints[H["LElbow"]]-human_joints[H["LShoulder"]])
+    upper_armR = np.linalg.norm(robot_joints[R["LElbow"]]-robot_joints[R["LShoulder"]])
+
+    forearmH = np.linalg.norm(human_joints[H["LWrist"]]-human_joints[H["LElbow"]])
+    forearmR = np.linalg.norm(robot_joints[R["LWrist"]]-robot_joints[R["LElbow"]])
+    
+    
+    s_upper_arm = upper_armR / upper_armH
+    s_forearm = forearmR / forearmH
+    s_spine = spineR / spineH
+    s_shoulder = shoulR / shoulH
+    s_hip = hipR / hipH
+    s_femor = femorR / femorH
+    s_tibia = tibiaR / tibiaH
+
+    #Scaling
+    if not head_fixed:
+        robot_joints[R["Head"]] = robot_joints[R["root_joint"]] + (human_joints[H["Neck"]] - human_joints[H["root_joint"]]) * s_spine
+        robot_joints[R["LShoulder"]] = robot_joints[R["Head"]] + (human_joints[H["LShoulder"]] - human_joints[H["Neck"]]) * s_shoulder
+        robot_joints[R["RShoulder"]] = robot_joints[R["Head"]] + (human_joints[H["RShoulder"]] - human_joints[H["Neck"]]) * s_shoulder
+    else:
+        robot_joints[R["Head"]] = 0
+        robot_joints[R["LShoulder"]] = robot_joints[R["LHip"]] + (human_joints[H["LShoulder"]] - human_joints[H["LHip"]]) * s_shoulder
+        robot_joints[R["RShoulder"]] = robot_joints[R["RHip"]] + (human_joints[H["RShoulder"]] - human_joints[H["RHip"]]) * s_shoulder
+    
+   
+    robot_joints[R["LHip"]] = robot_joints[R["root_joint"]] + (human_joints[H["LHip"]] - human_joints[H["root_joint"]]) * s_hip
+    robot_joints[R["LKnee"]] = robot_joints[R["LHip"]] + (human_joints[H["LKnee"]] - human_joints[H["LHip"]]) * s_femor
+    robot_joints[R["LAnkle"]] = robot_joints[R["LKnee"]] + (human_joints[H["LAnkle"]] - human_joints[H["LKnee"]]) * s_tibia
+    robot_joints[R["RHip"]] = robot_joints[R["root_joint"]] + (human_joints[H["RHip"]] - human_joints[H["root_joint"]]) * s_hip
+    robot_joints[R["RKnee"]] = robot_joints[R["RHip"]] + (human_joints[H["RKnee"]] - human_joints[H["RHip"]]) * s_femor
+    robot_joints[R["RAnkle"]] = robot_joints[R["RKnee"]] + (human_joints[H["RAnkle"]] - human_joints[H["RKnee"]]) * s_tibia
+    
+    robot_joints[R["LElbow"]] = robot_joints[R["LShoulder"]] + (human_joints[H["LElbow"]] - human_joints[H["LShoulder"]]) * s_upper_arm
+    robot_joints[R["LWrist"]] = robot_joints[R["LElbow"]] + (human_joints[H["LWrist"]] - human_joints[H["LElbow"]]) * s_forearm
+    robot_joints[R["RElbow"]] = robot_joints[R["RShoulder"]] + (human_joints[H["RElbow"]] - human_joints[H["RShoulder"]]) * s_upper_arm
+    robot_joints[R["RWrist"]] = robot_joints[R["RElbow"]] + (human_joints[H["RWrist"]] - human_joints[H["RElbow"]]) * s_forearm
+    
+    return robot_joints
+
+def pyplot_arrows(ax, global_orientations_matrices, human_joints, H):
+    
+    v = torch.tensor([0,0,1])
+
+    rotation = global_orientations_matrices[15].float()
+    direction = rotation.float() @ v.float()
+    direction = direction / torch.linalg.norm(direction)
+    
+        
+    ax.quiver(
+        human_joints[H["Head"]][0], 
+        human_joints[H["Head"]][1],
+        human_joints[H["Head"]][2],                    
+        direction[0],              
+        direction[1],              
+        direction[2],            
+        length=1.0,                
+        color='purple',
+        normalize=True           
+    )
+    
+    
+    v = torch.tensor([0,-1,0])
+    rotation = global_orientations_matrices[21].float()
+    direction = rotation.float() @ v.float()
+    direction_RHand = direction / torch.linalg.norm(direction)
+    
+    
+        
+    ax.quiver(
+        human_joints[H["RWrist"]][0], 
+        human_joints[H["RWrist"]][1],
+        human_joints[H["RWrist"]][2],
+        direction[0],              
+        direction[1],              
+        direction[2],              
+        length=1.0,                
+        color='orange',
+        normalize=True             
+    )
+    
+    
+    rotation = global_orientations_matrices[H["LWrist"]].float()
+    direction = rotation.float() @ v.float()
+    direction_LHand = direction / torch.linalg.norm(direction)
+ 
+        
+    ax.quiver(
+        human_joints[H["LWrist"]][0], 
+        human_joints[H["LWrist"]][1],
+        human_joints[H["LWrist"]][2],
+        direction[0],              
+        direction[1],              
+        direction[2],              
+        length=1.0,                
+        color='purple',
+        normalize=True             
+    )

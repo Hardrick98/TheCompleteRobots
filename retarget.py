@@ -4,6 +4,7 @@ from pinocchio.visualize import MeshcatVisualizer
 import pinocchio as pin
 import argparse
 import os
+from scipy.spatial.transform import Rotation as Rot
 import numpy as np
 import matplotlib.pyplot as plt
 from inverse_kinematics import InverseKinematicSolver
@@ -54,15 +55,11 @@ if __name__ == "__main__":
     data = robot.data
     q0 = robot.q0  
 
-    
-    #LOAD SIMPLE
         
     arr = np.load(args.human_pose, allow_pickle=True)
     
     
     joint_positions, orientations, translation, global_orient, human_mesh = load_simple(arr, 0)    
-
-    print(joint_positions.shape)
 
     translation[:,[1,2]] = translation[:,[2,1]]
 
@@ -70,8 +67,7 @@ if __name__ == "__main__":
      
     links_positions = robot.get_links_positions(q0)
    
-        
-    new = []        
+                
     human_origin = translation[0]
     joint_positions[:,:] -= joint_positions[:1,:]
     joint_positions[:,0] *= -1
@@ -81,8 +77,6 @@ if __name__ == "__main__":
     
     
     ax = plt.figure(figsize=(10, 10)).add_subplot(projection='3d')
-    
-    
     ax.set_xlim(-1,1)
     ax.set_ylim(-1,1)
     ax.set_zlim(-1,1)
@@ -122,78 +116,18 @@ if __name__ == "__main__":
         head_fixed = True
         R["Head"] = R["root_joint"]
         F["Head"] = F["root_joint"]
-     
+    
     robot_limbs = [(R["LHip"],R["LKnee"]), (R["LKnee"], R["LAnkle"]), (R["RHip"],R["RKnee"]), 
-                   (R["RKnee"], R["RAnkle"]),(R["LShoulder"],R["LElbow"]), (R["LElbow"], R["LWrist"]), 
-                   (R["RShoulder"],R["RElbow"]), (R["RElbow"], R["RWrist"]), (R["Head"], R["RShoulder"]), 
-                   (R["Head"], R["LShoulder"]), (R["Head"], R["RHip"]),(R["Head"], R["LHip"])]
+                (R["RKnee"], R["RAnkle"]),(R["LShoulder"],R["LElbow"]), (R["LElbow"], R["LWrist"]), 
+                (R["RShoulder"],R["RElbow"]), (R["RElbow"], R["RWrist"]), (R["Head"], R["RShoulder"]), 
+                (R["Head"], R["LShoulder"]), (R["Head"], R["RHip"]),(R["Head"], R["LHip"])]
     
-    
-    hipH = np.linalg.norm(human_joints[H["LHip"]]-human_joints[H["root_joint"]])
-    hipR = np.linalg.norm(robot_joints[R["LHip"]]-robot_joints[R["root_joint"]])
-    
-    spineH = np.linalg.norm(human_joints[H["Neck"]]-human_joints[H["root_joint"]])
-    spineR = np.linalg.norm(robot_joints[R["Head"]]-robot_joints[R["root_joint"]])
-    
-    if not head_fixed:
-        shoulH = np.linalg.norm(human_joints[H["LShoulder"]]-human_joints[H["Neck"]])
-        shoulR = np.linalg.norm(robot_joints[R["LShoulder"]]-robot_joints[R["Head"]])
-    else:
-        shoulH = np.linalg.norm(human_joints[H["LShoulder"]]-human_joints[H["LHip"]])
-        shoulR = np.linalg.norm(robot_joints[R["LShoulder"]]-robot_joints[R["LHip"]])
-    
-    femorH = np.linalg.norm(human_joints[H["LKnee"]]-human_joints[H["LHip"]])
-    femorR = np.linalg.norm(robot_joints[R["LKnee"]]-robot_joints[R["LHip"]])
-    
-    tibiaH = np.linalg.norm(human_joints[H["LAnkle"]]-human_joints[H["LKnee"]])
-    tibiaR = np.linalg.norm(robot_joints[R["LAnkle"]]-robot_joints[R["LKnee"]])
-
-    upper_armH = np.linalg.norm(human_joints[H["LElbow"]]-human_joints[H["LShoulder"]])
-    upper_armR = np.linalg.norm(robot_joints[R["LElbow"]]-robot_joints[R["LShoulder"]])
-
-    forearmH = np.linalg.norm(human_joints[H["LWrist"]]-human_joints[H["LElbow"]])
-    forearmR = np.linalg.norm(robot_joints[R["LWrist"]]-robot_joints[R["LElbow"]])
-    
-    
-    s_upper_arm = upper_armR / upper_armH
-    s_forearm = forearmR / forearmH
-    s_spine = spineR / spineH
-    s_shoulder = shoulR / shoulH
-    s_hip = hipR / hipH
-    s_femor = femorR / femorH
-    s_tibia = tibiaR / tibiaH
-
-    #Scaling
-    if not head_fixed:
-        robot_joints[R["Head"]] = robot_joints[R["root_joint"]] + (human_joints[H["Neck"]] - human_joints[H["root_joint"]]) * s_spine
-        robot_joints[R["LShoulder"]] = robot_joints[R["Head"]] + (human_joints[H["LShoulder"]] - human_joints[H["Neck"]]) * s_shoulder
-        robot_joints[R["RShoulder"]] = robot_joints[R["Head"]] + (human_joints[H["RShoulder"]] - human_joints[H["Neck"]]) * s_shoulder
-    else:
-        robot_joints[R["Head"]] = 0
-        robot_joints[R["LShoulder"]] = robot_joints[R["LHip"]] + (human_joints[H["LShoulder"]] - human_joints[H["LHip"]]) * s_shoulder
-        robot_joints[R["RShoulder"]] = robot_joints[R["RHip"]] + (human_joints[H["RShoulder"]] - human_joints[H["RHip"]]) * s_shoulder
-    
-   
-    robot_joints[R["LHip"]] = robot_joints[R["root_joint"]] + (human_joints[H["LHip"]] - human_joints[H["root_joint"]]) * s_hip
-    robot_joints[R["LKnee"]] = robot_joints[R["LHip"]] + (human_joints[H["LKnee"]] - human_joints[H["LHip"]]) * s_femor
-    robot_joints[R["LAnkle"]] = robot_joints[R["LKnee"]] + (human_joints[H["LAnkle"]] - human_joints[H["LKnee"]]) * s_tibia
-    robot_joints[R["RHip"]] = robot_joints[R["root_joint"]] + (human_joints[H["RHip"]] - human_joints[H["root_joint"]]) * s_hip
-    robot_joints[R["RKnee"]] = robot_joints[R["RHip"]] + (human_joints[H["RKnee"]] - human_joints[H["RHip"]]) * s_femor
-    robot_joints[R["RAnkle"]] = robot_joints[R["RKnee"]] + (human_joints[H["RAnkle"]] - human_joints[H["RKnee"]]) * s_tibia
-    
-    robot_joints[R["LElbow"]] = robot_joints[R["LShoulder"]] + (human_joints[H["LElbow"]] - human_joints[H["LShoulder"]]) * s_upper_arm
-    robot_joints[R["LWrist"]] = robot_joints[R["LElbow"]] + (human_joints[H["LWrist"]] - human_joints[H["LElbow"]]) * s_forearm
-    robot_joints[R["RElbow"]] = robot_joints[R["RShoulder"]] + (human_joints[H["RElbow"]] - human_joints[H["RShoulder"]]) * s_upper_arm
-    robot_joints[R["RWrist"]] = robot_joints[R["RElbow"]] + (human_joints[H["RWrist"]] - human_joints[H["RElbow"]]) * s_forearm
+    robot_joints = scale_human_to_robot(R,F, robot_joints, H, human_joints)
   
     indices = [R["Head"],R["LHip"], R["LKnee"], R["LAnkle"], R["RHip"], R["RKnee"], R["RAnkle"],
                R["LShoulder"], R["LElbow"], R["LWrist"],
                R["RShoulder"], R["RElbow"], R["RWrist"]]
   
-    
-    ax.set_xlim(-1,1)
-    ax.set_ylim(-1,1)
-    ax.set_zlim(-1,1)
     ax.scatter(robot_joints[indices, 0], robot_joints[indices, 1], robot_joints[indices, 2], c='g', marker='o')
     
     for joint1_idx, joint2_idx in robot_limbs:
@@ -243,10 +177,6 @@ if __name__ == "__main__":
         #F["LKnee"] : orientations[H["LKnee"]],
     }
 
-
-
-    from scipy.spatial.transform import Rotation as Rot
-
     
     rotvec = global_orient.numpy().flatten()
     global_rotation = torch.from_numpy(Rot.from_rotvec(rotvec).as_matrix()).float()
@@ -275,63 +205,8 @@ if __name__ == "__main__":
         21: "RHand"    # right_wrist
     }
     
+    pyplot_arrows(ax, global_orientations_matrices, human_joints, H)
     
-    v = torch.tensor([0,0,1])
-
-    rotation = global_orientations_matrices[15].float()
-    direction = rotation.float() @ v.float()
-    direction = direction / torch.linalg.norm(direction)
-    
-        
-    ax.quiver(
-        human_joints[H["Head"]][0], 
-        human_joints[H["Head"]][1],
-        human_joints[H["Head"]][2],                    
-        direction[0],              
-        direction[1],              
-        direction[2],            
-        length=1.0,                
-        color='purple',
-        normalize=True           
-    )
-    
-    
-    v = torch.tensor([0,-1,0])
-    rotation = global_orientations_matrices[21].float()
-    direction = rotation.float() @ v.float()
-    direction_RHand = direction / torch.linalg.norm(direction)
-    
-    
-        
-    ax.quiver(
-        human_joints[H["RWrist"]][0], 
-        human_joints[H["RWrist"]][1],
-        human_joints[H["RWrist"]][2],
-        direction[0],              
-        direction[1],              
-        direction[2],              
-        length=1.0,                
-        color='orange',
-        normalize=True             
-    )
-    
-    
-    rotation = global_orientations_matrices[H["LWrist"]].float()
-    direction = rotation.float() @ v.float()
-    direction_LHand = direction / torch.linalg.norm(direction)
- 
-        
-    ax.quiver(
-        human_joints[H["LWrist"]][0], 
-        human_joints[H["LWrist"]][1],
-        human_joints[H["LWrist"]][2],
-        direction[0],              
-        direction[1],              
-        direction[2],              
-        length=1.0,                
-        color='purple',
-        normalize=True             
-    )
 
 
     
@@ -395,7 +270,6 @@ if __name__ == "__main__":
 
         color = visual.meshColor
         m.color(color[:3])
-        # ottieni trasformazione del frame
         placement = data.oMf[visual.parentFrame]
 
         import pinocchio as pin
