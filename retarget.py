@@ -29,8 +29,13 @@ if __name__ == "__main__":
     parser.add_argument("--human_pose",
                         type=str,
                         help="Path to smpl human pose")
+    parser.add_argument("--idx",
+                        type=int,
+                        help="Path to smpl human pose")
     args  = parser.parse_args()
-    robot_name = args.robot.lower()    
+    robot_name = args.robot.lower() 
+    idx = args.idx
+
     print(robot_name)
     try:
         robot = HumanoidRobot(f"URDF/{args.robot}.urdf")
@@ -58,20 +63,25 @@ if __name__ == "__main__":
         
     arr = np.load(args.human_pose, allow_pickle=True)
     
-    
-    joint_positions, orientations, translation, global_orient, human_mesh = load_simple_interx(arr, 0)    
+    joint_positions, orientations, translation, global_orient, human_mesh, directions = load_simple_interx(arr, idx)    
 
     translation[:,[1,2]] = translation[:,[2,1]]
 
     orientations = orientations.view(-1,3) 
+    orientations = torch.cat((global_orient.view(-1,3),orientations),axis=0)
      
     links_positions = robot.get_links_positions(q0)
    
+    directions = np.array(directions)
                 
     human_origin = translation[0]
     joint_positions[:,:] -= joint_positions[:1,:]
     joint_positions[:,0] *= -1
     joint_positions[:,[1,2]] = joint_positions[:,[2,1]]
+
+    directions[:,0] *= -1
+    directions[:,[1,2]] = directions[:,[2,1]]
+
     human_joints = joint_positions
     
     
@@ -138,15 +148,17 @@ if __name__ == "__main__":
         except:
             pass
     
+
+
+
     
-    links = robot.get_frames()
+    links, links2 = robot.get_frames()
     joints = robot.joints
+
     
     joint_names = [v for k,v in F.items() if v != "root_joint"]
     joint_ids = [joints[name]for name in joint_names]
 
-    frame_names = ["RHand","LHand"]
-    frame_ids = [143,83]
     
     target_positions = {
         F["LHip"] : robot_joints[R["LHip"]],
@@ -168,17 +180,21 @@ if __name__ == "__main__":
         target_positions.pop(F["Head"])
 
     target_orientations = {
-        #"RHand": orientations[H["RWrist"]],  
-        #"LHand": orientations[H["LWrist"]],
+        F["RWrist"]: orientations[H["RWrist"]],  
+        F["LWrist"]: orientations[H["LWrist"]],
         #F["LElbow"]: orientations[H["LElbow"]],
         #F["RElbow"]: orientations[H["RElbow"]],
-        #F["RAnkle"]: orientations[H["right_foot"]],
-        #F["LKnee"] : orientations[H["LKnee"]],
+        #F["RShoulder"]: orientations[H["RShoulder"]],
+        #F["LShoulder"] : orientations[H["RShoulder"]]
     }
-
+    
+    
+    frame_names = [k for k,v in target_orientations.items()]
+    frame_ids = [model.getFrameId(f) for f in frame_names]
     
     rotvec = global_orient.numpy().flatten()
     global_rotation = torch.from_numpy(Rot.from_rotvec(rotvec).as_matrix()).float()
+    
     
     
 
@@ -200,11 +216,13 @@ if __name__ == "__main__":
         17: F["RShoulder"], # right_shoulder
         18: F["LElbow"],    # left_elbow
         19: F["RElbow"],    # right_elbow
-        20: "LHand",   # left_wrist
-        21: "RHand"    # right_wrist
+        20: F["LWrist"],   # left_wrist
+        21: F["RWrist"]   # right_wrist
     }
+
     
-    pyplot_arrows(ax, global_orientations_matrices, human_joints, H)
+    
+    pyplot_arrows(ax, directions, human_joints, H)
     
 
 
@@ -215,33 +233,82 @@ if __name__ == "__main__":
             rot_matrix = global_orientations_matrices[smplx_idx].numpy()
             target_orientations_global[robot_frame] = rot_matrix
     
+
     
+    target_orientations_global  = {
+        F["RWrist"]: directions[21], 
+        F["LWrist"]: directions[20],
+        #F["LElbow"]: orientations[H["LElbow"]],
+        #F["RElbow"]: orientations[H["RElbow"]],
+        #F["RShoulder"]: orientations[H["RShoulder"]],
+        #F["LShoulder"] : orientations[H["RShoulder"]]
+    }
+    
+    print(target_orientations_global)
     
     solver = InverseKinematicSolver(model,data,target_positions,target_orientations_global,joint_names, joint_ids, frame_names, frame_ids)
     
 
     q1 = solver.inverse_kinematics_position(q0)
     
-    """
-    q2 = solver.inverse_kinematics_orientation(q0)       
-
-    print(q1)
-    for joint_name, _ in target_orientations.items():
-        print(joint_name)
-        joint_id = model.getJointId(joint_name)
-        idx = model.joints[joint_id].idx_q 
-        q1[idx] = q2[idx]
-    print(q1)
-    """
     pin.forwardKinematics(model, data, q1)
     pin.updateFramePlacements(model, data)
+         
+
+    for joint_name in ["RWrist","LWrist"]:
+        joint_id = model.getFrameId(F[joint_name])
+        rot = target_orientations_global[F[joint_name]]
+
+        #v = torch.tensor([0,1,0])
+        #rotation = global_orientations_matrices[H[joint_name]].float()
+        #direction = rotation.float() @ v.float()
+        #direction_RHand = direction / torch.linalg.norm(direction)
+
+        direction = directions[H[joint_name]]
+        
+        ax.quiver(
+            robot_joints[R[joint_name]][0], 
+            robot_joints[R[joint_name]][1],
+            robot_joints[R[joint_name]][2],
+            direction[0],              
+            direction[1],              
+            direction[2],              
+            length=1.0,                
+            color='black',
+            normalize=True             
+        )
+
+        v = torch.tensor([0,0,-1])
+        rotation = torch.from_numpy(data.oMf[joint_id].rotation)
+        direction = rotation.float() @ v.float()
+        direction_RHand = direction / torch.linalg.norm(direction)
+        
+    
+    
+        
+        ax.quiver(
+            robot_joints[R[joint_name]][0], 
+            robot_joints[R[joint_name]][1],
+            robot_joints[R[joint_name]][2],
+            direction[0],              
+            direction[1],              
+            direction[2],              
+            length=1.0,                
+            color='blue',
+            normalize=True             
+        )
+    
+    #    q1[idx] = q2[idx]
+
+    
+
 
     
     viz = MeshcatVisualizer(model, robot.collision_model, robot.visual_model)
-    viz.initViewer(open=True) 
+    viz.initViewer(open=False) 
     viz.loadViewerModel()
     viz.display(q1)
-    #plt.show()
+    plt.show()
     input("Press Enter to reset the visualization...")
     viz.reset()
     

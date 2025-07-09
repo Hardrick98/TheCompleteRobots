@@ -312,14 +312,15 @@ def scale_human_to_robot(R, F, robot_joints, H, human_joints, head_fixed = False
     
     return robot_joints
 
-def pyplot_arrows(ax, global_orientations_matrices, human_joints, H):
+def pyplot_arrows(ax, directions, human_joints, H):
     
     v = torch.tensor([0,0,1])
 
-    rotation = global_orientations_matrices[15].float()
-    direction = rotation.float() @ v.float()
-    direction = direction / torch.linalg.norm(direction)
+    #rotation = global_orientations_matrices[15].float()
+    #direction = rotation.float() @ v.float()
+    #direction = direction / torch.linalg.norm(direction)
     
+    direction = directions[15]
         
     ax.quiver(
         human_joints[H["Head"]][0], 
@@ -334,11 +335,12 @@ def pyplot_arrows(ax, global_orientations_matrices, human_joints, H):
     )
     
     
-    v = torch.tensor([0,-1,0])
-    rotation = global_orientations_matrices[21].float()
-    direction = rotation.float() @ v.float()
-    direction_RHand = direction / torch.linalg.norm(direction)
+    #v = torch.tensor([0,1,0])
+    #rotation = global_orientations_matrices[21].float()
+    #direction = rotation.float() @ v.float()
+    #direction_RHand = direction / torch.linalg.norm(direction)
     
+    direction = directions[21]
     
         
     ax.quiver(
@@ -354,10 +356,11 @@ def pyplot_arrows(ax, global_orientations_matrices, human_joints, H):
     )
     
     
-    rotation = global_orientations_matrices[H["LWrist"]].float()
-    direction = rotation.float() @ v.float()
-    direction_LHand = direction / torch.linalg.norm(direction)
- 
+    #rotation = global_orientations_matrices[H["LWrist"]].float()
+    #direction = rotation.float() @ v.float()
+    #direction_LHand = direction / torch.linalg.norm(direction)
+    
+    direction = directions[20]
         
     ax.quiver(
         human_joints[H["LWrist"]][0], 

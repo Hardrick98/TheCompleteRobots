@@ -105,7 +105,7 @@ def load_simple_interx(arr, idx):
     body_pose_raw = torch.from_numpy(smpl['pose_body'][idx][:21]).reshape(1, -1).to(torch.float32)
     body_pose = torch.from_numpy(smpl['pose_body'][idx][:]).reshape(1, -1).to(torch.float32)
     transl        = torch.from_numpy(smpl['trans'][idx]).reshape(1, -1).to(torch.float32)
-    betas        = torch.from_numpy(smpl['betas'][idx]).reshape(1, 10).to(torch.float32)
+    betas        = torch.from_numpy(smpl['betas'][0]).reshape(1, 10).to(torch.float32)
 
     # Carica il modello SMPL
     smpl_model = SMPLX(
@@ -161,7 +161,7 @@ def load_simple_interx(arr, idx):
     
     #visualize_mesh_and_joints_vedo(verts, joints, faces, directions)
     
-    return joints, body_pose.reshape(1, -1).to(torch.float32), transl.cpu().numpy(), global_orient.cpu(), mesh
+    return joints, body_pose.reshape(1, -1).to(torch.float32), transl.cpu().numpy(), global_orient.cpu(), mesh, directions
 
 
 
