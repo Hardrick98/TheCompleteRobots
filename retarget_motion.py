@@ -135,19 +135,6 @@ if __name__ == "__main__":
                R["LShoulder"], R["LElbow"], R["LWrist"],
                R["RShoulder"], R["RElbow"], R["RWrist"]]
   
-    ax.scatter(robot_joints[indices, 0], robot_joints[indices, 1], robot_joints[indices, 2], c='g', marker='o')
-    
-    for joint1_idx, joint2_idx in robot_limbs:
-        try:
-            if all(len(joint) == 3 for joint in (robot_joints[joint1_idx], robot_joints[joint2_idx])):
-                x_coords, y_coords, z_coords = zip(robot_joints[joint1_idx], robot_joints[joint2_idx])
-                ax.plot(x_coords, y_coords, z_coords, c="green", linewidth=2)
-        except:
-            pass
-    
-
-
-
     
     links, links2 = robot.get_frames()
     joints = robot.joints
@@ -175,85 +162,6 @@ if __name__ == "__main__":
 
     if head_fixed:
         target_positions.pop(F["Head"])
-
-    """
-    target_orientations = {
-        F["RWrist"]: orientations[H["RWrist"]],  
-        F["LWrist"]: orientations[H["LWrist"]],
-        F["Head"] : orientations[H["Head"]]
-        #F["LElbow"]: orientations[H["LElbow"]],
-        #F["RElbow"]: orientations[H["RElbow"]],
-        #F["RShoulder"]: orientations[H["RShoulder"]],
-        #F["LShoulder"] : orientations[H["RShoulder"]]
-    }
-    """
-    
-
-    
-    rotvec = global_orient.numpy().flatten()
-    global_rotation = torch.from_numpy(Rot.from_rotvec(rotvec).as_matrix()).float()
-    
-    if args.debug:
-        for joint_name in ["Head"]:
-            
-            joint_id = model.getFrameId(F[joint_name])
-            v = torch.tensor([1,0,0])
-            rotation = torch.from_numpy(data.oMf[joint_id].rotation)
-            direction = rotation.float() @ v.float()
-            direction_RHand = direction / torch.linalg.norm(direction)
-            
-        
-        
-            
-            ax.quiver(
-                robot_joints[R[joint_name]][0], 
-                robot_joints[R[joint_name]][1],
-                robot_joints[R[joint_name]][2],
-                direction[0],              
-                direction[1],              
-                direction[2],              
-                length=1.0,                
-                color='gray',
-                normalize=True             
-            )
-
-    
-
-        
-    global_orientations_matrices = get_smplx_global_orientations(global_rotation.double(), orientations.numpy(), change_ref = True)
-
-
-
-
-    smplx_to_robot_mapping = {   
-        1: F["LHip"],       
-        2: F["RHip"],       
-        15: F["Head"],       
-        4: F["LKnee"],     # left_knee -> left_thigh
-        5: F["RKnee"],     # right_knee -> right_thigh
-        10: F["LAnkle"],    # left_ankle
-        11: F["RAnkle"],    # right_ankle
-        16: F["LShoulder"], # left_shoulder
-        17: F["RShoulder"], # right_shoulder
-        18: F["LElbow"],    # left_elbow
-        19: F["RElbow"],    # right_elbow
-        20: F["LWrist"],   # left_wrist
-        21: F["RWrist"]   # right_wrist
-    }
-
-    
-    
-    pyplot_arrows(ax, directions, human_joints, H)
-    
-
-
-    """
-    target_orientations_global = {}
-    for smplx_idx, robot_frame in smplx_to_robot_mapping.items():
-        if robot_frame in target_orientations:  
-            rot_matrix = global_orientations_matrices[smplx_idx].numpy()
-            target_orientations_global[robot_frame] = rot_matrix
-    """
 
     
     target_orientations_global  = {
