@@ -32,6 +32,7 @@ if __name__ == "__main__":
                         help="Path to smpl human pose")
     parser.add_argument("--idx",
                         type=int,
+                        default=0,
                         help="Path to smpl human pose")
     args  = parser.parse_args()
     robot_name = args.robot.lower() 
@@ -391,3 +392,25 @@ if __name__ == "__main__":
     vp.show(axes=1, interactive=True)
 
     
+    
+    """
+    
+    DoF = ['HeadYaw', 'HeadPitch', 'RShoulderPitch', 'RShoulderRoll', 'RElbowYaw', 'RElbowRoll', 
+     'RWristYaw', 'LShoulderPitch', 'LShoulderRoll', 'LElbowYaw', 'LElbowRoll', 'LWristYaw', 
+     'RHipYawPitch', 'RHipRoll', 'RHipPitch', 'RKneePitch', 'RAnklePitch', 'RAnkleRoll', 
+     'LHipYawPitch', 'LHipRoll', 'LHipPitch', 'LKneePitch', 'LAnklePitch', 'LAnkleRoll']
+    
+    webots_pose = {}
+    
+    for joint_name in DoF:
+        joint_id = model.getJointId(joint_name)
+        idx = model.joints[joint_id].idx_q
+    
+        webots_pose[joint_name] = q1[idx]
+        
+    import json
+    
+    json_path = f"{robot_name}_pose.json"
+    with open(json_path, 'w') as f:
+        json.dump([webots_pose], f, indent=4)
+    """
