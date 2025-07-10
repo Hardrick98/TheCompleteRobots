@@ -256,6 +256,7 @@ def scale_human_to_robot(R, F, robot_joints, H, human_joints, head_fixed = False
     hipH = np.linalg.norm(human_joints[H["LHip"]]-human_joints[H["root_joint"]])
     hipR = np.linalg.norm(robot_joints[R["LHip"]]-robot_joints[R["root_joint"]])
     
+    
     spineH = np.linalg.norm(human_joints[H["Neck"]]-human_joints[H["root_joint"]])
     spineR = np.linalg.norm(robot_joints[R["Head"]]-robot_joints[R["root_joint"]])
     

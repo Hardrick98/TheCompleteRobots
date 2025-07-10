@@ -3,6 +3,7 @@ from test_smpl import load_simple_interx
 from pinocchio.visualize import MeshcatVisualizer
 import pinocchio as pin
 import argparse
+from vedo import Plotter, Mesh
 import os
 from scipy.spatial.transform import Rotation as Rot
 import numpy as np
@@ -95,7 +96,7 @@ if __name__ == "__main__":
 
 
     H = {
-    "pelvis":0,
+    "root_joint":0,
     "LHip":1,
     "RHip":2,
     "spine1":3,
@@ -104,7 +105,7 @@ if __name__ == "__main__":
     "spine2":6,
     "LAnkle":7,
     "RAnkle":8,
-    "root_joint":9,
+    "spine3":9,
     "left_foot":10,
     "right_foot":11,
     "Neck":12,
@@ -179,23 +180,47 @@ if __name__ == "__main__":
     if head_fixed:
         target_positions.pop(F["Head"])
 
+    """
     target_orientations = {
         F["RWrist"]: orientations[H["RWrist"]],  
         F["LWrist"]: orientations[H["LWrist"]],
+        F["Head"] : orientations[H["Head"]]
         #F["LElbow"]: orientations[H["LElbow"]],
         #F["RElbow"]: orientations[H["RElbow"]],
         #F["RShoulder"]: orientations[H["RShoulder"]],
         #F["LShoulder"] : orientations[H["RShoulder"]]
     }
+    """
     
-    
-    frame_names = [k for k,v in target_orientations.items()]
-    frame_ids = [model.getFrameId(f) for f in frame_names]
+
     
     rotvec = global_orient.numpy().flatten()
     global_rotation = torch.from_numpy(Rot.from_rotvec(rotvec).as_matrix()).float()
     
+    """
+    for joint_name in ["Head"]:
+        
+        joint_id = model.getFrameId(F[joint_name])
+        v = torch.tensor([1,0,0])
+        rotation = torch.from_numpy(data.oMf[joint_id].rotation)
+        direction = rotation.float() @ v.float()
+        direction_RHand = direction / torch.linalg.norm(direction)
+        
     
+    
+        
+        ax.quiver(
+            robot_joints[R[joint_name]][0], 
+            robot_joints[R[joint_name]][1],
+            robot_joints[R[joint_name]][2],
+            direction[0],              
+            direction[1],              
+            direction[2],              
+            length=1.0,                
+            color='gray',
+            normalize=True             
+        )
+    """
     
 
         
@@ -207,7 +232,7 @@ if __name__ == "__main__":
     smplx_to_robot_mapping = {   
         1: F["LHip"],       
         2: F["RHip"],       
-        12: F["Head"],       
+        15: F["Head"],       
         4: F["LKnee"],     # left_knee -> left_thigh
         5: F["RKnee"],     # right_knee -> right_thigh
         10: F["LAnkle"],    # left_ankle
@@ -226,43 +251,39 @@ if __name__ == "__main__":
     
 
 
-    
+    """
     target_orientations_global = {}
     for smplx_idx, robot_frame in smplx_to_robot_mapping.items():
         if robot_frame in target_orientations:  
             rot_matrix = global_orientations_matrices[smplx_idx].numpy()
             target_orientations_global[robot_frame] = rot_matrix
-    
+    """
 
     
     target_orientations_global  = {
-        F["RWrist"]: directions[21], 
-        F["LWrist"]: directions[20],
-        #F["LElbow"]: orientations[H["LElbow"]],
-        #F["RElbow"]: orientations[H["RElbow"]],
-        #F["RShoulder"]: orientations[H["RShoulder"]],
-        #F["LShoulder"] : orientations[H["RShoulder"]]
+        F["RWrist"]: [directions[H["RWrist"]], [0,0,-1]], 
+        F["LWrist"]: [directions[H["LWrist"]], [0,0,-1]],
+        F["Head"]: [directions[H["Head"]], [1,0,0]]
     }
     
-    print(target_orientations_global)
+    frame_names = [k for k,v in target_orientations_global.items()]
+    frame_ids = [model.getFrameId(f) for f in frame_names]
+
     
     solver = InverseKinematicSolver(model,data,target_positions,target_orientations_global,joint_names, joint_ids, frame_names, frame_ids)
     
 
-    q1 = solver.inverse_kinematics_position(q0)
+    q1 = solver.inverse_kinematics(q0)
     
     pin.forwardKinematics(model, data, q1)
     pin.updateFramePlacements(model, data)
          
-
-    for joint_name in ["RWrist","LWrist"]:
+    #ORIENTATIONS DEBUG
+    """
+    for joint_name in ["RWrist","LWrist", "Head"]:
         joint_id = model.getFrameId(F[joint_name])
         rot = target_orientations_global[F[joint_name]]
 
-        #v = torch.tensor([0,1,0])
-        #rotation = global_orientations_matrices[H[joint_name]].float()
-        #direction = rotation.float() @ v.float()
-        #direction_RHand = direction / torch.linalg.norm(direction)
 
         direction = directions[H[joint_name]]
         
@@ -278,13 +299,10 @@ if __name__ == "__main__":
             normalize=True             
         )
 
-        v = torch.tensor([0,0,-1])
+        v = torch.tensor(target_orientations_global[F[joint_name]][1])
         rotation = torch.from_numpy(data.oMf[joint_id].rotation)
         direction = rotation.float() @ v.float()
         direction_RHand = direction / torch.linalg.norm(direction)
-        
-    
-    
         
         ax.quiver(
             robot_joints[R[joint_name]][0], 
@@ -297,8 +315,16 @@ if __name__ == "__main__":
             color='blue',
             normalize=True             
         )
+    """
     
-    #    q1[idx] = q2[idx]
+    
+    final_positions = []
+
+    for name, frame_id in zip(joint_names, joint_ids):
+        final_positions.append(data.oMf[frame_id].translation)
+    
+    final_positions = np.array(final_positions)
+    ax.scatter(final_positions[:, 0], final_positions[:, 1], final_positions[:, 2], c='b', marker='x')
 
     
 
@@ -313,10 +339,7 @@ if __name__ == "__main__":
     viz.reset()
     
     
-    visual_model = robot.visual_model
-
-    from vedo import Plotter, Mesh
-    
+    visual_model = robot.visual_model   
 
 
     vp = Plotter(title="Human and Robot", axes=1, interactive=False)

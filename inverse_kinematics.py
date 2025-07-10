@@ -33,29 +33,12 @@ class InverseKinematicSolver():
             if name in self.target_ori:
                 
                 target_ori = self.target_ori[name]
-                #target_ori = pin.exp3(target_ori.numpy())
-                #cost_ori += np.linalg.norm(ori-target_ori, ord='fro')**2
                 cost_ori += self.angular_error(ori, target_ori)
         return w_pos * cost_pos + w_ori * cost_ori
 
 
-    def ik_cost_ori(self, q):
-        
-        pin.forwardKinematics(self.model, self.data, q)
-        pin.updateFramePlacements(self.model, self.data)
-        
-        cost_ori = 0.0
-        
-        for name, frame_id in zip(self.frame_names, self.frame_ids):
-            oMf = self.data.oMi[frame_id]
-            ori = oMf.rotation              #model.frames[frame_id].placement.rotation 
-            target_ori = self.target_ori[name]
-            cost_ori += np.linalg.norm(ori - target_ori, ord='fro')
-            
-        return cost_ori
 
-
-    def inverse_kinematics_position(self, q0):
+    def inverse_kinematics(self, q0):
 
         q_lower_limits = self.model.lowerPositionLimit
         q_upper_limits = self.model.upperPositionLimit
@@ -74,16 +57,14 @@ class InverseKinematicSolver():
     
     def angular_error(self,R1, target):
         
-        v = np.array([0, 0, -1])  
-
+        v = np.array(target[1])
+        
         pred = R1 @ v
         pred = pred / np.linalg.norm(pred)
 
-        print(pred)
-        print(target)
 
         pred_proj = np.array(pred)
-        target_proj = np.array(target)
+        target_proj = np.array(target[0])
 
         
         pred_proj /= np.linalg.norm(pred_proj)
@@ -91,8 +72,6 @@ class InverseKinematicSolver():
   
         dot = np.dot(pred_proj, target_proj)
         angle_error = np.arccos(dot) 
-
-
 
         return np.abs(angle_error)
 
