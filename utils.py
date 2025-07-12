@@ -374,3 +374,66 @@ def pyplot_arrows(ax, directions, human_joints, H):
         color='purple',
         normalize=True             
     )
+
+import torch
+import kornia
+
+def compute_global_orientations_batch(global_orient: torch.Tensor, body_pose: torch.Tensor, change_ref: bool = False):
+    """
+    Args:
+        global_orient: (N, 3, 3) root orientation matrices
+        body_pose: (N, 21, 3) axis-angle body poses (excluding root)
+        change_ref: if True, apply a reference frame change
+    Returns:
+        global_orientations: (N, 22, 3, 3)
+    """
+    def rodrigues_kornia(rvecs: torch.Tensor) -> torch.Tensor:
+        return kornia.geometry.axis_angle_to_rotation_matrix(rvecs)[:, :3, :3]  # (N * 21, 3, 3)
+
+    N = body_pose.shape[0]
+
+    # Compute local rotations from axis-angle to rotation matrices
+    local_rotations = rodrigues_kornia(body_pose.reshape(-1, 3)).reshape(N, 21, 3, 3)
+
+    parents = torch.tensor([
+        -1,  # 0: pelvis (root)
+         0,  # 1: left_hip
+         0,  # 2: right_hip  
+         0,  # 3: spine1
+         1,  # 4: left_knee
+         2,  # 5: right_knee
+         3,  # 6: spine2
+         4,  # 7: left_ankle
+         5,  # 8: right_ankle
+         6,  # 9: spine3
+         7,  # 10: left_foot
+         8,  # 11: right_foot
+         9,  # 12: neck
+         9,  # 13: left_collar
+         9,  # 14: right_collar
+        12,  # 15: head
+        13,  # 16: left_shoulder
+        14,  # 17: right_shoulder
+        16,  # 18: left_elbow
+        17,  # 19: right_elbow
+        18,  # 20: left_wrist
+        19   # 21: right_wrist
+    ], dtype=torch.long)
+
+    global_orientations = torch.zeros((N, 22, 3, 3), dtype=torch.float32, device=global_orient.device)
+    global_orientations[:, 0] = global_orient
+
+    for i in range(1, 22):
+        parent = parents[i]
+        global_orientations[:, i] = torch.matmul(global_orientations[:, parent], local_rotations[:, i - 1])
+
+    if change_ref:
+        M = torch.tensor([
+            [-1, 0, 0],
+            [ 0, 0, 1],
+            [ 0, 1, 0]
+        ], dtype=torch.float32, device=global_orient.device)
+        global_orientations = M @ global_orientations  # (3, 3) @ (N, 22, 3, 3) via broadcasting
+
+
+    return global_orientations

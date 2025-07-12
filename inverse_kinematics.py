@@ -46,7 +46,7 @@ class InverseKinematicSolver():
         for i in range(self.model.nq):
             bounds.append((q_lower_limits[i], q_upper_limits[i]))
 
-        res = minimize(self.ik_cost, q0, bounds=bounds, method='SLSQP', options={'maxiter': 1000, 'disp': True})
+        res = minimize(self.ik_cost, q0, bounds=bounds, method='SLSQP', options={'maxiter': 1000, 'disp': False})
         
         q1 = np.array(res.x).reshape(-1)
         assert q1.shape[0] == self.model.nq

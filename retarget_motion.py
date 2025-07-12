@@ -1,16 +1,17 @@
 from utils import *
-from test_smpl import load_simple_interx
+from test_smpl import load_simple_all
 from pinocchio.visualize import MeshcatVisualizer
 import pinocchio as pin
 import argparse
-from vedo import Plotter, Mesh
+from vedo import Plotter, Mesh, merge
 import os
+from tqdm import tqdm
 from scipy.spatial.transform import Rotation as Rot
 import numpy as np
 import matplotlib.pyplot as plt
 from inverse_kinematics import InverseKinematicSolver
 from robotoid import Robotoid
-
+from smplx import SMPLX
 
 
 if __name__ == "__main__":
@@ -57,199 +58,162 @@ if __name__ == "__main__":
     data = robot.data
     q0 = robot.q0  
 
-        
-    arr = np.load(args.human_pose, allow_pickle=True)
-    
-    joint_positions, orientations, translation, global_orient, human_mesh, directions = load_simple_interx(arr, idx)    
-
-    translation[:,[1,2]] = translation[:,[2,1]]
-
-    orientations = orientations.view(-1,3) 
-    orientations = torch.cat((global_orient.view(-1,3),orientations),axis=0)
-     
-    links_positions = robot.get_links_positions(q0)
-   
-    directions = np.array(directions)
-                
-    human_origin = translation[0]
-    joint_positions[:,:] -= joint_positions[:1,:]
-    joint_positions[:,0] *= -1
-    joint_positions[:,[1,2]] = joint_positions[:,[2,1]]
-
-    directions[:,0] *= -1
-    directions[:,[1,2]] = directions[:,[2,1]]
-
-    human_joints = joint_positions
-    
-    
-    
-    ax = plt.figure(figsize=(10, 10)).add_subplot(projection='3d')
-    ax.set_xlim(-1,1)
-    ax.set_ylim(-1,1)
-    ax.set_zlim(-1,1)
-    ax.scatter(human_joints[:22, 0], human_joints[:22, 1], human_joints[:22, 2], c='r', marker='o')
-
-
-
-    H = {
-    "root_joint":0,
-    "LHip":1,
-    "RHip":2,
-    "spine1":3,
-    "LKnee":4,
-    "RKnee":5,
-    "spine2":6,
-    "LAnkle":7,
-    "RAnkle":8,
-    "spine3":9,
-    "left_foot":10,
-    "right_foot":11,
-    "Neck":12,
-    "left_collar":13,
-    "right_collar":14,
-    "Head":15,
-    "LShoulder":16,
-    "RShoulder":17,
-    "LElbow":18,
-    "RElbow":19,
-    "LWrist":20,
-    "RWrist":21}
+    smpl_model = SMPLX(
+        model_path='models_smplx_v1_1/models/smplx/SMPLX_MALE.npz',  # Deve contenere i file .pkl del modello
+        gender='male', 
+        batch_size=8
+    ).to("cuda:0")
 
     robotoid = Robotoid(robot)
     F, R = robotoid.build()
+        
+    arr = np.load(args.human_pose, allow_pickle=True)
     
-    head_fixed = False
-    if "Head" not in R:
-        head_fixed = True
-        R["Head"] = R["root_joint"]
-        F["Head"] = F["root_joint"]
+    joint_positions, orientations, translation, global_orient, human_meshes, directions_seq = load_simple_all(smpl_model, arr)    
     
-    robot_limbs = [(R["LHip"],R["LKnee"]), (R["LKnee"], R["LAnkle"]), (R["RHip"],R["RKnee"]), 
-                (R["RKnee"], R["RAnkle"]),(R["LShoulder"],R["LElbow"]), (R["LElbow"], R["LWrist"]), 
-                (R["RShoulder"],R["RElbow"]), (R["RElbow"], R["RWrist"]), (R["Head"], R["RShoulder"]), 
-                (R["Head"], R["LShoulder"]), (R["Head"], R["RHip"]),(R["Head"], R["LHip"])]
+    human_joints_seq = joint_positions.detach().cpu().numpy()
+    orientations_seq = orientations.detach().cpu()
+    translation_seq = translation.detach().cpu().numpy()
+    global_orient_seq = global_orient.detach().cpu()
+
+    joint_configurations = []
+    sequence_num = joint_positions.shape[0]
+    sequence_num = 200
+    for i in tqdm(range(sequence_num)):
     
-    robot_joints = scale_human_to_robot(R,F, robot_joints, H, human_joints, head_fixed)
-  
-    indices = [R["Head"],R["LHip"], R["LKnee"], R["LAnkle"], R["RHip"], R["RKnee"], R["RAnkle"],
-               R["LShoulder"], R["LElbow"], R["LWrist"],
-               R["RShoulder"], R["RElbow"], R["RWrist"]]
-  
+        human_joints = human_joints_seq[i:i+1][0]
+        orientations = orientations_seq[i:i+1][0]
+        translation = translation_seq[i:i+1]
+        global_orient = global_orient_seq[i:i+1]
+        human_mesh = human_meshes[i]
+        directions = directions_seq[i]
+
+
+        translation[:,[1,2]] = translation[:,[2,1]]
+
+        orientations = orientations.view(-1,3) 
+        orientations = torch.cat((global_orient.view(-1,3),orientations),axis=0)
+        
+        links_positions = robot.get_links_positions(q0)
     
-    links, links2 = robot.get_frames()
-    joints = robot.joints
+        directions = directions.detach().cpu().numpy()
 
     
-    joint_names = [v for k,v in F.items() if v != "root_joint"]
-    joint_ids = [joints[name]for name in joint_names]
+        human_joints[:,:] -= human_joints[:1,:]
+        human_joints[:,0] *= -1
+        human_joints[:,[1,2]] = human_joints[:,[2,1]]
+        directions[:,0] *= -1
+        directions[:,[1,2]] = directions[:,[2,1]]
+        
+        
 
-    
-    target_positions = {
-        F["LHip"] : robot_joints[R["LHip"]],
-        F["RHip"] : robot_joints[R["RHip"]], 
-        F["LElbow"]: robot_joints[R["LElbow"]],
-        F["RElbow"]: robot_joints[R["RElbow"]],
-        F["LWrist"]: robot_joints[R["LWrist"]], 
-        F["RWrist"]: robot_joints[R["RWrist"]], 
-        F["RKnee"]: robot_joints[R["RKnee"]], 
-        F["LKnee"]: robot_joints[R["LKnee"]], 
-        F["LAnkle"]: robot_joints[R["LAnkle"]], 
-        F["RAnkle"]: robot_joints[R["RAnkle"]], 
-        F["RShoulder"] : robot_joints[R["RShoulder"]],
-        F["LShoulder"] : robot_joints[R["LShoulder"]],
-        F["Head"]: robot_joints[R["Head"]],
-    }
 
-    if head_fixed:
-        target_positions.pop(F["Head"])
+        H = {
+        "root_joint":0,
+        "LHip":1,
+        "RHip":2,
+        "spine1":3,
+        "LKnee":4,
+        "RKnee":5,
+        "spine2":6,
+        "LAnkle":7,
+        "RAnkle":8,
+        "spine3":9,
+        "left_foot":10,
+        "right_foot":11,
+        "Neck":12,
+        "left_collar":13,
+        "right_collar":14,
+        "Head":15,
+        "LShoulder":16,
+        "RShoulder":17,
+        "LElbow":18,
+        "RElbow":19,
+        "LWrist":20,
+        "RWrist":21}
+        
+        head_fixed = False
+        if "Head" not in R:
+            head_fixed = True
+            R["Head"] = R["root_joint"]
+            F["Head"] = F["root_joint"]
+        
+        robot_limbs = [(R["LHip"],R["LKnee"]), (R["LKnee"], R["LAnkle"]), (R["RHip"],R["RKnee"]), 
+                    (R["RKnee"], R["RAnkle"]),(R["LShoulder"],R["LElbow"]), (R["LElbow"], R["LWrist"]), 
+                    (R["RShoulder"],R["RElbow"]), (R["RElbow"], R["RWrist"]), (R["Head"], R["RShoulder"]), 
+                    (R["Head"], R["LShoulder"]), (R["Head"], R["RHip"]),(R["Head"], R["LHip"])]
+        
+        robot_joints = scale_human_to_robot(R,F, robot_joints, H, human_joints, head_fixed)
+    
+        indices = [R["Head"],R["LHip"], R["LKnee"], R["LAnkle"], R["RHip"], R["RKnee"], R["RAnkle"],
+                R["LShoulder"], R["LElbow"], R["LWrist"],
+                R["RShoulder"], R["RElbow"], R["RWrist"]]
+    
+        
+        links, links2 = robot.get_frames()
+        joints = robot.joints
 
-    
-    target_orientations_global  = {
-        F["RWrist"]: [directions[H["RWrist"]], [0,0,-1]], 
-        F["LWrist"]: [directions[H["LWrist"]], [0,0,-1]],
-        F["Head"]: [directions[H["Head"]], [1,0,0]]
-    }
-    
-    frame_names = [k for k,v in target_orientations_global.items()]
-    frame_ids = [model.getFrameId(f) for f in frame_names]
+        
+        joint_names = [v for k,v in F.items() if v != "root_joint"]
+        joint_ids = [joints[name]for name in joint_names]
 
-    
-    solver = InverseKinematicSolver(model,data,target_positions,target_orientations_global,joint_names, joint_ids, frame_names, frame_ids)
+        
+        target_positions = {
+            F["LHip"] : robot_joints[R["LHip"]],
+            F["RHip"] : robot_joints[R["RHip"]], 
+            F["LElbow"]: robot_joints[R["LElbow"]],
+            F["RElbow"]: robot_joints[R["RElbow"]],
+            F["LWrist"]: robot_joints[R["LWrist"]], 
+            F["RWrist"]: robot_joints[R["RWrist"]], 
+            F["RKnee"]: robot_joints[R["RKnee"]], 
+            F["LKnee"]: robot_joints[R["LKnee"]], 
+            F["LAnkle"]: robot_joints[R["LAnkle"]], 
+            F["RAnkle"]: robot_joints[R["RAnkle"]], 
+            F["RShoulder"] : robot_joints[R["RShoulder"]],
+            F["LShoulder"] : robot_joints[R["LShoulder"]],
+            F["Head"]: robot_joints[R["Head"]],
+        }
+
+        if head_fixed:
+            target_positions.pop(F["Head"])
+
+        
+        target_orientations_global  = {
+            F["RWrist"]: [directions[H["RWrist"]], [0,0,-1]], 
+            F["LWrist"]: [directions[H["LWrist"]], [0,0,-1]],
+            F["Head"]: [directions[H["Head"]], [1,0,0]]
+        }
+        
+        frame_names = [k for k,v in target_orientations_global.items()]
+        frame_ids = [model.getFrameId(f) for f in frame_names]
+
+        
+        solver = InverseKinematicSolver(model,data,target_positions,target_orientations_global,joint_names, joint_ids, frame_names, frame_ids)
+        
+
+        q1 = solver.inverse_kinematics(q0)
+        joint_configurations.append(q1)
+        
+        pin.forwardKinematics(model, data, q1)
+        pin.updateFramePlacements(model, data)
+            
     
 
-    q1 = solver.inverse_kinematics(q0)
-    
+human_meshes_t = []
+robot_meshes = []
+
+for t in range(len(joint_configurations)):
+
+    q1 = joint_configurations[t]
     pin.forwardKinematics(model, data, q1)
     pin.updateFramePlacements(model, data)
-         
-    #ORIENTATIONS DEBUG
-    if args.debug:
-        for joint_name in ["RWrist","LWrist", "Head"]:
-            joint_id = model.getFrameId(F[joint_name])
-            rot = target_orientations_global[F[joint_name]]
 
-
-            direction = directions[H[joint_name]]
-            
-            ax.quiver(
-                robot_joints[R[joint_name]][0], 
-                robot_joints[R[joint_name]][1],
-                robot_joints[R[joint_name]][2],
-                direction[0],              
-                direction[1],              
-                direction[2],              
-                length=1.0,                
-                color='black',
-                normalize=True             
-            )
-
-            v = torch.tensor(target_orientations_global[F[joint_name]][1])
-            rotation = torch.from_numpy(data.oMf[joint_id].rotation)
-            direction = rotation.float() @ v.float()
-            direction_RHand = direction / torch.linalg.norm(direction)
-            
-            ax.quiver(
-                robot_joints[R[joint_name]][0], 
-                robot_joints[R[joint_name]][1],
-                robot_joints[R[joint_name]][2],
-                direction[0],              
-                direction[1],              
-                direction[2],              
-                length=1.0,                
-                color='blue',
-                normalize=True             
-            )
-
-    
-    
-        final_positions = []
-
-        for name, frame_id in zip(joint_names, joint_ids):
-            final_positions.append(data.oMf[frame_id].translation)
-        
-        final_positions = np.array(final_positions)
-        ax.scatter(final_positions[:, 0], final_positions[:, 1], final_positions[:, 2], c='b', marker='x')
-
-        plt.show()
-
-
-    
-    viz = MeshcatVisualizer(model, robot.collision_model, robot.visual_model)
-    viz.initViewer(open=False) 
-    viz.loadViewerModel()
-    viz.display(q1)
-    input("Press Enter to reset the visualization...")
-    viz.reset()
-    
-    
     visual_model = robot.visual_model   
 
 
-    vp = Plotter(title="Human and Robot", axes=1, interactive=False)
-
+    all_meshes = []
     for visual in visual_model.geometryObjects:
-        
-        mesh_path = os.path.join(visual.meshPath.replace(".dae",".stl"))
+        mesh_path = os.path.join(visual.meshPath.replace(".dae", ".stl"))
         if not os.path.exists(mesh_path):
             print(f"Mesh non trovata: {mesh_path}")
             continue
@@ -261,15 +225,13 @@ if __name__ == "__main__":
             continue
 
         color = visual.meshColor
-        m.color(color[:3])
-        placement = data.oMf[visual.parentFrame]
+        m.color(color[:3])  # RGB
 
-        import pinocchio as pin
+        placement = data.oMf[visual.parentFrame]
         placement_world = placement.act(visual.placement)
         R = placement_world.rotation
         p = placement_world.translation
 
-        
         T = np.eye(4)
         T[:3, :3] = R
         T[:3, 3] = p
@@ -277,25 +239,39 @@ if __name__ == "__main__":
         m.scale(visual.meshScale[0])
         m.apply_transform(T)
 
-        vp += m
+        all_meshes.append(m)
 
 
-        M = np.array([
+   
+
+    robot_mesh = merge(all_meshes)
+
+
+
+    M = np.array([
         [-1, 0, 0],
         [0, 0, 1],
         [0, 1, 0]
     ])
     T = np.eye(4)
     T[:3, :3] = M
+    human_origin = translation_seq[t]
     human_origin[0] *= -1
 
     T[:3, 3] = -human_origin + (np.array([0,0.7,1]))
-    human_mesh.apply_transform(T)
-    vp += human_mesh
-    vp.camera.SetPosition([3, 0, 1])        
-    vp.camera.SetFocalPoint([0, 0, 0])      
-    vp.camera.SetViewUp([0, 0, 1])         
+    hm = human_meshes[t].apply_transform(T)
 
-    vp.show(axes=1, interactive=True)
+    robot_meshes.append(robot_mesh)
+    human_meshes_t.append(hm)
+
+from test_smpl import animate_all_poses
+
+animate_all_poses(human_meshes_t, robot_meshes)
+
+    #vp.camera.SetPosition([3, 0, 1])        
+    #vp.camera.SetFocalPoint([0, 0, 0])      
+    #vp.camera.SetViewUp([0, 0, 1])         
+
+    
 
     
