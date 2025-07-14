@@ -4,8 +4,19 @@ from scipy.optimize import minimize
 
 class InverseKinematicSolver():
     
-    def __init__(self, model, data, target_pos, target_ori, joint_names, joint_ids, frame_names, frame_ids):
+    def __init__(self, model, data):
         
+        self.model = model
+        self.data = data
+        self.target_pos = None
+        self.target_ori = None
+        self.joint_names = None
+        self.joint_ids = None
+        self.frame_names = None 
+        self.frame_ids = None
+
+    def update(self, model, data, target_pos, target_ori, joint_names, joint_ids, frame_names, frame_ids):
+
         self.model = model
         self.data = data
         self.target_pos = target_pos
@@ -26,7 +37,7 @@ class InverseKinematicSolver():
         for name, frame_id in zip(self.joint_names, self.joint_ids):
             oMf = self.data.oMf[frame_id]
             pos = oMf.translation
-            ori = oMf.rotation#model.frames[frame_id].placement.rotation 
+            ori = oMf.rotation #model.frames[frame_id].placement.rotation 
             target_pos = self.target_pos[name]
             cost_pos += np.linalg.norm(pos - target_pos)**2
             
@@ -66,13 +77,12 @@ class InverseKinematicSolver():
         pred_proj = np.array(pred)
         target_proj = np.array(target[0])
 
-        
-        pred_proj /= np.linalg.norm(pred_proj)
         target_proj /= np.linalg.norm(target_proj)
   
-        dot = np.dot(pred_proj, target_proj)
+        dot = np.clip(np.dot(pred_proj, target_proj), -1.0, 1.0)
         angle_error = np.arccos(dot) 
 
         return np.abs(angle_error)
 
-    
+
+

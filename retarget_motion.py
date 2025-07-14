@@ -66,6 +66,7 @@ if __name__ == "__main__":
 
     robotoid = Robotoid(robot)
     F, R = robotoid.build()
+    solver = InverseKinematicSolver(model,data)
         
     arr = np.load(args.human_pose, allow_pickle=True)
     
@@ -76,9 +77,11 @@ if __name__ == "__main__":
     translation_seq = translation.detach().cpu().numpy()
     global_orient_seq = global_orient.detach().cpu()
 
+    print("\nFINDING CONFIGURATIONS...")
+
     joint_configurations = []
     sequence_num = joint_positions.shape[0]
-    sequence_num = 200
+    #sequence_num = 200
     for i in tqdm(range(sequence_num)):
     
         human_joints = human_joints_seq[i:i+1][0]
@@ -154,8 +157,7 @@ if __name__ == "__main__":
         joints = robot.joints
 
         
-        joint_names = [v for k,v in F.items() if v != "root_joint"]
-        joint_ids = [joints[name]for name in joint_names]
+
 
         
         target_positions = {
@@ -173,6 +175,11 @@ if __name__ == "__main__":
             F["LShoulder"] : robot_joints[R["LShoulder"]],
             F["Head"]: robot_joints[R["Head"]],
         }
+        
+        joint_names = [k for k in target_positions.keys()]
+        joint_ids = [joints[name]for name in joint_names]
+
+
 
         if head_fixed:
             target_positions.pop(F["Head"])
@@ -188,21 +195,25 @@ if __name__ == "__main__":
         frame_ids = [model.getFrameId(f) for f in frame_names]
 
         
-        solver = InverseKinematicSolver(model,data,target_positions,target_orientations_global,joint_names, joint_ids, frame_names, frame_ids)
+        solver.update(model,data,target_positions,target_orientations_global,joint_names, joint_ids, frame_names, frame_ids)
         
-
-        q1 = solver.inverse_kinematics(q0)
+        if i==0:
+            q1 = solver.inverse_kinematics(q0)
+        else:
+            q1 = solver.inverse_kinematics(q1)
+        
         joint_configurations.append(q1)
         
         pin.forwardKinematics(model, data, q1)
         pin.updateFramePlacements(model, data)
             
     
+print("\nCONSTRUCTING VISUALIZATION...")
 
 human_meshes_t = []
 robot_meshes = []
 
-for t in range(len(joint_configurations)):
+for t in tqdm(range(len(joint_configurations))):
 
     q1 = joint_configurations[t]
     pin.forwardKinematics(model, data, q1)
@@ -268,10 +279,6 @@ from test_smpl import animate_all_poses
 
 animate_all_poses(human_meshes_t, robot_meshes)
 
-    #vp.camera.SetPosition([3, 0, 1])        
-    #vp.camera.SetFocalPoint([0, 0, 0])      
-    #vp.camera.SetViewUp([0, 0, 1])         
 
-    
 
     

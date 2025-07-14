@@ -10,3 +10,4 @@ models_smplx_v1_1.zip
 *.npz
 .vscode/launch.json
 video.mp4
+profile_output.prof
