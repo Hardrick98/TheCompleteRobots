@@ -209,6 +209,24 @@ if __name__ == "__main__":
             
     
 print("\nCONSTRUCTING VISUALIZATION...")
+"""
+if args.human_pose[-5]=="1":
+    args.human_pose[-5] == "2"
+    interactor = args.human_pose
+else:
+    args.human_pose[-5] == "1"
+    interactor = args.human_pose
+"""
+ 
+#arr = np.load(interactor, allow_pickle=True)
+
+#joint_positions, orientations, translation, global_orient, human_meshes, directions_seq = load_simple_all(smpl_model, arr)    
+
+#human_joints_seq = joint_positions.detach().cpu().numpy()
+#orientations_seq = orientations.detach().cpu()
+#translation_seq = translation.detach().cpu().numpy()
+#global_orient_seq = global_orient.detach().cpu()
+
 
 human_meshes_t = []
 robot_meshes = []

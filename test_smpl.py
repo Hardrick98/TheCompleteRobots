@@ -246,7 +246,7 @@ import time
 
 from vedo import Video
 
-def animate_all_poses(pose1, pose2, delay = 0.005):
+def animate_all_poses(pose1, pose2, delay = 0.001):
     vp = Plotter(interactive=False, axes=1, title="SMPLX Animation", bg='white')
 
     meshes1 = [m.clone().c('blue') for m in pose1]
