@@ -5,9 +5,9 @@ URDF/t-pose.npy
 models_smplx_v1_1/
 *.npy
 graph_net.py
-
 models_smplx_v1_1.zip
 *.npz
 .vscode/launch.json
-video.mp4
+*.mp4
 profile_output.prof
+*.pkl

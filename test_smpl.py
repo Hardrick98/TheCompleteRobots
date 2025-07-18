@@ -6,7 +6,9 @@ import argparse
 from utils import compute_global_orientations_smplx, compute_global_orientations_batch
 from vedo import Mesh, Points, show, Arrow, Plotter
 from tqdm import tqdm
-
+import joblib
+import time
+from vedo import Video
 
 
 
@@ -242,37 +244,44 @@ def load_simple_all(smpl_model, arr):
     
     return joints, orientations, transl, global_orient, meshes, directions
 
-import time
 
-from vedo import Video
-
-def animate_all_poses(pose1, pose2, delay = 0.001):
-    vp = Plotter(interactive=False, axes=1, title="SMPLX Animation", bg='white')
+def animate_all_poses(pose1, pose2, delay = 0.01, video=False):
+    vp = Plotter(interactive = False, axes=1, title="SMPLX Animation", bg='white')
 
     meshes1 = [m.clone().c('blue') for m in pose1]
     meshes2 = [m.clone().c('red') for m in pose2]
-    framerate = 24
-    video = Video(name="video.mp4", duration=len(pose1)/framerate, fps=framerate)
+    framerate = 60
+    if video:
+        video = Video(name="video.mp4", duration=len(pose1)/framerate, fps=framerate)
     vp.show(meshes1[0], meshes2[0], resetcam=True)
     
-    vp.camera.SetPosition([-5, 1, 1])        
-    vp.camera.SetFocalPoint([0, 0, 0])      
-    vp.camera.SetViewUp([0, 0, 1]) 
+    try:
+        camera_parameter = joblib.load("camera.pkl")
+        vp.camera.SetPosition(camera_parameter["pos"])        
+        vp.camera.SetFocalPoint(camera_parameter["focal"])      
+        vp.camera.SetViewUp(camera_parameter["view"]) 
+    except:
+        print("Could not load camera parameters")
+        pass
+    
     vp.render()
 
     for i in range(1, len(meshes1)):
         # Usa `vp.remove()` per rimuovere solo i mesh vecchi
         vp.remove(meshes1[i-1], meshes2[i-1])
-
         vp.add(meshes1[i], meshes2[i])
         vp.render()
-        video.add_frame()
+        if video:
+            video.add_frame()
         time.sleep(delay)
         
-
-    video.close()
-    vp.interactive().close()
-
+    if video:
+        video.close()
+    vp.interactive()
+    camera_parameter= {"pos" : vp.camera.GetPosition(),"focal" : vp.camera.GetFocalPoint(),"view": vp.camera.GetViewUp()}
+    print(camera_parameter)
+    joblib.dump(camera_parameter,"camera.pkl")
+    vp.close()
 
 if __name__ == "__main__":
     
@@ -282,7 +291,7 @@ if __name__ == "__main__":
     parser.add_argument("--file","-f",type=str)
     args = parser.parse_args()
     arr = np.load(args.file, allow_pickle=True)
-    arr2 = np.load("P2.npz")
+    arr2 = np.load(args.file.removesuffix("P1.npz")+"P2.npz")
 
     device = "cuda:0"
     #load_simple_interx(arr, 0)

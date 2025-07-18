@@ -67,51 +67,7 @@ if __name__ == "__main__":
     robotoid = Robotoid(robot)
     F, R = robotoid.build()
     solver = InverseKinematicSolver(model,data)
-        
-    arr = np.load(args.human_pose, allow_pickle=True)
-    
-    joint_positions, orientations, translation, global_orient, human_meshes, directions_seq = load_simple_all(smpl_model, arr)    
-    
-    human_joints_seq = joint_positions.detach().cpu().numpy()
-    orientations_seq = orientations.detach().cpu()
-    translation_seq = translation.detach().cpu().numpy()
-    global_orient_seq = global_orient.detach().cpu()
-
-    print("\nFINDING CONFIGURATIONS...")
-
-    joint_configurations = []
-    sequence_num = joint_positions.shape[0]
-    #sequence_num = 200
-    for i in tqdm(range(sequence_num)):
-    
-        human_joints = human_joints_seq[i:i+1][0]
-        orientations = orientations_seq[i:i+1][0]
-        translation = translation_seq[i:i+1]
-        global_orient = global_orient_seq[i:i+1]
-        human_mesh = human_meshes[i]
-        directions = directions_seq[i]
-
-
-        translation[:,[1,2]] = translation[:,[2,1]]
-
-        orientations = orientations.view(-1,3) 
-        orientations = torch.cat((global_orient.view(-1,3),orientations),axis=0)
-        
-        links_positions = robot.get_links_positions(q0)
-    
-        directions = directions.detach().cpu().numpy()
-
-    
-        human_joints[:,:] -= human_joints[:1,:]
-        human_joints[:,0] *= -1
-        human_joints[:,[1,2]] = human_joints[:,[2,1]]
-        directions[:,0] *= -1
-        directions[:,[1,2]] = directions[:,[2,1]]
-        
-        
-
-
-        H = {
+    H = {
         "root_joint":0,
         "LHip":1,
         "RHip":2,
@@ -133,170 +89,252 @@ if __name__ == "__main__":
         "LElbow":18,
         "RElbow":19,
         "LWrist":20,
-        "RWrist":21}
-        
-        head_fixed = False
-        if "Head" not in R:
-            head_fixed = True
-            R["Head"] = R["root_joint"]
-            F["Head"] = F["root_joint"]
-        
-        robot_limbs = [(R["LHip"],R["LKnee"]), (R["LKnee"], R["LAnkle"]), (R["RHip"],R["RKnee"]), 
-                    (R["RKnee"], R["RAnkle"]),(R["LShoulder"],R["LElbow"]), (R["LElbow"], R["LWrist"]), 
-                    (R["RShoulder"],R["RElbow"]), (R["RElbow"], R["RWrist"]), (R["Head"], R["RShoulder"]), 
-                    (R["Head"], R["LShoulder"]), (R["Head"], R["RHip"]),(R["Head"], R["LHip"])]
-        
-        robot_joints = scale_human_to_robot(R,F, robot_joints, H, human_joints, head_fixed)
+        "RWrist":21}       
     
-        indices = [R["Head"],R["LHip"], R["LKnee"], R["LAnkle"], R["RHip"], R["RKnee"], R["RAnkle"],
-                R["LShoulder"], R["LElbow"], R["LWrist"],
-                R["RShoulder"], R["RElbow"], R["RWrist"]]
+    file1 = args.human_pose + "P1.npz"
+    file2 = args.human_pose + "P2.npz"
+    arr1 = np.load(file1, allow_pickle=True)
+    arr2 = np.load(file2, allow_pickle=True)
+
+    def retarget(arr, smpl_model, F, R, H, robot_joints):
     
+        joint_positions, orientations, translation, global_orient, human_meshes, directions_seq = load_simple_all(smpl_model, arr)    
         
-        links, links2 = robot.get_frames()
-        joints = robot.joints
-
-        
-
-
-        
-        target_positions = {
-            F["LHip"] : robot_joints[R["LHip"]],
-            F["RHip"] : robot_joints[R["RHip"]], 
-            F["LElbow"]: robot_joints[R["LElbow"]],
-            F["RElbow"]: robot_joints[R["RElbow"]],
-            F["LWrist"]: robot_joints[R["LWrist"]], 
-            F["RWrist"]: robot_joints[R["RWrist"]], 
-            F["RKnee"]: robot_joints[R["RKnee"]], 
-            F["LKnee"]: robot_joints[R["LKnee"]], 
-            F["LAnkle"]: robot_joints[R["LAnkle"]], 
-            F["RAnkle"]: robot_joints[R["RAnkle"]], 
-            F["RShoulder"] : robot_joints[R["RShoulder"]],
-            F["LShoulder"] : robot_joints[R["LShoulder"]],
-            F["Head"]: robot_joints[R["Head"]],
-        }
-        
-        joint_names = [k for k in target_positions.keys()]
-        joint_ids = [joints[name]for name in joint_names]
+        human_joints_seq = joint_positions.detach().cpu().numpy()
+        orientations_seq = orientations.detach().cpu()
+        translation_seq1 = translation.detach().cpu().numpy()
+        global_orient_seq = global_orient.detach().cpu()
 
 
+        print("\nFINDING CONFIGURATIONS...")
 
-        if head_fixed:
-            target_positions.pop(F["Head"])
+        joint_configurations = []
+        sequence_num = joint_positions.shape[0]
+        #sequence_num = 200
+        for i in tqdm(range(sequence_num)):
+        
+            human_joints = human_joints_seq[i:i+1][0]
+            orientations = orientations_seq[i:i+1][0]
+            translation = translation_seq1[i:i+1].copy()
+            global_orient = global_orient_seq[i:i+1]
+            human_mesh = human_meshes[i]
+            directions = directions_seq[i]
+
+
+            translation[:,[1,2]] = translation[:,[2,1]]
+
+            orientations = orientations.view(-1,3) 
+            orientations = torch.cat((global_orient.view(-1,3),orientations),axis=0)
+            
+            links_positions = robot.get_links_positions(q0)
+        
+            directions = directions.detach().cpu().numpy()
 
         
-        target_orientations_global  = {
-            F["RWrist"]: [directions[H["RWrist"]], [0,0,-1]], 
-            F["LWrist"]: [directions[H["LWrist"]], [0,0,-1]],
-            F["Head"]: [directions[H["Head"]], [1,0,0]]
-        }
+            human_joints[:,:] -= human_joints[:1,:]
+            human_joints[:,0] *= -1
+            human_joints[:,[1,2]] = human_joints[:,[2,1]]
+            directions[:,0] *= -1
+            directions[:,[1,2]] = directions[:,[2,1]]
+            
+            
+            
+            head_fixed = False
+            if "Head" not in R:
+                head_fixed = True
+                R["Head"] = R["root_joint"]
+                F["Head"] = F["root_joint"]
+            
+            robot_limbs = [(R["LHip"],R["LKnee"]), (R["LKnee"], R["LAnkle"]), (R["RHip"],R["RKnee"]), 
+                        (R["RKnee"], R["RAnkle"]),(R["LShoulder"],R["LElbow"]), (R["LElbow"], R["LWrist"]), 
+                        (R["RShoulder"],R["RElbow"]), (R["RElbow"], R["RWrist"]), (R["Head"], R["RShoulder"]), 
+                        (R["Head"], R["LShoulder"]), (R["Head"], R["RHip"]),(R["Head"], R["LHip"])]
+            
+            robot_joints = scale_human_to_robot(R,F, robot_joints, H, human_joints, head_fixed)
         
-        frame_names = [k for k,v in target_orientations_global.items()]
-        frame_ids = [model.getFrameId(f) for f in frame_names]
+            indices = [R["Head"],R["LHip"], R["LKnee"], R["LAnkle"], R["RHip"], R["RKnee"], R["RAnkle"],
+                    R["LShoulder"], R["LElbow"], R["LWrist"],
+                    R["RShoulder"], R["RElbow"], R["RWrist"]]
+        
+            
+            links, links2 = robot.get_frames()
+            joints = robot.joints
 
-        
-        solver.update(model,data,target_positions,target_orientations_global,joint_names, joint_ids, frame_names, frame_ids)
-        
-        if i==0:
-            q1 = solver.inverse_kinematics(q0)
-        else:
-            q1 = solver.inverse_kinematics(q1)
-        
-        joint_configurations.append(q1)
-        
+            
+
+
+            
+            target_positions = {
+                F["LHip"] : robot_joints[R["LHip"]],
+                F["RHip"] : robot_joints[R["RHip"]], 
+                F["LElbow"]: robot_joints[R["LElbow"]],
+                F["RElbow"]: robot_joints[R["RElbow"]],
+                F["LWrist"]: robot_joints[R["LWrist"]], 
+                F["RWrist"]: robot_joints[R["RWrist"]], 
+                F["RKnee"]: robot_joints[R["RKnee"]], 
+                F["LKnee"]: robot_joints[R["LKnee"]], 
+                F["LAnkle"]: robot_joints[R["LAnkle"]], 
+                F["RAnkle"]: robot_joints[R["RAnkle"]], 
+                F["RShoulder"] : robot_joints[R["RShoulder"]],
+                F["LShoulder"] : robot_joints[R["LShoulder"]],
+                F["Head"]: robot_joints[R["Head"]],
+            }
+            
+            joint_names = [k for k in target_positions.keys()]
+            joint_ids = [joints[name]for name in joint_names]
+
+
+
+            if head_fixed:
+                target_positions.pop(F["Head"])
+
+            
+            target_orientations_global  = {
+                F["RWrist"]: [directions[H["RWrist"]], [0,0,-1]], 
+                F["LWrist"]: [directions[H["LWrist"]], [0,0,-1]],
+                F["Head"]: [directions[H["Head"]], [1,0,0]]
+            }
+            
+            frame_names = [k for k,v in target_orientations_global.items()]
+            frame_ids = [model.getFrameId(f) for f in frame_names]
+
+            
+            solver.update(model,data,target_positions,target_orientations_global,joint_names, joint_ids, frame_names, frame_ids)
+            
+            if i==0:
+                q1 = solver.inverse_kinematics(q0)
+            else:
+                q1 = solver.inverse_kinematics(q1)
+            
+            joint_configurations.append(q1)
+            
+            pin.forwardKinematics(model, data, q1)
+            pin.updateFramePlacements(model, data)
+
+        joint_configurations = np.vstack(joint_configurations)
+
+        return joint_configurations
+
+
+    joint_config1 = retarget(arr1, smpl_model, F, R, H, robot_joints)
+    joint_config2 = retarget(arr2, smpl_model, F, R, H, robot_joints)
+
+    path = file1.removesuffix(".npz")
+    path = path[:-2] + 'R' + path[-1] + ".npy"
+    np.save(path, joint_config1)
+    path = file2.removesuffix(".npz")
+    path = path[:-2] + 'R' + path[-1] + ".npy"
+    np.save(path, joint_config2)
+
+    #print("\nCONSTRUCTING VISUALIZATION...")
+
+    """
+
+    if args.human_pose[-5]=="1":
+        interactor = args.human_pose.removesuffix("P1.npz") + "P2.npz"
+    else:
+        interactor = args.human_pose.removesuffix("P2.npz") + "P1.npz"
+
+    arr = np.load(interactor, allow_pickle=True)
+
+    joint_positions, orientations, translation, global_orient, human_meshes, directions_seq = load_simple_all(smpl_model, arr)    
+    human_joints_seq = joint_positions.detach().cpu().numpy()
+    orientations_seq = orientations.detach().cpu()
+    translation_seq2 = translation.detach().cpu().numpy()
+    global_orient_seq = global_orient.detach().cpu()
+
+
+    human_meshes_t = []
+    robot_meshes = []
+
+    
+
+    for t in tqdm(range(len(joint_configurations))):
+
+        lowest_pos = 1
+
+        q1 = joint_configurations[t]
         pin.forwardKinematics(model, data, q1)
         pin.updateFramePlacements(model, data)
-            
+
+        visual_model = robot.visual_model   
+
+
+        all_meshes = []
+        for visual in visual_model.geometryObjects:
+            mesh_path = os.path.join(visual.meshPath.replace(".dae", ".stl"))
+            if not os.path.exists(mesh_path):
+                print(f"Mesh non trovata: {mesh_path}")
+                continue
+
+            try:
+                m = Mesh(mesh_path)
+            except Exception as e:
+                print(f"Errore nel caricare {mesh_path}: {e}")
+                continue
+
+            color = visual.meshColor
+            m.color(color[:3])  # RGB
+
+            placement = data.oMf[visual.parentFrame]
+            placement_world = placement.act(visual.placement)
+            R = placement_world.rotation
+            p = placement_world.translation
+
+            if p[2] < lowest_pos:
+                lowest_pos = p[2]
+
+            T = np.eye(4)
+            T[:3, :3] = R
+            T[:3, 3] = p
+
+            m.scale(visual.meshScale[0])
+            m.apply_transform(T)
+
+            all_meshes.append(m)
+
+
     
-print("\nCONSTRUCTING VISUALIZATION...")
-"""
-if args.human_pose[-5]=="1":
-    args.human_pose[-5] == "2"
-    interactor = args.human_pose
-else:
-    args.human_pose[-5] == "1"
-    interactor = args.human_pose
-"""
- 
-#arr = np.load(interactor, allow_pickle=True)
 
-#joint_positions, orientations, translation, global_orient, human_meshes, directions_seq = load_simple_all(smpl_model, arr)    
-
-#human_joints_seq = joint_positions.detach().cpu().numpy()
-#orientations_seq = orientations.detach().cpu()
-#translation_seq = translation.detach().cpu().numpy()
-#global_orient_seq = global_orient.detach().cpu()
+        robot_mesh = merge(all_meshes)
 
 
-human_meshes_t = []
-robot_meshes = []
 
-for t in tqdm(range(len(joint_configurations))):
-
-    q1 = joint_configurations[t]
-    pin.forwardKinematics(model, data, q1)
-    pin.updateFramePlacements(model, data)
-
-    visual_model = robot.visual_model   
-
-
-    all_meshes = []
-    for visual in visual_model.geometryObjects:
-        mesh_path = os.path.join(visual.meshPath.replace(".dae", ".stl"))
-        if not os.path.exists(mesh_path):
-            print(f"Mesh non trovata: {mesh_path}")
-            continue
-
-        try:
-            m = Mesh(mesh_path)
-        except Exception as e:
-            print(f"Errore nel caricare {mesh_path}: {e}")
-            continue
-
-        color = visual.meshColor
-        m.color(color[:3])  # RGB
-
-        placement = data.oMf[visual.parentFrame]
-        placement_world = placement.act(visual.placement)
-        R = placement_world.rotation
-        p = placement_world.translation
-
+        M = np.array([
+            [-1, 0, 0],
+            [0, 0, 1],
+            [0, 1, 0]
+        ])
         T = np.eye(4)
-        T[:3, :3] = R
-        T[:3, 3] = p
+        T[:3, :3] = M
 
-        m.scale(visual.meshScale[0])
-        m.apply_transform(T)
+        
+        human_origin = translation_seq2[t:t+1]
+        human_origin[:,[1,2]]=human_origin[:,[2,1]]
+        human_origin[:,0] *= -1
 
-        all_meshes.append(m)
+        interaction_pos = translation_seq1[t:t+1]
+        interaction_pos[:,[1,2]]=interaction_pos[:,[2,1]]
+        interaction_pos[:,0] *= -1
 
+        human_joints = human_joints_seq[t]
+        human_joints[:,:] -= human_joints[:1,:]
+        human_joints[:,0] *= -1
+        human_joints[:,[1,2]] = human_joints[:,[2,1]]
+        ground_pos = human_joints[H["RAnkle"]]
+        diff = lowest_pos - ground_pos[2]
 
-   
+        distance = human_origin - interaction_pos
+        T[:3, 3] = -human_origin + distance + np.array([0,0,diff])
+        hm = human_meshes[t].apply_transform(T)
 
-    robot_mesh = merge(all_meshes)
+        robot_meshes.append(robot_mesh)
+        human_meshes_t.append(hm)
 
+    from test_smpl import animate_all_poses
 
+    animate_all_poses(human_meshes_t, robot_meshes)
 
-    M = np.array([
-        [-1, 0, 0],
-        [0, 0, 1],
-        [0, 1, 0]
-    ])
-    T = np.eye(4)
-    T[:3, :3] = M
-    human_origin = translation_seq[t]
-    human_origin[0] *= -1
-
-    T[:3, 3] = -human_origin + (np.array([0,0.7,1]))
-    hm = human_meshes[t].apply_transform(T)
-
-    robot_meshes.append(robot_mesh)
-    human_meshes_t.append(hm)
-
-from test_smpl import animate_all_poses
-
-animate_all_poses(human_meshes_t, robot_meshes)
-
-
+    """
 
     
