@@ -52,7 +52,12 @@ if __name__ == "__main__":
     pose_dict, robot_joints = robot.get_joints(robot.q0)
     _, robot_limbs = robot.get_physical_joints()
     
-    
+        
+    smpl_model = SMPLX(
+        model_path='models_smplx_v1_1/models/smplx/SMPLX_MALE.npz',  # Deve contenere i file .pkl del modello
+        gender='male', 
+        batch_size=1
+    ).to("cuda:0")
     
     model = robot.model
     data = robot.data
@@ -61,7 +66,7 @@ if __name__ == "__main__":
         
     arr = np.load(args.human_pose, allow_pickle=True)
     
-    joint_positions, orientations, translation, global_orient, human_mesh, directions = load_simple_interx(arr, idx)    
+    joint_positions, orientations, translation, global_orient, human_mesh, directions = load_simple_interx(smpl_model,arr, idx)    
 
     translation[:,[1,2]] = translation[:,[2,1]]
 
@@ -267,11 +272,11 @@ if __name__ == "__main__":
     frame_ids = [model.getFrameId(f) for f in frame_names]
 
     
-    solver = InverseKinematicSolver(model,data,target_positions,target_orientations_global,joint_names, joint_ids, frame_names, frame_ids)
+    solver = InverseKinematicSolver(model,data)
     
 
+    q1 = solver.update(model,data,target_positions,target_orientations_global,joint_names, joint_ids, frame_names, frame_ids)
     q1 = solver.inverse_kinematics(q0)
-    
     pin.forwardKinematics(model, data, q1)
     pin.updateFramePlacements(model, data)
          
@@ -326,6 +331,7 @@ if __name__ == "__main__":
         plt.show()
 
 
+
     
     viz = MeshcatVisualizer(model, robot.collision_model, robot.visual_model)
     viz.initViewer(open=False) 
@@ -334,6 +340,8 @@ if __name__ == "__main__":
     input("Press Enter to reset the visualization...")
     viz.reset()
     
+    pin.forwardKinematics(model, data, q0)
+    pin.updateFramePlacements(model, data)
     
     visual_model = robot.visual_model   
 
@@ -357,23 +365,24 @@ if __name__ == "__main__":
         m.color(color[:3])
         placement = data.oMf[visual.parentFrame]
 
-        import pinocchio as pin
+        
         placement_world = placement.act(visual.placement)
         R = placement_world.rotation
         p = placement_world.translation
+
 
         
         T = np.eye(4)
         T[:3, :3] = R
         T[:3, 3] = p
 
-        m.scale(visual.meshScale[0])
+        m.scale(visual.meshScale)
         m.apply_transform(T)
 
         vp += m
 
 
-        M = np.array([
+    M = np.array([
         [-1, 0, 0],
         [0, 0, 1],
         [0, 1, 0]

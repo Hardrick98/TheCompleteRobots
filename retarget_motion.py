@@ -145,11 +145,6 @@ if __name__ == "__main__":
                 R["Head"] = R["root_joint"]
                 F["Head"] = F["root_joint"]
             
-            robot_limbs = [(R["LHip"],R["LKnee"]), (R["LKnee"], R["LAnkle"]), (R["RHip"],R["RKnee"]), 
-                        (R["RKnee"], R["RAnkle"]),(R["LShoulder"],R["LElbow"]), (R["LElbow"], R["LWrist"]), 
-                        (R["RShoulder"],R["RElbow"]), (R["RElbow"], R["RWrist"]), (R["Head"], R["RShoulder"]), 
-                        (R["Head"], R["LShoulder"]), (R["Head"], R["RHip"]),(R["Head"], R["LHip"])]
-            
             robot_joints = scale_human_to_robot(R,F, robot_joints, H, human_joints, head_fixed)
         
             indices = [R["Head"],R["LHip"], R["LKnee"], R["LAnkle"], R["RHip"], R["RKnee"], R["RAnkle"],
@@ -179,14 +174,13 @@ if __name__ == "__main__":
                 F["LShoulder"] : robot_joints[R["LShoulder"]],
                 F["Head"]: robot_joints[R["Head"]],
             }
+
+            if head_fixed:
+                target_positions.pop(F["Head"])
             
             joint_names = [k for k in target_positions.keys()]
             joint_ids = [joints[name]for name in joint_names]
 
-
-
-            if head_fixed:
-                target_positions.pop(F["Head"])
 
             
             target_orientations_global  = {
@@ -218,6 +212,8 @@ if __name__ == "__main__":
 
     joint_config1 = retarget(arr1, smpl_model, F, R, H, robot_joints)
     joint_config2 = retarget(arr2, smpl_model, F, R, H, robot_joints)
+
+    print(joint_config1.shape)
 
     path = file1.removesuffix(".npz")
     path = path[:-2] + 'R' + path[-1] + ".npy"

@@ -121,7 +121,7 @@ def load_simple_interx(smpl_model, arr, idx):
     direction = direction / np.linalg.norm(direction)
    
 
-    #orientations = compute_global_orientations_smplx(global_rotation, body_pose.cpu().view(-1,3).numpy())
+    orientations = compute_global_orientations_smplx(global_rotation, body_pose.cpu().view(-1,3).numpy())
     
 
     
@@ -139,7 +139,7 @@ def load_simple_interx(smpl_model, arr, idx):
     joints = output.joints[0].detach().cpu().numpy() 
     faces = smpl_model.faces
     
-    """
+   
     directions = []
     for ori in orientations[:-3]:
         direction = ori @ v
@@ -152,13 +152,13 @@ def load_simple_interx(smpl_model, arr, idx):
         direction = ori @ v
         direction = direction / np.linalg.norm(direction)
         directions.append(direction)
-    """
+    
     mesh = Mesh([verts, faces])
     #mesh.c('lightblue').alpha(0.5).lw(0.5)
     
     #visualize_mesh_and_joints_vedo(verts, joints, faces, directions)
     
-    return joints, body_pose.cpu().reshape(1, -1).to(torch.float32), transl.cpu().numpy(), global_orient.cpu(), mesh,# directions
+    return joints, body_pose.cpu().reshape(1, -1).to(torch.float32), transl.cpu().numpy(), global_orient.cpu(), mesh, directions
 
 
 def load_simple_all(smpl_model, arr):
