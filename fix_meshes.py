@@ -2,7 +2,7 @@ from vedo import Mesh, show
 import trimesh
 import numpy as np
 
-mesh = trimesh.load("/home/rick/TheCompleteRobots/meshes/h1_2_description/meshes/L_hand_base_link.STL")
+mesh = trimesh.load("meshes/nao_description/meshes/V40/LWristYaw.stl")
 
 T_swap_xy = np.eye(4)
 T_swap_xy[:3, :3] = np.array([
@@ -16,11 +16,11 @@ T_swap_xy[:3, :3] = np.array([
 
 # (Opzionale) centra la mesh se necessario
 #offset = -mesh.bounding_box
-offset = np.array([0.0,0.06,0])
+#offset = np.array([0.0,0.06,0])
 
-T_center = np.eye(4)
-T_center[:3, 3] = offset
-mesh.apply_transform(T_center)
-mesh.export("/home/rick/TheCompleteRobots/meshes/h1_2_description/meshes/L_hand_base_link.STL")
+#T_center = np.eye(4)
+#T_center[:3, 3] = offset
+#mesh.apply_transform(T_center)
+#mesh.export("/home/rick/TheCompleteRobots/meshes/h1_2_description/meshes/L_hand_base_link.dae")
 
 show(mesh,axes=1)

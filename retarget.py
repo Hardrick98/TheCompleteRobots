@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from inverse_kinematics import InverseKinematicSolver
 from robotoid import Robotoid
-
+from mesh import compose_hand_mesh
 
 
 if __name__ == "__main__":
@@ -261,15 +261,33 @@ if __name__ == "__main__":
             target_orientations_global[robot_frame] = rot_matrix
     """
 
-    
+    x,y,z = compose_hand_mesh(model, robot.visual_model,data, F["RWrist"])
+    dir = np.argmin(np.array([x,y,z]))
+
+    if dir == 0:
+        print("Palm direction is x")
+        cL = [1,0,0]
+        cR = [1,0,0]
+    elif dir == 1:
+        print("Palm direction is y")
+        cL = [0,-1,0]
+        cR = [0,1,0]
+    elif dir == 2:
+        print("Palm direction is z")
+        cL = [0,0,-1]
+        cR = [0,0,-1]
+        
+
     target_orientations_global  = {
-        F["RWrist"]: [directions[H["RWrist"]], [0,0,-1]], 
-        F["LWrist"]: [directions[H["LWrist"]], [0,0,-1]],
-        F["Head"]: [directions[H["Head"]], [1,0,0]]
+        F["RWrist"]: [directions[H["RWrist"]], cR], 
+        F["LWrist"]: [directions[H["LWrist"]], cL],
+        #F["Head"]: [directions[H["Head"]], [1,0,0]]
     }
     
     frame_names = [k for k,v in target_orientations_global.items()]
     frame_ids = [model.getFrameId(f) for f in frame_names]
+
+    
 
     
     solver = InverseKinematicSolver(model,data)

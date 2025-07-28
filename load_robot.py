@@ -5,6 +5,7 @@ import argparse
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+from mesh import compose_hand_mesh
 
 
 if __name__ == "__main__":
@@ -49,6 +50,10 @@ if __name__ == "__main__":
     model = robot.model
     data = robot.data
     q0 = robot.q0  
+    visual_model = robot.visual_model
+
+    compose_hand_mesh(model, visual_model, "RWristYaw")
+
 
     viz = MeshcatVisualizer(model, robot.collision_model, robot.visual_model)
     viz.initViewer(open=True) 
