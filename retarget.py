@@ -340,9 +340,6 @@ if __name__ == "__main__":
     input("Press Enter to reset the visualization...")
     viz.reset()
     
-    pin.forwardKinematics(model, data, q0)
-    pin.updateFramePlacements(model, data)
-    
     visual_model = robot.visual_model   
 
 
@@ -352,13 +349,13 @@ if __name__ == "__main__":
         
         mesh_path = os.path.join(visual.meshPath.replace(".dae",".stl"))
         if not os.path.exists(mesh_path):
-            print(f"Mesh non trovata: {mesh_path}")
+            print(f"Mesh not found: {mesh_path}")
             continue
 
         try:
             m = Mesh(mesh_path)
         except Exception as e:
-            print(f"Errore nel caricare {mesh_path}: {e}")
+            print(f"Error during loading of {mesh_path}: {e}")
             continue
 
         color = visual.meshColor

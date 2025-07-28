@@ -65,7 +65,7 @@ class Robotoid:
             reduced.append(self.longest_common_prefix(group))
             groups.append(group)
 
-        return reduced[:max_groups]
+        return reduced[:max_groups], groups
     
     def build(self):
 
@@ -108,12 +108,7 @@ class Robotoid:
 
 
         if len(new_chains) > 5: #è probabile che ci siano più end-effector del necessario quindi riduci
-            new_chains = self.reduce_lists(new_chains, max_groups=5)
-            
-
-
-
-
+            new_chains, groups = self.reduce_lists(new_chains, max_groups=5)
 
 
         ## HANDLING DUPLICATE ORIGIN JOINTS DIFFERENT FROM ROOT (ATLAS CASE)
