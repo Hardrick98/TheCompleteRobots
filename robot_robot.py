@@ -31,6 +31,8 @@ parser.add_argument("--human_pose",
 parser.add_argument("--video",
                         action="store_true",
                         help="If to record video or not at the end")
+
+
 args  = parser.parse_args()
 robot_name = args.robot.lower() 
 
@@ -167,7 +169,7 @@ for t in tqdm(range(len(joint_configurations1))):
         T[:3, :3] = R
         T[:3, 3] = p
 
-        m.scale(visual.meshScale[0])
+        m.scale(visual.meshScale)
         m.apply_transform(T)
 
         all_meshes.append(m)
@@ -213,7 +215,7 @@ for t in tqdm(range(len(joint_configurations1))):
         T[:3, :3] = R
         T[:3, 3] = p
 
-        m.scale(visual.meshScale[0])
+        m.scale(visual.meshScale)
         m.apply_transform(T)
 
         all_meshes.append(m)

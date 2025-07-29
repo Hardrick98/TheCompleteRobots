@@ -52,7 +52,7 @@ if __name__ == "__main__":
     q0 = robot.q0  
     visual_model = robot.visual_model
 
-    compose_hand_mesh(model, visual_model, "RWristYaw")
+    #compose_hand_mesh(model, visual_model, "RWristYaw")
 
 
     viz = MeshcatVisualizer(model, robot.collision_model, robot.visual_model)

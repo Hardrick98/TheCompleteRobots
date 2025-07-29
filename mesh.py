@@ -20,12 +20,9 @@ def compose_hand_mesh(model, visual_model, data, frame):
                 desc_joints.append(j)
                 break
 
-    # includi root stesso se vuoi
+
     desc_joints = list(set(desc_joints + [root_link_id]))
 
-    print("Discendenti joints:", [model.names[j] for j in desc_joints])
-
-    # 3. Estrai le mesh in visual_model associate a quei joint
     meshes = []
     for geom in visual_model.geometryObjects:
         if geom.parentJoint in desc_joints:

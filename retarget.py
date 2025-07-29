@@ -63,7 +63,10 @@ if __name__ == "__main__":
     data = robot.data
     q0 = robot.q0  
 
-        
+    
+
+
+
     arr = np.load(args.human_pose, allow_pickle=True)
     
     joint_positions, orientations, translation, global_orient, human_mesh, directions = load_simple_interx(smpl_model,arr, idx)    
@@ -72,9 +75,33 @@ if __name__ == "__main__":
 
     orientations = orientations.view(-1,3) 
     orientations = torch.cat((global_orient.view(-1,3),orientations),axis=0)
-     
+    
+
+
+
+
     links_positions = robot.get_links_positions(q0)
    
+    robotoid = Robotoid(robot)
+    F, R = robotoid.build()
+    
+    x,y,z = compose_hand_mesh(model, robot.visual_model,data, F["RWrist"])
+    dir = np.argmin(np.array([x,y,z]))
+
+    if dir == 0:
+        print("Palm direction is x")
+        cL = [1,0,0]
+        cR = [1,0,0]
+    elif dir == 1:
+        print("Palm direction is y")
+        cL = [0,-1,0]
+        cR = [0,1,0]
+    elif dir == 2:
+        print("Palm direction is z")
+        cL = [0,0,-1]
+        cR = [0,0,-1]
+
+
     directions = np.array(directions)
                 
     human_origin = translation[0]
@@ -121,9 +148,8 @@ if __name__ == "__main__":
     "LWrist":20,
     "RWrist":21}
 
-    robotoid = Robotoid(robot)
-    F, R = robotoid.build()
-    
+
+
     head_fixed = False
     if "Head" not in R:
         head_fixed = True
@@ -161,6 +187,7 @@ if __name__ == "__main__":
     
     joint_names = [v for k,v in F.items() if v != "root_joint"]
     joint_ids = [joints[name]for name in joint_names]
+
 
     
     target_positions = {
@@ -208,8 +235,6 @@ if __name__ == "__main__":
             direction = rotation.float() @ v.float()
             direction_RHand = direction / torch.linalg.norm(direction)
             
-        
-        
             
             ax.quiver(
                 robot_joints[R[joint_name]][0], 
@@ -261,21 +286,7 @@ if __name__ == "__main__":
             target_orientations_global[robot_frame] = rot_matrix
     """
 
-    x,y,z = compose_hand_mesh(model, robot.visual_model,data, F["RWrist"])
-    dir = np.argmin(np.array([x,y,z]))
 
-    if dir == 0:
-        print("Palm direction is x")
-        cL = [1,0,0]
-        cR = [1,0,0]
-    elif dir == 1:
-        print("Palm direction is y")
-        cL = [0,-1,0]
-        cR = [0,1,0]
-    elif dir == 2:
-        print("Palm direction is z")
-        cL = [0,0,-1]
-        cR = [0,0,-1]
         
 
     target_orientations_global  = {
