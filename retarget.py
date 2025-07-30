@@ -7,6 +7,7 @@ from vedo import Plotter, Mesh
 import os
 from scipy.spatial.transform import Rotation as Rot
 import numpy as np
+from smpl_dict import H
 import matplotlib.pyplot as plt
 from inverse_kinematics import InverseKinematicSolver
 from robotoid import Robotoid
@@ -124,32 +125,6 @@ if __name__ == "__main__":
 
 
 
-    H = {
-    "root_joint":0,
-    "LHip":1,
-    "RHip":2,
-    "spine1":3,
-    "LKnee":4,
-    "RKnee":5,
-    "spine2":6,
-    "LAnkle":7,
-    "RAnkle":8,
-    "spine3":9,
-    "left_foot":10,
-    "right_foot":11,
-    "Neck":12,
-    "left_collar":13,
-    "right_collar":14,
-    "Head":15,
-    "LShoulder":16,
-    "RShoulder":17,
-    "LElbow":18,
-    "RElbow":19,
-    "LWrist":20,
-    "RWrist":21}
-
-
-
     head_fixed = False
     if "Head" not in R:
         head_fixed = True
@@ -207,20 +182,7 @@ if __name__ == "__main__":
     }
 
     if head_fixed:
-        target_positions.pop(F["Head"])
-
-    """
-    target_orientations = {
-        F["RWrist"]: orientations[H["RWrist"]],  
-        F["LWrist"]: orientations[H["LWrist"]],
-        F["Head"] : orientations[H["Head"]]
-        #F["LElbow"]: orientations[H["LElbow"]],
-        #F["RElbow"]: orientations[H["RElbow"]],
-        #F["RShoulder"]: orientations[H["RShoulder"]],
-        #F["LShoulder"] : orientations[H["RShoulder"]]
-    }
-    """
-    
+        target_positions.pop(F["Head"]) 
 
     
     rotvec = global_orient.numpy().flatten()
@@ -275,18 +237,6 @@ if __name__ == "__main__":
     
     
     pyplot_arrows(ax, directions, human_joints, H)
-    
-
-
-    """
-    target_orientations_global = {}
-    for smplx_idx, robot_frame in smplx_to_robot_mapping.items():
-        if robot_frame in target_orientations:  
-            rot_matrix = global_orientations_matrices[smplx_idx].numpy()
-            target_orientations_global[robot_frame] = rot_matrix
-    """
-
-
         
 
     target_orientations_global  = {

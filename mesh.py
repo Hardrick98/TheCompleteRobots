@@ -4,15 +4,13 @@ import os
 
 
 def compose_hand_mesh(model, visual_model, data, frame):
-# 1. Ottieni il frame e il joint/link padre
+
     frame_id = model.getFrameId(frame)
     frame = model.frames[frame_id]
-    root_link_id = frame.parentJoint  # joint index del frame
+    root_link_id = frame.parentJoint  
 
-    # 2. Costruisci la lista dei joint discendenti
     desc_joints = []
     for j in range(model.njoints):
-        # controlla se il padre del joint j è discendente di root_link_id ricorsivamente
         cur = j
         while cur != 0:
             cur = model.parents[cur]
@@ -43,10 +41,6 @@ def compose_hand_mesh(model, visual_model, data, frame):
                 continue
             # Carica mesh con Trimesh
             mesh = trimesh.load(mesh_path)
-            # Applica scala se presente
-            #if geom.meshScale is not None:
-            #    mesh.apply_scale(geom.meshScale)
-            # Ottieni la trasformazione nel mondo
             placement = data.oMf[geom.parentFrame]
             placement_world = placement.act(geom.placement)
             R = placement_world.rotation
@@ -70,4 +64,4 @@ def compose_hand_mesh(model, visual_model, data, frame):
         #combined.show()  # oppure: combined.export("combined_mesh.obj")
         return lunghezza, larghezza, profondità
     else:
-        print("❌ Nessuna mesh trovata")
+        print("Nessuna mesh trovata")
