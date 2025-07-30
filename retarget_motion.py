@@ -1,19 +1,14 @@
 from utils import *
 from test_smpl import load_simple_all
-from pinocchio.visualize import MeshcatVisualizer
 import pinocchio as pin
 import argparse
-from smpl_dict import H
 from vedo import Mesh, merge
 import os
 from tqdm import tqdm
 from scipy.spatial.transform import Rotation as Rot
 import numpy as np
-import matplotlib.pyplot as plt
-from inverse_kinematics import InverseKinematicSolver
 from robotoid import Robotoid, HumanAction
 from smplx import SMPLX
-from mesh import compose_hand_mesh
 
 
 if __name__ == "__main__":
@@ -77,6 +72,7 @@ if __name__ == "__main__":
     human_action1 = HumanAction(action1)
     human_action2 = HumanAction(action2)
 
+    H = human_action1.get_joint_dict()
     joint_config1 = robotoid1.retarget(human_action1)
     joint_config2 = robotoid2.retarget(human_action2)
 
@@ -94,18 +90,10 @@ if __name__ == "__main__":
             
         
 
-        if args.human_pose[-5]=="1":
-            interactor = args.human_pose.removesuffix("P1.npz") + "/P2.npz"
-        else:
-            interactor = args.human_pose.removesuffix("P2.npz") + "/P1.npz"
-
-        arr = np.load(interactor, allow_pickle=True)
-
-        joint_positions, orientations, translation, global_orient, human_meshes, directions_seq = load_simple_all(smpl_model, arr)    
-        human_joints_seq = joint_positions.detach().cpu().numpy()
-        orientations_seq = orientations.detach().cpu()
-        translation_seq2 = translation.detach().cpu().numpy()
-        global_orient_seq = global_orient.detach().cpu()
+        
+        human_action = human_action2
+       
+        human_joints_seq, orientations_seq, translation_seq, global_orient_seq, human_meshes, directions_seq = human_action.get_attributes()  
 
 
         human_meshes_t = []
@@ -173,11 +161,11 @@ if __name__ == "__main__":
             T[:3, :3] = M
 
             
-            human_origin = translation_seq2[t:t+1]
+            human_origin = translation_seq[t:t+1]
             human_origin[:,[1,2]]=human_origin[:,[2,1]]
             human_origin[:,0] *= -1
 
-            interaction_pos = translation_seq2[t:t+1]
+            interaction_pos = translation_seq[t:t+1]
             interaction_pos[:,[1,2]]=interaction_pos[:,[2,1]]
             interaction_pos[:,0] *= -1
 

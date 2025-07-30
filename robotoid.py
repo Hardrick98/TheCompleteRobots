@@ -17,8 +17,10 @@ class Robotoid:
         self.model = robot.model
         self.data = robot.data
         self.visual_model = robot.visual_model
+        self.collision_model = robot.collision_model
         self.solver = InverseKinematicSolver(self.model,self.data)
         self.N, self.J = self.build()
+        self.links_positions = self.robot.get_links_positions(self.q0)
         self.cL, self.cR = self.find_palm_convention()
         self.head_fixed = False
         print(self.N)
@@ -432,9 +434,9 @@ class Robotoid:
 
         return final_reduced, final_values
 
-    def retarget(self, human_action):
+    def retarget(self, human_action, idx=None):
 
-        human_joints_seq, orientations_seq, translation_seq, global_orient_seq, _, directions_seq = human_action.get_attributes()  
+        human_joints_seq, orientations_seq, translation_seq, global_orient_seq, _, directions_seq = human_action.get_attributes(idx)  
         H = human_action.get_joint_dict()
 
 
@@ -442,7 +444,7 @@ class Robotoid:
 
         joint_configurations = []
         sequence_num = human_joints_seq.shape[0]
-        sequence_num = 100
+        #sequence_num = 100
 
         for i in tqdm(range(sequence_num)):
         
@@ -576,8 +578,11 @@ class HumanAction():
         self.translation_seq = translation.detach().cpu().numpy()
         self.global_orient_seq = global_orient.detach().cpu()
 
-    def get_attributes(self):
-        return self.human_joints_seq, self.orientations_seq, self.translation_seq, self.global_orient_seq, self.human_meshes, self.directions_seq 
+    def get_attributes(self, idx=None):
+        if idx is None:
+            return self.human_joints_seq, self.orientations_seq, self.translation_seq, self.global_orient_seq, self.human_meshes, self.directions_seq 
+        else:
+            return self.human_joints_seq[idx:idx+1], self.orientations_seq[idx:idx+1], self.translation_seq[idx:idx+1], self.global_orient_seq[idx:idx+1], self.human_meshes[idx:idx+1], self.directions_seq[idx:idx+1]
 
     def get_joint_dict(self):
         return self.H
@@ -670,3 +675,6 @@ class HumanAction():
 
 
 ### RIVEDERE QUEL GET PHYSICAL JOINTS, GET JOINTS
+
+
+
