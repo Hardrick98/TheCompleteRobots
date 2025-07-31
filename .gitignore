@@ -8,6 +8,7 @@ graph_net.py
 models_smplx_v1_1.zip
 *.npz
 .vscode/launch.json
-*.mp4
 profile_output.prof
 *.pkl
+wave.mp4
+high_five.mp4
