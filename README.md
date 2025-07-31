@@ -35,7 +35,9 @@ python retarget.py --human_pose PATH_TO_SMPL_POSE --robot ROBOT_NAME
 Press ENTER to visualize the human side by side to the robot.
 
 <p align="center">
-  <img src="images/hug.gif" width="300"/>
+  <video width="300" autoplay loop muted playsinline>
+  <source src="videos/hug.mp4" type="video/mp4">
+  </video>
   <img src="images/high_five.gif" width="300"/>
   <img src="images/wave.gif" width="300"/>
 
