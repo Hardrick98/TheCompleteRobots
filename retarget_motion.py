@@ -59,9 +59,14 @@ if __name__ == "__main__":
         batch_size=8
     ).to("cuda:0")
 
-   
-    robotoid1 = Robotoid(robot)
-    robotoid2 = Robotoid(robot)
+    wheeled = False
+    if args.robot == "pepper":
+        wheeled = True
+    
+    print(wheeled)
+
+    robotoid1 = Robotoid(robot, wheeled)
+    robotoid2 = Robotoid(robot, wheeled)
     
     
     file1 = args.human_pose + "/P2.npz"

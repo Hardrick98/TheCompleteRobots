@@ -1,14 +1,18 @@
-from utils import *
 from tqdm import tqdm
+import numpy as np
 from inverse_kinematics import InverseKinematicSolver
 import os
+from utils import compute_global_orientations_batch
+from smplx import SMPLX
+import torch
+import pinocchio as pin
 import trimesh
 from vedo import Mesh
 from scipy.spatial.transform import Rotation as Rot
 
 class Robotoid:
 
-    def __init__(self, robot):
+    def __init__(self, robot, wheeled = False):
         
         self.pose_dict, self.robot_joints = robot.get_joints(robot.q0)
         #self.robot_joints, self.robot_limbs = robot.get_physical_joints()
@@ -19,15 +23,16 @@ class Robotoid:
         self.visual_model = robot.visual_model
         self.collision_model = robot.collision_model
         self.solver = InverseKinematicSolver(self.model,self.data)
+        self.wheeled = wheeled
         self.N, self.J = self.build()
         self.links_positions = self.robot.get_links_positions(self.q0)
         self.cL, self.cR = self.find_palm_convention()
         self.head_fixed = False
-        print(self.N)
         if "Head" not in self.N:
             self.head_fixed = True 
             self.J["Head"] = self.J["root_joint"]
-            self.N["Head"] = self.N["root_joint"]  
+            self.N["Head"] = self.N["root_joint"] 
+        
 
 
     def find_palm_convention(self):
@@ -158,27 +163,33 @@ class Robotoid:
         return reduced[:max_groups], groups
     
 
-    def scale_human_to_robot(R, robot_joints, H, human_joints, head_fixed = False):
-
-        hipH = np.linalg.norm(human_joints[H["LHip"]]-human_joints[H["root_joint"]])
-        hipR = np.linalg.norm(robot_joints[R["LHip"]]-robot_joints[R["root_joint"]])
+    def scale_human_to_robot(self, R, robot_joints, H, human_joints):
         
         
         spineH = np.linalg.norm(human_joints[H["Neck"]]-human_joints[H["root_joint"]])
         spineR = np.linalg.norm(robot_joints[R["Head"]]-robot_joints[R["root_joint"]])
         
-        if not head_fixed:
+        if not self.head_fixed or self.wheeled:
             shoulH = np.linalg.norm(human_joints[H["LShoulder"]]-human_joints[H["Neck"]])
             shoulR = np.linalg.norm(robot_joints[R["LShoulder"]]-robot_joints[R["Head"]])
         else:
             shoulH = np.linalg.norm(human_joints[H["LShoulder"]]-human_joints[H["LHip"]])
             shoulR = np.linalg.norm(robot_joints[R["LShoulder"]]-robot_joints[R["LHip"]])
         
-        femorH = np.linalg.norm(human_joints[H["LKnee"]]-human_joints[H["LHip"]])
-        femorR = np.linalg.norm(robot_joints[R["LKnee"]]-robot_joints[R["LHip"]])
-        
-        tibiaH = np.linalg.norm(human_joints[H["LAnkle"]]-human_joints[H["LKnee"]])
-        tibiaR = np.linalg.norm(robot_joints[R["LAnkle"]]-robot_joints[R["LKnee"]])
+        if not self.wheeled:
+            
+            hipH = np.linalg.norm(human_joints[H["LHip"]]-human_joints[H["root_joint"]])
+            hipR = np.linalg.norm(robot_joints[R["LHip"]]-robot_joints[R["root_joint"]])
+
+            femorH = np.linalg.norm(human_joints[H["LKnee"]]-human_joints[H["LHip"]])
+            femorR = np.linalg.norm(robot_joints[R["LKnee"]]-robot_joints[R["LHip"]])
+            
+            tibiaH = np.linalg.norm(human_joints[H["LAnkle"]]-human_joints[H["LKnee"]])
+            tibiaR = np.linalg.norm(robot_joints[R["LAnkle"]]-robot_joints[R["LKnee"]])
+
+            s_hip = hipR / hipH
+            s_femor = femorR / femorH
+            s_tibia = tibiaR / tibiaH
 
         upper_armH = np.linalg.norm(human_joints[H["LElbow"]]-human_joints[H["LShoulder"]])
         upper_armR = np.linalg.norm(robot_joints[R["LElbow"]]-robot_joints[R["LShoulder"]])
@@ -191,12 +202,10 @@ class Robotoid:
         s_forearm = forearmR / forearmH
         s_spine = spineR / spineH
         s_shoulder = shoulR / shoulH
-        s_hip = hipR / hipH
-        s_femor = femorR / femorH
-        s_tibia = tibiaR / tibiaH
+
 
         #Scaling
-        if not head_fixed:
+        if not self.head_fixed:
             robot_joints[R["Head"]] = robot_joints[R["root_joint"]] + (human_joints[H["Neck"]] - human_joints[H["root_joint"]]) * s_spine
             robot_joints[R["LShoulder"]] = robot_joints[R["Head"]] + (human_joints[H["LShoulder"]] - human_joints[H["Neck"]]) * s_shoulder
             robot_joints[R["RShoulder"]] = robot_joints[R["Head"]] + (human_joints[H["RShoulder"]] - human_joints[H["Neck"]]) * s_shoulder
@@ -205,14 +214,14 @@ class Robotoid:
             robot_joints[R["LShoulder"]] = robot_joints[R["LHip"]] + (human_joints[H["LShoulder"]] - human_joints[H["LHip"]]) * s_shoulder
             robot_joints[R["RShoulder"]] = robot_joints[R["RHip"]] + (human_joints[H["RShoulder"]] - human_joints[H["RHip"]]) * s_shoulder
         
-    
-        robot_joints[R["LHip"]] = robot_joints[R["root_joint"]] + (human_joints[H["LHip"]] - human_joints[H["root_joint"]]) * s_hip
-        robot_joints[R["LKnee"]] = robot_joints[R["LHip"]] + (human_joints[H["LKnee"]] - human_joints[H["LHip"]]) * s_femor
-        robot_joints[R["LAnkle"]] = robot_joints[R["LKnee"]] + (human_joints[H["LAnkle"]] - human_joints[H["LKnee"]]) * s_tibia
         
-        robot_joints[R["RHip"]] = robot_joints[R["root_joint"]] + (human_joints[H["RHip"]] - human_joints[H["root_joint"]]) * s_hip
-        robot_joints[R["RKnee"]] = robot_joints[R["RHip"]] + (human_joints[H["RKnee"]] - human_joints[H["RHip"]]) * s_femor
-        robot_joints[R["RAnkle"]] = robot_joints[R["RKnee"]] + (human_joints[H["RAnkle"]] - human_joints[H["RKnee"]]) * s_tibia
+        if not self.wheeled:
+            robot_joints[R["LHip"]] = robot_joints[R["root_joint"]] + (human_joints[H["LHip"]] - human_joints[H["root_joint"]]) * s_hip
+            robot_joints[R["LKnee"]] = robot_joints[R["LHip"]] + (human_joints[H["LKnee"]] - human_joints[H["LHip"]]) * s_femor
+            robot_joints[R["LAnkle"]] = robot_joints[R["LKnee"]] + (human_joints[H["LAnkle"]] - human_joints[H["LKnee"]]) * s_tibia
+            robot_joints[R["RHip"]] = robot_joints[R["root_joint"]] + (human_joints[H["RHip"]] - human_joints[H["root_joint"]]) * s_hip
+            robot_joints[R["RKnee"]] = robot_joints[R["RHip"]] + (human_joints[H["RKnee"]] - human_joints[H["RHip"]]) * s_femor
+            robot_joints[R["RAnkle"]] = robot_joints[R["RKnee"]] + (human_joints[H["RAnkle"]] - human_joints[H["RKnee"]]) * s_tibia
 
         robot_joints[R["LElbow"]] = robot_joints[R["LShoulder"]] + (human_joints[H["LElbow"]] - human_joints[H["LShoulder"]]) * s_upper_arm
         robot_joints[R["LWrist"]] = robot_joints[R["LElbow"]] + (human_joints[H["LWrist"]] - human_joints[H["LElbow"]]) * s_forearm
@@ -246,6 +255,7 @@ class Robotoid:
                 if i != 0:
                     end_effectors.append(joint_name)
 
+        print(end_effectors)
         
         chains = self.get_kinematic_chains(end_effectors, parent_child)
         new_chains = []
@@ -256,7 +266,8 @@ class Robotoid:
         #FIND KINEMATIC CHAINS
         if len(new_chains) > 5: #è probabile che ci siano più end-effector del necessario quindi riduci
             new_chains, groups = self.reduce_lists(new_chains, max_groups=5)
-
+        
+        print(new_chains)
 
         ## HANDLING DUPLICATE ORIGIN JOINTS DIFFERENT FROM ROOT (ATLAS CASE)
 
@@ -296,7 +307,6 @@ class Robotoid:
                 positions[self.model.names[j]] = self.data.oMi[j].translation
             chains_new.append(positions)
 
-
         if len(chains_new) == 4:
             head = [{}]
             chains_new = head + chains_new
@@ -321,10 +331,15 @@ class Robotoid:
                 kmeans = KMeans(n_clusters=3, random_state=0).fit(points)
             else:
                 if len(points) == 0:
-                    print("Head not movable")
-                    robotoid[chain_value] = np.array([[100,100,100]])
-                    robotoid_labels[chain_value] = [[None]]
-                    chain_value += 1
+                    if self.wheeled == True: 
+                        robotoid[chain_value] = np.array([[-100,-100,-100]])
+                        robotoid_labels[chain_value] = [[None]]
+                        chain_value += 1
+                    else:
+                        print("Head not movable")
+                        robotoid[chain_value] = np.array([[100,100,100]])
+                        robotoid_labels[chain_value] = [[None]]
+                        chain_value += 1
                     continue
                 kmeans = KMeans(n_clusters=1,random_state=0).fit(points)
 
@@ -366,12 +381,13 @@ class Robotoid:
 
 
 
-
+        
 
 
 
         sorted_chain_ids = sorted(robotoid.keys(), key=lambda i: robotoid[i][0, 2], reverse=True)
 
+ 
 
         robotoid = {i: robotoid[i] for i in sorted_chain_ids}
         robotoid_labels = {i: robotoid_labels[i] for i in sorted_chain_ids}
@@ -379,6 +395,8 @@ class Robotoid:
         new_robotoid = {i: v for i, (_, v) in enumerate(robotoid.items())}
         new_robotoid_labels = {i: v for i, (_, v) in enumerate(robotoid_labels.items())}
         
+
+
         robotoid = new_robotoid
         robotoid_labels = new_robotoid_labels 
 
@@ -404,22 +422,22 @@ class Robotoid:
             final["RShoulder"] = robotoid_labels[1][0]
             final["RElbow"] = robotoid_labels[1][1]
             final["RWrist"] = robotoid_labels[1][2]
-            
-            
-        if robotoid[3][0,1] > 0:
-            final["LHip"] = robotoid_labels[3][0]
-            final["LKnee"] = robotoid_labels[3][1]
-            final["LAnkle"] = robotoid_labels[3][2]
-            final["RHip"] = robotoid_labels[4][0]
-            final["RKnee"] = robotoid_labels[4][1]
-            final["RAnkle"] = robotoid_labels[4][2]
-        else:
-            final["LHip"] = robotoid_labels[4][0]
-            final["LKnee"] = robotoid_labels[4][1]
-            final["LAnkle"] = robotoid_labels[4][2]
-            final["RHip"] = robotoid_labels[3][0]
-            final["RKnee"] = robotoid_labels[3][1]
-            final["RAnkle"] = robotoid_labels[3][2]
+        
+        if robotoid_labels[4][0][0] is not None:
+            if robotoid[3][0,1] > 0:
+                final["LHip"] = robotoid_labels[3][0]
+                final["LKnee"] = robotoid_labels[3][1]
+                final["LAnkle"] = robotoid_labels[3][2]
+                final["RHip"] = robotoid_labels[4][0]
+                final["RKnee"] = robotoid_labels[4][1]
+                final["RAnkle"] = robotoid_labels[4][2]
+            else:
+                final["LHip"] = robotoid_labels[4][0]
+                final["LKnee"] = robotoid_labels[4][1]
+                final["LAnkle"] = robotoid_labels[4][2]
+                final["RHip"] = robotoid_labels[3][0]
+                final["RKnee"] = robotoid_labels[3][1]
+                final["RAnkle"] = robotoid_labels[3][2]
 
 
         final_reduced = {}
@@ -471,26 +489,37 @@ class Robotoid:
 
 
             
-            self.robot_joints = scale_human_to_robot(self.J, self.N, self.robot_joints, H, human_joints, self.head_fixed)        
+            self.robot_joints = self.scale_human_to_robot(self.J, self.robot_joints, H, human_joints)        
             
             joints = self.robot.joints
             
-            target_positions = {
-                self.N["LHip"] : self.robot_joints[self.J["LHip"]],
-                self.N["RHip"] : self.robot_joints[self.J["RHip"]], 
-                self.N["LElbow"]: self.robot_joints[self.J["LElbow"]],
-                self.N["RElbow"]: self.robot_joints[self.J["RElbow"]],
-                self.N["LWrist"]: self.robot_joints[self.J["LWrist"]], 
-                self.N["RWrist"]: self.robot_joints[self.J["RWrist"]], 
-                self.N["RKnee"]: self.robot_joints[self.J["RKnee"]], 
-                self.N["LKnee"]: self.robot_joints[self.J["LKnee"]], 
-                self.N["LAnkle"]: self.robot_joints[self.J["LAnkle"]], 
-                self.N["RAnkle"]: self.robot_joints[self.J["RAnkle"]], 
-                self.N["RShoulder"] : self.robot_joints[self.J["RShoulder"]],
-                self.N["LShoulder"] : self.robot_joints[self.J["LShoulder"]],
-                self.N["Head"]: self.robot_joints[self.J["Head"]],
-            }
-            
+            if not self.wheeled:
+                target_positions = {
+                    self.N["LHip"] : self.robot_joints[self.J["LHip"]],
+                    self.N["RHip"] : self.robot_joints[self.J["RHip"]], 
+                    self.N["LElbow"]: self.robot_joints[self.J["LElbow"]],
+                    self.N["RElbow"]: self.robot_joints[self.J["RElbow"]],
+                    self.N["LWrist"]: self.robot_joints[self.J["LWrist"]], 
+                    self.N["RWrist"]: self.robot_joints[self.J["RWrist"]], 
+                    self.N["RKnee"]: self.robot_joints[self.J["RKnee"]], 
+                    self.N["LKnee"]: self.robot_joints[self.J["LKnee"]], 
+                    self.N["LAnkle"]: self.robot_joints[self.J["LAnkle"]], 
+                    self.N["RAnkle"]: self.robot_joints[self.J["RAnkle"]], 
+                    self.N["RShoulder"] : self.robot_joints[self.J["RShoulder"]],
+                    self.N["LShoulder"] : self.robot_joints[self.J["LShoulder"]],
+                    self.N["Head"]: self.robot_joints[self.J["Head"]],
+                }
+            else:
+                    target_positions = {
+                        self.N["LElbow"]: self.robot_joints[self.J["LElbow"]],
+                        self.N["RElbow"]: self.robot_joints[self.J["RElbow"]],
+                        self.N["LWrist"]: self.robot_joints[self.J["LWrist"]], 
+                        self.N["RWrist"]: self.robot_joints[self.J["RWrist"]], 
+                        self.N["RShoulder"] : self.robot_joints[self.J["RShoulder"]],
+                        self.N["LShoulder"] : self.robot_joints[self.J["LShoulder"]],
+                        self.N["Head"]: self.robot_joints[self.J["Head"]],
+                    }
+                
             
             if self.head_fixed:
                 target_positions.pop(self.N["Head"])
@@ -671,10 +700,4 @@ class HumanAction():
         
         return joints, orientations, transl, global_orient, meshes, directions
 
-
-
-
-### RIVEDERE QUEL GET PHYSICAL JOINTS, GET JOINTS
-
-
-
+    
