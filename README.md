@@ -13,27 +13,37 @@ conda activate Robots
 ```
 
 
-## To run ROBOT EQUALIZER
-
-```
-python robot_translator.py --robot ROBOT_NAME         # --help to see list of available robots
-```
-
 This code will print the kinematic associations.
 
-## TO visualize the INVERSE KINEMATICS PROCESS run
+## TO find robot configurations
 
-Download SAMPLE here: https://drive.google.com/file/d/1CSDqJGh7zWs2xjXEa533vCPEcINhP3NH/view?usp=sharing
+
 Download SMPL models here: https://drive.google.com/file/d/1eF2DCk7GhbSAYfC8eKVFCU27P4VeKNPV/view?usp=sharing
 
-Put the models_smplx_v1_1 in the main folder and the sample pose wherever you want
+Put the models_smplx_v1_1 in the main folder.
+You can use the interaction sample to test the code.
 
 ```
-python retarget.py --human_pose PATH_TO_SMPL_POSE --robot ROBOT_NAME
+python retarget_motion.py --interaction PATH_TO_INTERACTION --robot ROBOT_NAME
 ```
+
+If you want only one pose run:
+
+```
+python retarget_pose.py --interaction PATH_TO_INTERACTION --robot ROBOT_NAME
+```
+
+This will save robot configurations in the same folder.
+
+To visualize and create a video run 
+```
+python robot_interaction.py --interaction PATH_TO_INTERACTION --robot ROBOT_NAME
+```
+After the visualization stops you can adjust the camera and press q to save camera parameters. Those will be loaded in the next execution.
+
 
 Press ENTER to visualize the human side by side to the robot.
 
 <p align="center">
-  <img src="images/wave.gif" width="300"/>
+  <img src="images/wave.gif" width="600"/>
 </p>

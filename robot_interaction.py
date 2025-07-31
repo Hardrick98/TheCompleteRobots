@@ -37,7 +37,7 @@ robot_list = [r.removesuffix(".urdf") for r in os.listdir("URDF") if r.endswith(
 
 parser = argparse.ArgumentParser(description="Retarget human to robot")
 parser.add_argument("--robot", type=str, default="nao", help="The robot to visualize.")
-parser.add_argument("--human_pose", type=str, help="Path to smpl human pose")
+parser.add_argument("--interaction", type=str, help="Path to smpl human pose")
 parser.add_argument("--video", action="store_true", help="If to record video or not at the end")
 
 args = parser.parse_args()
@@ -99,8 +99,8 @@ H = {
 
 print("\nCONSTRUCTING VISUALIZATION...")
 
-arr1 = np.load(f"{args.human_pose}/P1.npz", allow_pickle=True)
-arr2 = np.load(f"{args.human_pose}/P2.npz", allow_pickle=True)
+arr1 = np.load(f"{args.interaction}/P1.npz", allow_pickle=True)
+arr2 = np.load(f"{args.interaction}/P2.npz", allow_pickle=True)
 
 joint_positions1, _, translation1, _, _, _ = load_simple_all(smpl_model, arr1)
 joint_positions2, _, translation2, _, _, _ = load_simple_all(smpl_model, arr2)
@@ -118,8 +118,8 @@ human1_js[:, :, [1, 2]] = human1_js[:, :, [2, 1]]
 human2_js[:, :, 0] *= -1
 human2_js[:, :, [1, 2]] = human2_js[:, :, [2, 1]]
 
-joint_configurations1 = np.load(f"{args.human_pose}/R1.npy")
-joint_configurations2 = np.load(f"{args.human_pose}/R2.npy")
+joint_configurations1 = np.load(f"{args.interaction}/R1.npy")
+joint_configurations2 = np.load(f"{args.interaction}/R2.npy")
 
 robot1_cache = preload_robot_meshes(robot1)
 robot2_cache = preload_robot_meshes(robot2)

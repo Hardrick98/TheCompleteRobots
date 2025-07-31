@@ -9,6 +9,6 @@ models_smplx_v1_1.zip
 *.npz
 .vscode/launch.json
 profile_output.prof
-*.pkl
+actions.pkl
 wave.mp4
 high_five.mp4

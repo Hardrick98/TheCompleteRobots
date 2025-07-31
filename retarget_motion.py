@@ -25,7 +25,7 @@ if __name__ == "__main__":
     parser.add_argument("--debug",
                         action="store_true",
                         help="Enter debug mode with plt")
-    parser.add_argument("--human_pose",
+    parser.add_argument("--interaction",
                         type=str,
                         help="Path to smpl human pose")
     parser.add_argument("--idx",
@@ -69,8 +69,8 @@ if __name__ == "__main__":
     robotoid2 = Robotoid(robot, wheeled)
     
     
-    file1 = args.human_pose + "/P2.npz"
-    file2 = args.human_pose + "/P1.npz"
+    file1 = args.interaction + "/P2.npz"
+    file2 = args.interaction + "/P1.npz"
     action1 = np.load(file1, allow_pickle=True)
     action2 = np.load(file2, allow_pickle=True)
 
