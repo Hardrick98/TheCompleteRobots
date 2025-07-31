@@ -36,6 +36,12 @@ class Robotoid:
 
 
     def find_palm_convention(self):
+        """
+        Determines the palm orientation convention used in the retargeting function.
+
+        Returns:
+            A tuple of two lists (cL, cR) representing direction vectors in the form [x', y', z'].
+        """
 
         frame_id = self.model.getFrameId(self.N["RWrist"])
         frame = self.model.frames[frame_id]
@@ -69,9 +75,8 @@ class Robotoid:
             if geom.parentJoint in desc_joints:
                 mesh_path = geom.meshPath
                 if not os.path.isfile(mesh_path):
-                    print(f"⚠️ File non trovato: {mesh_path}")
+                    print(f"File not found: {mesh_path}")
                     continue
-                # Carica mesh con Trimesh
                 mesh = trimesh.load(mesh_path)
                 placement = self.data.oMf[geom.parentFrame]
                 placement_world = placement.act(geom.placement)
@@ -114,7 +119,10 @@ class Robotoid:
             return None, None
 
     def get_kinematic_chains(self,end_effectors, parent_child):
-            
+            """
+            Returns:
+                A list of kinematic chains
+            """
             chains = []
             for ee in end_effectors:
                 chain = []
@@ -165,6 +173,12 @@ class Robotoid:
 
     def scale_human_to_robot(self, R, robot_joints, H, human_joints):
         
+        """
+        Scales and moves the robot joints to fit the human ones in the robot.
+
+        Returns:
+            A numpy array containing the robot joint target positions
+        """
         
         spineH = np.linalg.norm(human_joints[H["Neck"]]-human_joints[H["root_joint"]])
         spineR = np.linalg.norm(robot_joints[R["Head"]]-robot_joints[R["root_joint"]])
@@ -235,6 +249,13 @@ class Robotoid:
     
     def build(self):
 
+        """
+        Given the URDF file it builds the robotoid by associating each joint to the abstract structure.
+
+        Returns:
+            A robotoid
+        """
+
         parent_child = {}
         for i, joint_name in enumerate(self.model.names):
             parent_idx = self.model.parents[i]
@@ -255,7 +276,6 @@ class Robotoid:
                 if i != 0:
                     end_effectors.append(joint_name)
 
-        print(end_effectors)
         
         chains = self.get_kinematic_chains(end_effectors, parent_child)
         new_chains = []
@@ -267,7 +287,6 @@ class Robotoid:
         if len(new_chains) > 5: #è probabile che ci siano più end-effector del necessario quindi riduci
             new_chains, groups = self.reduce_lists(new_chains, max_groups=5)
         
-        print(new_chains)
 
         ## HANDLING DUPLICATE ORIGIN JOINTS DIFFERENT FROM ROOT (ATLAS CASE)
 
@@ -452,7 +471,14 @@ class Robotoid:
 
         return final_reduced, final_values
 
+    
     def retarget(self, human_action, idx=None):
+        """
+        Given a human action this function retargets it to the robot.
+        
+        Returns:
+            A numpy array with all the joint configurations for the action
+        """  
 
         human_joints_seq, orientations_seq, translation_seq, global_orient_seq, _, directions_seq = human_action.get_attributes(idx)  
         H = human_action.get_joint_dict()

@@ -89,13 +89,11 @@ if __name__ == "__main__":
     path = path[:-2] + 'R' + path[-1] + ".npy"
     np.save(path, joint_config2)
 
-    #print("\nCONSTRUCTING VISUALIZATION...")
+    
 
     if args.visualize:
             
-        
-
-        
+        print("\nCONSTRUCTING VISUALIZATION...")
         human_action = human_action2
        
         human_joints_seq, orientations_seq, translation_seq, global_orient_seq, human_meshes, directions_seq = human_action.get_attributes()  
