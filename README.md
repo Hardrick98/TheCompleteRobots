@@ -13,8 +13,6 @@ conda activate Robots
 ```
 
 
-This code will print the kinematic associations.
-
 ## TO find robot configurations
 
 
@@ -42,7 +40,7 @@ python robot_interaction.py --interaction PATH_TO_INTERACTION --robot ROBOT_NAME
 After the visualization stops you can adjust the camera and press q to save camera parameters. Those will be loaded in the next execution.
 
 
-Press ENTER to visualize the human side by side to the robot.
+The output will be a video.mp4 file.
 
 <p align="center">
   <img src="images/wave.gif" width="600"/>
