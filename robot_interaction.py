@@ -113,6 +113,8 @@ trans2 = translation2.detach().cpu().numpy()
 
 trans1[:, 0] *= -1
 trans1[:, [1, 2]] = trans1[:, [2, 1]]
+trans2[:, 0] *= -1
+trans2[:, [1, 2]] = trans2[:, [2, 1]]
 human1_js[:, :, 0] *= -1
 human1_js[:, :, [1, 2]] = human1_js[:, :, [2, 1]]
 human2_js[:, :, 0] *= -1
@@ -189,11 +191,19 @@ for t in tqdm(range(len(joint_configurations1))):
   
     s = [robot_bounds[0]/human_bounds[0], robot_bounds[1]/human_bounds[1], 0]
 
+    """
+
     T = np.eye(4)
-    T[:3, 3] = trans1[t] #+ distance_between * s
+    T[:3, 3] = trans1[t] + distance_between *s
     for m in meshes2:
         m.apply_transform(T)
 
+    """      
+    T = np.eye(4)
+    T[:3, 3] = trans2[t]
+    for m in meshes2:
+        m.apply_transform(T)
+    
     # Visualizzazione
     if t == 0:
         vp.show(*meshes1, *meshes2, resetcam=True)

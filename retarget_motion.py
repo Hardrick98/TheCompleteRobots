@@ -93,7 +93,7 @@ if __name__ == "__main__":
 
     if args.visualize:
             
-        print("\nCONSTRUCTING VISUALIZATION...")
+        print("\nConstructing Visualization...")
         human_action = human_action2
        
         human_joints_seq, orientations_seq, translation_seq, global_orient_seq, human_meshes, directions_seq = human_action.get_attributes()  
