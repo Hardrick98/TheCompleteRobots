@@ -36,24 +36,35 @@ def preload_robot_meshes(robot):
 robot_list = [r.removesuffix(".urdf") for r in os.listdir("URDF") if r.endswith(".urdf")]
 
 parser = argparse.ArgumentParser(description="Retarget human to robot")
-parser.add_argument("--robot", type=str, default="nao", help="The robot to visualize.")
+parser.add_argument("--robot1", type=str, default="nao", help="The robot1 to visualize.")
+parser.add_argument("--robot2", type=str, default="nao", help="The robot2 to visualize.")
 parser.add_argument("--interaction", type=str, help="Path to smpl human pose")
 parser.add_argument("--video", action="store_true", help="If to record video or not at the end")
 
 args = parser.parse_args()
-robot_name = args.robot.lower()
+robot_name1 = args.robot1.lower()
+robot_name2 = args.robot2.lower()
 
-wheeled = args.robot.lower() == "pepper"
+wheeled = args.robot1.lower() == "pepper"
 
 try:
-    robot1 = HumanoidRobot(f"URDF/{args.robot}.urdf")
-    robot2 = HumanoidRobot(f"URDF/{args.robot}.urdf")
+    robot1 = HumanoidRobot(f"URDF/{args.robot1}.urdf")
 except Exception as e:
-    print(f"Error loading robot {robot_name}: {e}")
+    print(f"Error loading robot {robot_name1}: {e}")
     print("Available robots:")
     for r in robot_list:
         print(f"- {r}")
     exit(1)
+
+try:
+    robot2 = HumanoidRobot(f"URDF/{args.robot2}.urdf")
+except Exception as e:
+    print(f"Error loading robot {robot_name1}: {e}")
+    print("Available robots:")
+    for r in robot_list:
+        print(f"- {r}")
+    exit(1)
+
 
 pose_dict, robot_joints = robot1.get_joints(robot1.q0)
 _, robot_limbs = robot1.get_physical_joints()
@@ -120,8 +131,8 @@ human1_js[:, :, [1, 2]] = human1_js[:, :, [2, 1]]
 human2_js[:, :, 0] *= -1
 human2_js[:, :, [1, 2]] = human2_js[:, :, [2, 1]]
 
-joint_configurations1 = np.load(f"{args.interaction}/R1.npy")
-joint_configurations2 = np.load(f"{args.interaction}/R2.npy")
+joint_configurations1 = np.load(f"{args.interaction}/{robot_name1}1.npy")
+joint_configurations2 = np.load(f"{args.interaction}/{robot_name2}2.npy")
 
 robot1_cache = preload_robot_meshes(robot1)
 robot2_cache = preload_robot_meshes(robot2)
@@ -165,6 +176,7 @@ for t in tqdm(range(len(joint_configurations1))):
     pin.updateFramePlacements(robot2.model, robot2.data)
 
     meshes2 = []
+    robot_pos2 = []
     for name, (base_mesh, placement, parentFrame) in robot2_cache.items():
         m = base_mesh.clone()
         placement_world = robot2.data.oMf[parentFrame].act(placement)
@@ -176,45 +188,56 @@ for t in tqdm(range(len(joint_configurations1))):
         m.apply_transform(T)
         m.color("red")
         meshes2.append(m)
+        robot_pos2.append(p)
 
-    # Traslazioni
+    t1 = trans1[t].copy()
+    t2 = trans2[t].copy()
+
+    if t == 0:
+        robot_pos1 = np.vstack(robot_pos1)
+        human_bounds = np.ptp(human1_js[t], axis=0)
+        robot_bounds = np.ptp(robot_pos1, axis=0)
+        s1 = robot_bounds / human_bounds  
+
+        robot_pos2 = np.vstack(robot_pos2)
+        human_bounds = np.ptp(human2_js[t], axis=0)
+        robot_bounds = np.ptp(robot_pos2, axis=0)
+        s2 = robot_bounds / human_bounds   
     
-    distance_between = human2_js[t][H["root_joint"]] - human1_js[t][H["root_joint"]]
-    T = np.eye(4)
-    T[:3, 3] = trans1[t]
+
+    # Traslazione robot1
+    T1 = np.eye(4)
+    min_z = np.min(human1_js[:,2])
+    t1_s = t1.copy()
+    #t1_s[2] -= min_z
+    t1_s = t1_s * s1
+    T1[:3, 3] = t1_s
+
     for m in meshes1:
-        m.apply_transform(T)
+        m.apply_transform(T1)
 
-    robot_pos1 = np.vstack(robot_pos1)
-    human_bounds = np.ptp(human1_js[t], axis=0)
-    robot_bounds = np.ptp(robot_pos1, axis=0)
-  
-    s = [robot_bounds[0]/human_bounds[0], robot_bounds[1]/human_bounds[1], 0]
+    T2 = np.eye(4)
+    min_z = np.min(human2_js[:,2])
+    t2_s = t2.copy()
+    #t2_s[2] -= min_z
+    t2_s = t2_s * s2
 
-    """
-
-    T = np.eye(4)
-    T[:3, 3] = trans1[t] + distance_between *s
-    for m in meshes2:
-        m.apply_transform(T)
-
-    """      
-    T = np.eye(4)
-    T[:3, 3] = trans2[t]
-    for m in meshes2:
-        m.apply_transform(T)
+    T2[:3, 3] = t2_s
     
-    # Visualizzazione
+    for m in meshes2:
+        m.apply_transform(T2)
+        
+        # Visualizzazione
     if t == 0:
         vp.show(*meshes1, *meshes2, resetcam=True)
-        
-        try:
-            camera_parameter = joblib.load("camera.pkl")
-            vp.camera.SetPosition(camera_parameter["pos"])        
-            vp.camera.SetFocalPoint(camera_parameter["focal"])      
-            vp.camera.SetViewUp(camera_parameter["view"]) 
-        except Exception as e:
-            print("Could not load camera parameters:", e)
+    
+    try:
+        camera_parameter = joblib.load("camera.pkl")
+        vp.camera.SetPosition(camera_parameter["pos"])        
+        vp.camera.SetFocalPoint(camera_parameter["focal"])      
+        vp.camera.SetViewUp(camera_parameter["view"]) 
+    except Exception as e:
+        print("Could not load camera parameters:", e)
     else:
         vp.remove(*prev_meshes1, *prev_meshes2)
         vp.add(*meshes1, *meshes2)

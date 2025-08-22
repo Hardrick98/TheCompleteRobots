@@ -38,7 +38,6 @@ if __name__ == "__main__":
     robot_name = args.robot.lower() 
     idx = args.idx
 
-    print(robot_name)
     try:
         robot = HumanoidRobot(f"URDF/{args.robot}.urdf")
     except Exception as e:
@@ -83,10 +82,10 @@ if __name__ == "__main__":
 
 
     path = file1.removesuffix(".npz")
-    path = path[:-2] + 'R' + path[-1] + ".npy"
+    path = path[:-2] + robot_name + path[-1] + ".npy"
     np.save(path, joint_config1)
     path = file2.removesuffix(".npz")
-    path = path[:-2] + 'R' + path[-1] + ".npy"
+    path = path[:-2] + robot_name + path[-1] + ".npy"
     np.save(path, joint_config2)
 
     

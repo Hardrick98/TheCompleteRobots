@@ -9,6 +9,6 @@ models_smplx_v1_1.zip
 *.npz
 .vscode/launch.json
 profile_output.prof
-actions.pkl
+*.pkl
 *.mp4
-camera.pkl
+
