@@ -1,5 +1,5 @@
 from utils import *
-from test_smpl import load_simple_all
+from human_interaction import load_simple_all
 import pinocchio as pin
 import argparse
 from vedo import Mesh, merge
@@ -185,7 +185,7 @@ if __name__ == "__main__":
             robot_meshes.append(robot_mesh)
             human_meshes_t.append(hm)
 
-        from test_smpl import animate_all_poses
+        from human_interaction import animate_all_poses
 
         animate_all_poses(human_meshes_t, robot_meshes)
 

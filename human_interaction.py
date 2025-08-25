@@ -252,7 +252,7 @@ def animate_all_poses(pose1, pose2, delay = 0.01, video=False):
     meshes2 = [m.clone().c('red') for m in pose2]
     framerate = 60
     if video:
-        video = Video(name="video.mp4", duration=len(pose1)/framerate, fps=framerate)
+        video = Video(name="videos/video.mp4", duration=len(pose1)/framerate, fps=framerate)
     vp.show(meshes1[0], meshes2[0], resetcam=True)
     
     try:
@@ -288,10 +288,10 @@ if __name__ == "__main__":
 
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--file","-f",type=str)
+    parser.add_argument("--path","-p",type=str)
     args = parser.parse_args()
-    arr = np.load(args.file, allow_pickle=True)
-    arr2 = np.load(args.file.removesuffix("P1.npz")+"P2.npz")
+    arr = np.load(args.path+"/P1.npz" , allow_pickle=True)
+    arr2 = np.load(args.path+"/P2.npz")
 
     device = "cuda:0"
     #load_simple_interx(arr, 0)

@@ -1,5 +1,5 @@
 from utils import *
-from test_smpl import load_simple_interx
+from human_interaction import load_simple_interx
 from pinocchio.visualize import MeshcatVisualizer
 import pinocchio as pin
 import argparse

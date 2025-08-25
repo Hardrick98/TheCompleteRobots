@@ -1,5 +1,5 @@
 from utils import *
-from test_smpl import load_simple_all
+from human_interaction import load_simple_all
 from pinocchio.visualize import MeshcatVisualizer
 import pinocchio as pin
 import argparse
@@ -278,6 +278,6 @@ for t in tqdm(range(len(joint_configurations1))):
     robot2_meshes.append(robot_mesh2)
 
 
-from test_smpl import animate_all_poses
+from human_interaction import animate_all_poses
 
 animate_all_poses(robot1_meshes, robot2_meshes, video=args.video)
