@@ -1,5 +1,7 @@
 import joblib
-"""
+import argparse
+import random
+
 actions_dict = {
     0: "Hug",
     1: "Handshake",
@@ -44,21 +46,23 @@ actions_dict = {
 }
 
 
-#actions_dict = {v: k for k, v in actions_dict.items()}
-import os 
 
-inter = os.listdir("/datasets/InterX/motions")
-print(inter[0])
+def pick_random_action(action):
 
-data = {}
-for k,v in actions_dict.items():
-  data[v] = []
+  actions = joblib.load("actions.pkl")
 
-for i in inter:
-  data[actions_dict[int(i[9:12])]].append(i)
+  n = random.randint(0, len(actions[action]))
 
-joblib.dump(data,"actions.pkl")
-"""
-actions = joblib.load("actions.pkl")
+  a = actions[action][n]
 
-print(actions["Hug"])
+  return a
+
+if __name__ == "__main__":
+
+  parser = argparse.ArgumentParser()
+  parser.add_argument("-a","--action", help=print(actions_dict))
+  args = parser.parse_args()
+
+
+  a = pick_random_action(args.action)
+  print(a)

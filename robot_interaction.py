@@ -3,7 +3,7 @@ from human_interaction import load_simple_all
 from pinocchio.visualize import MeshcatVisualizer
 import pinocchio as pin
 import argparse
-from vedo import Plotter, Mesh, Video
+from vedo import Plotter, Mesh, Video, Axes
 import os
 from tqdm import tqdm
 from scipy.spatial.transform import Rotation as Rot
@@ -137,14 +137,14 @@ joint_configurations2 = np.load(f"{args.interaction}/{robot_name2}2.npy")
 robot1_cache = preload_robot_meshes(robot1)
 robot2_cache = preload_robot_meshes(robot2)
 
-vp = Plotter(interactive=False, axes=1, title="SMPLX Retargeting", bg='white')
+vp = Plotter(interactive=True, axes=0, title="SMPLX Retargeting", bg='white')
 
 if args.video:
     video = Video("video.mp4", duration=len(joint_configurations1)/60, fps=60)
 else:
     video = None
 
-vp.show(resetcam=True)
+
 
 prev_meshes1 = []
 prev_meshes2 = []
@@ -203,23 +203,22 @@ for t in tqdm(range(len(joint_configurations1))):
         human_bounds = np.ptp(human2_js[t], axis=0)
         robot_bounds = np.ptp(robot_pos2, axis=0)
         s2 = robot_bounds / human_bounds   
-    
-
-    # Traslazione robot1
+  
     T1 = np.eye(4)
-    min_z = np.min(human1_js[:,2])
+    min_z = np.min(human1_js[t,:,2])
     t1_s = t1.copy()
-    #t1_s[2] -= min_z
+    t1_s[2] -= min_z           #make sure it is on the ground
     t1_s = t1_s * s1
     T1[:3, 3] = t1_s
-
+    
     for m in meshes1:
         m.apply_transform(T1)
 
     T2 = np.eye(4)
-    min_z = np.min(human2_js[:,2])
+    min_z = np.min(human2_js[t,:,2])
     t2_s = t2.copy()
-    #t2_s[2] -= min_z
+    t2_s[2] -= min_z  
+
     t2_s = t2_s * s2
 
     T2[:3, 3] = t2_s
@@ -227,17 +226,21 @@ for t in tqdm(range(len(joint_configurations1))):
     for m in meshes2:
         m.apply_transform(T2)
         
-        # Visualizzazione
+    axes_opts = dict(
+        xtitle="X",
+        ytitle="Y",
+        ztitle="Z",
+        xyplane_color="yellow",
+        xyalpha=0.5,
+        zrange=[0,2],
+        xrange=[-1,1],
+        yrange=[-1,1]
+    )
+
+    ax = Axes(vp, **axes_opts)
     if t == 0:
-        vp.show(*meshes1, *meshes2, resetcam=True)
-    
-    try:
-        camera_parameter = joblib.load("camera.pkl")
-        vp.camera.SetPosition(camera_parameter["pos"])        
-        vp.camera.SetFocalPoint(camera_parameter["focal"])      
-        vp.camera.SetViewUp(camera_parameter["view"]) 
-    except Exception as e:
-        print("Could not load camera parameters:", e)
+        vp.show(*meshes1, *meshes2, axes=ax, resetcam=True)
+
     else:
         vp.remove(*prev_meshes1, *prev_meshes2)
         vp.add(*meshes1, *meshes2)
@@ -255,11 +258,4 @@ if video:
     video.close()
 
 vp.interactive()
-camera_parameter = {
-    "pos": vp.camera.GetPosition(),
-    "focal": vp.camera.GetFocalPoint(),
-    "view": vp.camera.GetViewUp()
-}
-print(camera_parameter)
-joblib.dump(camera_parameter, "camera.pkl")
 vp.close()

@@ -39,8 +39,8 @@ def load_simple(arr, idx):
     global_orient = torch.from_numpy(smpl['global_orient'][idx]).reshape(1, -1).to(torch.float32)
     body_pose_raw = torch.from_numpy(smpl['body_pose'][idx][:21]).reshape(1, -1).to(torch.float32)
     body_pose = torch.from_numpy(smpl['body_pose'][idx][:]).reshape(1, -1).to(torch.float32)
-    transl        = torch.from_numpy(smpl['root_transl'][idx]).reshape(1, -1).to(torch.float32)
-    betas        = torch.from_numpy(smpl['betas'][idx]).reshape(1, 10).to(torch.float32)
+    transl = torch.from_numpy(smpl['root_transl'][idx]).reshape(1, -1).to(torch.float32)
+    betas = torch.from_numpy(smpl['betas'][idx]).reshape(1, 10).to(torch.float32)
 
     # Carica il modello SMPL
     smpl_model = SMPLX(
@@ -246,7 +246,7 @@ def load_simple_all(smpl_model, arr):
 
 
 def animate_all_poses(pose1, pose2, delay = 0.01, video=False):
-    vp = Plotter(interactive = False, axes=1, title="SMPLX Animation", bg='white')
+    vp = Plotter(interactive = True, axes=1, title="SMPLX Animation", bg='white')
 
     meshes1 = [m.clone().c('blue') for m in pose1]
     meshes2 = [m.clone().c('red') for m in pose2]
@@ -255,14 +255,6 @@ def animate_all_poses(pose1, pose2, delay = 0.01, video=False):
         video = Video(name="videos/video.mp4", duration=len(pose1)/framerate, fps=framerate)
     vp.show(meshes1[0], meshes2[0], resetcam=True)
     
-    try:
-        camera_parameter = joblib.load("camera.pkl")
-        vp.camera.SetPosition(camera_parameter["pos"])        
-        vp.camera.SetFocalPoint(camera_parameter["focal"])      
-        vp.camera.SetViewUp(camera_parameter["view"]) 
-    except:
-        print("Could not load camera parameters")
-        pass
     
     vp.render()
 
@@ -278,9 +270,6 @@ def animate_all_poses(pose1, pose2, delay = 0.01, video=False):
     if video:
         video.close()
     vp.interactive()
-    camera_parameter= {"pos" : vp.camera.GetPosition(),"focal" : vp.camera.GetFocalPoint(),"view": vp.camera.GetViewUp()}
-    print(camera_parameter)
-    joblib.dump(camera_parameter,"camera.pkl")
     vp.close()
 
 if __name__ == "__main__":
@@ -288,10 +277,10 @@ if __name__ == "__main__":
 
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--path","-p",type=str)
+    parser.add_argument("--interaction","-i",type=str)
     args = parser.parse_args()
-    arr = np.load(args.path+"/P1.npz" , allow_pickle=True)
-    arr2 = np.load(args.path+"/P2.npz")
+    arr = np.load(args.interaction+"/P1.npz" , allow_pickle=True)
+    arr2 = np.load(args.interaction+"/P2.npz")
 
     device = "cuda:0"
     #load_simple_interx(arr, 0)
