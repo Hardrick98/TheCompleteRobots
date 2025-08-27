@@ -60,7 +60,7 @@ def pick_random_action(action):
 if __name__ == "__main__":
 
   parser = argparse.ArgumentParser()
-  parser.add_argument("-a","--action", help=print(actions_dict))
+  parser.add_argument("-a","--action")
   args = parser.parse_args()
 
 

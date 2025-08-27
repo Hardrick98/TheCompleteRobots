@@ -278,6 +278,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--interaction","-i",type=str)
+    parser.add_argument("--video",action="store_true")
     args = parser.parse_args()
     arr = np.load(args.interaction+"/P1.npz" , allow_pickle=True)
     arr2 = np.load(args.interaction+"/P2.npz")
@@ -294,5 +295,5 @@ if __name__ == "__main__":
     joints, body_pose, transl, global_orient, pose1, directions = load_simple_all(smpl_model, arr)
     joints, body_pose, transl, global_orient, pose2, directions = load_simple_all(smpl_model, arr2)
     
-    animate_all_poses(pose1, pose2)
+    animate_all_poses(pose1, pose2, video=args.video)
     

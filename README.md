@@ -35,10 +35,9 @@ This will save robot configurations in the same folder.
 
 To visualize and create a video run 
 ```
-python robot_interaction.py --interaction PATH_TO_INTERACTION --robot ROBOT_NAME
+python robot_interaction.py --interaction PATH_TO_INTERACTION --robot1 ROBOT1_NAME --robot2 ROBOT2_NAME --video 
 ```
-After the visualization stops you can adjust the camera and press q to save camera parameters. Those will be loaded in the next execution.
-
+When the interactive window opens, adjust the camera as you like then press q. The interaction will start and the video will be recorded. Once the motion stops press q to end.
 
 The output will be a video.mp4 file.
 
