@@ -42,5 +42,5 @@ When the interactive window opens, adjust the camera as you like then press q. T
 The output will be a video.mp4 file.
 
 <p align="center">
-  <img src="images/wave.gif" width="600"/>
+  <img src="images/robot_play.gif" width="600"/>
 </p>

@@ -5,7 +5,7 @@ import argparse
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from mesh import compose_hand_mesh
+
 
 
 if __name__ == "__main__":
