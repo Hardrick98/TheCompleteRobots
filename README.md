@@ -45,6 +45,5 @@ The output will be a video.mp4 file.
   <img src="images/human_play.gif" width="300"/>
   <img src="images/robot_play.gif", width="300">
 </p>
-<p align="center">
-  <em>Human</em> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>Robot</em>
-</p>
+
+On the left humans on the right robots playing ROCK-PAPER-SCISSORS
