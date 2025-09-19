@@ -11,3 +11,5 @@ clip = clip.resized(0.5)
 
 # Write to GIF
 clip.write_gif("images/robot_play.gif", fps=120)
+
+#ffmpeg -i human_play.mp4 -vf "fps=30,scale=600:-1:flags=lanczos" -gifflags -transdiff -y human_play.gif

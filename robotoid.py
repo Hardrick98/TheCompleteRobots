@@ -204,6 +204,20 @@ class Robotoid:
             s_hip = hipR / hipH
             s_femor = femorR / femorH
             s_tibia = tibiaR / tibiaH
+        else:
+            
+            HHip = (human_joints[H["LHip"]] + human_joints[H["RHip"]])/2
+            HKnee = (human_joints[H["LAnkle"]] + human_joints[H["RAnkle"]])/2
+            hipH = np.linalg.norm(HHip-human_joints[H["root_joint"]])
+            hipR = np.linalg.norm(robot_joints[R["Hip"]]-robot_joints[R["root_joint"]])
+
+            femorH = np.linalg.norm(HKnee-HHip)
+            femorR = np.linalg.norm(robot_joints[R["Knee"]]-robot_joints[R["Hip"]])
+         
+            
+            s_hip = hipR / hipH
+            s_femor = femorR / femorH
+        
 
         upper_armH = np.linalg.norm(human_joints[H["LElbow"]]-human_joints[H["LShoulder"]])
         upper_armR = np.linalg.norm(robot_joints[R["LElbow"]]-robot_joints[R["LShoulder"]])
@@ -236,6 +250,10 @@ class Robotoid:
             robot_joints[R["RHip"]] = robot_joints[R["root_joint"]] + (human_joints[H["RHip"]] - human_joints[H["root_joint"]]) * s_hip
             robot_joints[R["RKnee"]] = robot_joints[R["RHip"]] + (human_joints[H["RKnee"]] - human_joints[H["RHip"]]) * s_femor
             robot_joints[R["RAnkle"]] = robot_joints[R["RKnee"]] + (human_joints[H["RAnkle"]] - human_joints[H["RKnee"]]) * s_tibia
+        else:
+            robot_joints[R["Knee"]] = robot_joints[R["Hip"]] + (HKnee - HHip) * s_femor
+            robot_joints[R["Hip"]] = robot_joints[R["root_joint"]] + (HHip- human_joints[H["root_joint"]]) * s_hip
+
 
         robot_joints[R["LElbow"]] = robot_joints[R["LShoulder"]] + (human_joints[H["LElbow"]] - human_joints[H["LShoulder"]]) * s_upper_arm
         robot_joints[R["LWrist"]] = robot_joints[R["LElbow"]] + (human_joints[H["LWrist"]] - human_joints[H["LElbow"]]) * s_forearm
@@ -265,6 +283,7 @@ class Robotoid:
                 parent_name = self.model.names[parent_idx]
             parent_child[joint_name] = parent_name
 
+        print(parent_child)
 
         all_parents = set(self.model.parents)
 
@@ -457,7 +476,11 @@ class Robotoid:
                 final["RHip"] = robotoid_labels[3][0]
                 final["RKnee"] = robotoid_labels[3][1]
                 final["RAnkle"] = robotoid_labels[3][2]
-
+        else:
+            
+         
+            final["Hip"] = robotoid_labels[3][0][0:2]
+            final["Knee"]  = [robotoid_labels[3][0][2]]
 
         final_reduced = {}
         final_values = {}
@@ -465,6 +488,7 @@ class Robotoid:
             if v[0] is not None:
                 final_reduced[k] = v[0]
                 final_values[k] = self.model.getJointId(v[0])-1
+
 
         final_reduced["root_joint"] = "root_joint"
         final_values["root_joint"] = self.model.getJointId("root_joint") - 1
@@ -519,6 +543,8 @@ class Robotoid:
             
             joints = self.robot.joints
             
+    
+
             if not self.wheeled:
                 target_positions = {
                     self.N["LHip"] : self.robot_joints[self.J["LHip"]],
@@ -536,14 +562,19 @@ class Robotoid:
                     self.N["Head"]: self.robot_joints[self.J["Head"]],
                 }
             else:
-                    target_positions = {
-                        self.N["LElbow"]: self.robot_joints[self.J["LElbow"]],
-                        self.N["RElbow"]: self.robot_joints[self.J["RElbow"]],
-                        self.N["LWrist"]: self.robot_joints[self.J["LWrist"]], 
-                        self.N["RWrist"]: self.robot_joints[self.J["RWrist"]], 
-                        self.N["RShoulder"] : self.robot_joints[self.J["RShoulder"]],
-                        self.N["LShoulder"] : self.robot_joints[self.J["LShoulder"]],
-                        self.N["Head"]: self.robot_joints[self.J["Head"]],
+                
+                target_positions = {
+                    self.N["LElbow"]: self.robot_joints[self.J["LElbow"]],
+                    self.N["RElbow"]: self.robot_joints[self.J["RElbow"]],
+                    self.N["LWrist"]: self.robot_joints[self.J["LWrist"]], 
+                    self.N["RWrist"]: self.robot_joints[self.J["RWrist"]], 
+                    self.N["RShoulder"] : self.robot_joints[self.J["RShoulder"]],
+                    self.N["LShoulder"] : self.robot_joints[self.J["LShoulder"]],
+                    self.N["Head"]: self.robot_joints[self.J["Head"]],
+                    self.N["Knee"]: self.robot_joints[self.J["Knee"]],
+                    self.N["Hip"] : self.robot_joints[self.J["Hip"]]
+
+                       
                     }
                 
             
