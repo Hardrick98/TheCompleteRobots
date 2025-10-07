@@ -1,38 +1,67 @@
 name: Robots
 channels:
+  - conda-forge
   - defaults
-  - https://repo.anaconda.com/pkgs/main
-  - https://repo.anaconda.com/pkgs/r
 dependencies:
   - _libgcc_mutex=0.1=main
   - _openmp_mutex=5.1=1_gnu
+  - asttokens=3.0.0=pyhd8ed1ab_1
   - bzip2=1.0.8=h5eee18b_6
-  - ca-certificates=2025.2.25=h06a4308_0
+  - ca-certificates=2025.8.3=hbd8a1cb_0
+  - comm=0.2.3=pyhe01879c_0
+  - debugpy=1.8.11=py311h6a678d5_0
+  - decorator=5.2.1=pyhd8ed1ab_0
+  - exceptiongroup=1.3.0=pyhd8ed1ab_0
+  - importlib-metadata=8.7.0=pyhe01879c_1
+  - ipykernel=6.30.1=pyh82676e8_0
+  - ipython_pygments_lexers=1.1.1=pyhd8ed1ab_0
+  - jedi=0.19.2=pyhd8ed1ab_1
+  - jupyter_client=8.6.3=pyhd8ed1ab_1
+  - jupyter_core=5.8.1=pyh31011fe_0
   - ld_impl_linux-64=2.40=h12ee557_0
   - libffi=3.4.4=h6a678d5_1
   - libgcc-ng=11.2.0=h1234567_1
   - libgomp=11.2.0=h1234567_1
+  - libsodium=1.0.18=h36c2ea0_1
   - libstdcxx-ng=11.2.0=h1234567_1
   - libuuid=1.41.5=h5eee18b_0
+  - matplotlib-inline=0.1.7=pyhd8ed1ab_1
   - ncurses=6.4=h6a678d5_0
+  - nest-asyncio=1.6.0=pyhd8ed1ab_1
   - openssl=1.1.1w=h7f8727e_0
+  - packaging=25.0=pyh29332c3_1
+  - pexpect=4.9.0=pyhd8ed1ab_1
+  - pickleshare=0.7.5=pyhd8ed1ab_1004
   - pip=25.1=pyhc872135_2
+  - ptyprocess=0.7.0=pyhd8ed1ab_1
+  - pure_eval=0.2.3=pyhd8ed1ab_1
   - python=3.11.0=h7a1cb2a_3
+  - python-dateutil=2.9.0.post0=pyhe01879c_2
   - readline=8.2=h5eee18b_0
   - setuptools=78.1.1=py311h06a4308_0
+  - six=1.17.0=pyhe01879c_1
   - sqlite=3.45.3=h5eee18b_0
+  - stack_data=0.6.3=pyhd8ed1ab_1
   - tk=8.6.14=h39e8969_0
+  - traitlets=5.14.3=pyhd8ed1ab_1
+  - typing_extensions=4.15.0=pyhcf101f3_0
+  - wcwidth=0.2.13=pyhd8ed1ab_1
   - wheel=0.45.1=py311h06a4308_0
   - xz=5.6.4=h5eee18b_1
+  - zeromq=4.3.5=h6a678d5_0
+  - zipp=3.23.0=pyhd8ed1ab_0
   - zlib=1.2.13=h5eee18b_1
   - pip:
+      - addict==2.4.0
       - anyio==4.9.0
-      - asttokens==3.0.0
+      - assimp==4.1.4
       - attrs==25.3.0
+      - blinker==1.9.0
       - catkin-pkg==1.0.0
       - certifi==2025.4.26
       - charset-normalizer==3.4.2
       - clarabel==0.10.0
+      - click==8.2.1
       - cmeel==0.57.3
       - cmeel-assimp==5.4.3.1
       - cmeel-boost==1.87.0.1
@@ -44,12 +73,13 @@ dependencies:
       - cmeel-zlib==1.3.1
       - coal-library==3.0.1
       - colorlog==6.9.0
+      - configargparse==1.7.1
       - contourpy==1.3.2
       - cvxopt==1.3.2
       - cycler==0.12.1
       - cython==3.1.2
       - daqp==0.7.1
-      - decorator==5.2.1
+      - dash==3.2.0
       - distro==1.9.0
       - docutils==0.21.2
       - ecos==2.0.14
@@ -57,8 +87,11 @@ dependencies:
       - embreex==2.17.7.post6
       - executing==2.2.0
       - fast-simplification==0.1.11
+      - fastjsonschema==2.21.2
       - filelock==3.18.0
+      - flask==3.1.2
       - fonttools==4.58.2
+      - freetype-py==2.5.1
       - fsspec==2025.3.2
       - gitdb==4.0.12
       - gitpython==3.1.44
@@ -70,15 +103,16 @@ dependencies:
       - imageio==2.37.0
       - imageio-ffmpeg==0.6.0
       - ipython==9.2.0
-      - ipython-pygments-lexers==1.1.1
+      - ipywidgets==8.1.7
+      - itsdangerous==2.2.0
       - jax==0.6.0
       - jaxlib==0.6.0
       - jaxopt==0.8.5
-      - jedi==0.19.2
       - jinja2==3.1.6
       - joblib==1.5.0
       - jsonschema==4.23.0
       - jsonschema-specifications==2025.4.1
+      - jupyterlab-widgets==3.0.15
       - kiwisolver==1.4.8
       - kornia==0.8.1
       - kornia-rs==0.1.9
@@ -88,13 +122,15 @@ dependencies:
       - mapbox-earcut==1.0.3
       - markupsafe==3.0.2
       - matplotlib==3.10.3
-      - matplotlib-inline==0.1.7
       - meshcat==0.3.2
       - meshcat-shapes==0.3.0
       - ml-dtypes==0.5.1
       - moviepy==2.1.0
       - mpmath==1.3.0
+      - narwhals==2.2.0
+      - nbformat==5.10.4
       - networkx==3.4.2
+      - numpy==1.26.0
       - nvidia-cublas-cu12==12.6.4.1
       - nvidia-cuda-cupti-cu12==12.6.80
       - nvidia-cuda-nvrtc-cu12==12.6.77
@@ -109,30 +145,34 @@ dependencies:
       - nvidia-nccl-cu12==2.26.2
       - nvidia-nvjitlink-cu12==12.6.85
       - nvidia-nvtx-cu12==12.6.77
+      - open3d==0.19.0
+      - opencv-python==4.12.0.88
       - opt-einsum==3.4.0
       - osqp==1.0.4
-      - packaging==25.0
       - pandas==2.3.1
       - parso==0.8.4
-      - pexpect==4.9.0
       - pillow==10.4.0
       - pin==3.4.0
       - pin-pink==3.2.0
       - piqp==0.5.0
+      - platformdirs==4.3.8
+      - plotly==6.3.0
       - proglog==0.1.12
       - prompt-toolkit==3.0.51
       - proxsuite==0.7.2
       - psutil==7.0.0
-      - ptyprocess==0.7.0
-      - pure-eval==0.2.3
+      - pyassimp==5.2.5
       - pycollada==0.9
       - pyglet==1.5.31
       - pygments==2.19.1
       - pyngrok==7.2.8
+      - pyopengl==3.1.0
       - pyparsing==3.2.3
-      - python-dateutil==2.9.0.post0
+      - pyquaternion==0.9.9
+      - pyrender==0.1.45
       - python-dotenv==1.1.1
       - pytz==2025.2
+      - pywavefront==1.3.3
       - pyyaml==6.0.2
       - pyzmq==26.4.0
       - qpalm==1.2.5
@@ -141,6 +181,7 @@ dependencies:
       - quadprog==0.1.13
       - referencing==0.36.2
       - requests==2.32.4
+      - retrying==1.4.2
       - robot-descriptions==1.17.0
       - rospkg==1.6.0
       - rpds-py==0.24.0
@@ -150,18 +191,15 @@ dependencies:
       - scs==3.2.7.post2
       - shapely==2.1.0
       - sip-python==0.0.2
-      - six==1.17.0
       - smmap==5.0.2
       - smplx==0.1.28
       - sniffio==1.3.1
-      - stack-data==0.6.3
       - svg-path==6.3
       - sympy==1.14.0
       - threadpoolctl==3.6.0
       - torch==2.7.0
       - tornado==6.4.2
       - tqdm==4.67.1
-      - traitlets==5.14.3
       - trimesh==4.6.9
       - triton==3.3.0
       - typing-extensions==4.13.2
@@ -172,7 +210,8 @@ dependencies:
       - vedo==2025.5.4
       - vhacdx==0.0.8.post2
       - vtk==9.5.0
-      - wcwidth==0.2.13
+      - werkzeug==3.1.3
+      - widgetsnbextension==4.0.14
       - xacro==1.13.3
       - xxhash==3.5.0
       - yourdfpy==0.0.57

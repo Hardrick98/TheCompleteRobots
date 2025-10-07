@@ -2,7 +2,7 @@ from vedo import Mesh, show
 import trimesh
 import numpy as np
 
-mesh = trimesh.load("meshes/nao_description/meshes/V40/LWristYaw.stl")
+mesh = trimesh.load("meshes/nao_description/meshes/V40/RShoulderRoll.stl")
 
 T_swap_xy = np.eye(4)
 T_swap_xy[:3, :3] = np.array([
@@ -24,3 +24,9 @@ T_swap_xy[:3, :3] = np.array([
 #mesh.export("/home/rick/TheCompleteRobots/meshes/h1_2_description/meshes/L_hand_base_link.dae")
 
 show(mesh,axes=1)
+
+
+from vedo import Mesh
+
+mesh = Mesh("meshes/nao_description/meshes/V40/LElbowRoll.stl")
+mesh.write("Obj.obj")
