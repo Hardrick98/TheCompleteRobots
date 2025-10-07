@@ -14,7 +14,6 @@ from smplx import SMPLX
 import pyrender
 import trimesh
 import imageio
-import pywavefront
 
 
 theta = np.pi / 2  # 90 gradi in radianti
@@ -40,6 +39,7 @@ Rz = np.array([
 # ------------------- funzione di preload -------------------
 def preload_robot_meshes(robot):
     cache = {}
+    frames = robot.body
     for visual in robot.visual_model.geometryObjects:
         mesh_path = visual.meshPath
         if not os.path.exists(mesh_path):
@@ -47,7 +47,7 @@ def preload_robot_meshes(robot):
         try:
             mesh = trimesh.load_mesh(mesh_path)
             mesh.apply_scale(visual.meshScale)
-            cache[visual.name] = (mesh, visual.placement, visual.parentFrame)
+            cache[visual.name] = (mesh, visual.placement, frames[visual.name[:-2]])
         except Exception as e:
             print(f"Errore caricando mesh {mesh_path}: {e}")
             continue
@@ -59,6 +59,7 @@ robot_list = [r.removesuffix(".urdf") for r in os.listdir("URDF") if r.endswith(
 parser = argparse.ArgumentParser(description="Retarget human to robot")
 parser.add_argument("--robot1", type=str, default="nao")
 parser.add_argument("--robot2", type=str, default="nao")
+parser.add_argument("--camera_mode", type=str, default="exo")
 parser.add_argument("--interaction", type=str)
 parser.add_argument("--video", action="store_true")
 parser.add_argument("--scene", type=str, default=None)
@@ -68,7 +69,7 @@ args = parser.parse_args()
 robot_name1 = args.robot1.lower()
 robot_name2 = args.robot2.lower()
 wheeled = robot_name1 == "pepper"
-camera_mode = "ego"
+camera_mode = args.camera_mode
 try:
     robot1 = HumanoidRobot(f"URDF/{args.robot1}.urdf")
 except Exception as e:
@@ -80,6 +81,27 @@ try:
 except Exception as e:
     print(f"Error loading robot {robot_name2}: {e}")
     exit(1)
+
+
+
+def look_at(camera_pos, target):
+    forward = (target - camera_pos)
+    forward /= np.linalg.norm(forward)
+    right = np.cross(forward, np.array([0, 1, 0]))
+    right /= np.linalg.norm(right)
+    up = np.cross(right, forward)
+    rot = np.eye(4)
+    
+    theta = np.pi/10
+    R_fix = np.array([
+    [ np.cos(theta), 0, np.sin(theta)],
+    [ 0,             1, 0            ],
+    [-np.sin(theta), 0, np.cos(theta)]
+    ])
+    
+    rot[:3, :3] = R_fix @ Rx@Rx@np.vstack([right, up, -forward]).T
+    rot[:3, 3] = camera_pos
+    return rot
 
 
 model = robot1.model
@@ -126,17 +148,16 @@ robot1_cache = preload_robot_meshes(robot1)
 robot2_cache = preload_robot_meshes(robot2)
 
 # ------------------- setup pyrender -------------------
-pyr_scene = pyrender.Scene(ambient_light=[0.5,0.5,0.5], bg_color=[0,255,0])
+pyr_scene = pyrender.Scene(ambient_light=[0.5,0.5,0.5]) #bg_color=[0,255,0]
 mesh_nodes1 = []
 mesh_nodes2 = []
 
 if args.scene != None:
-    scene_mesh = trimesh.load_scene("LR.glb")
+    scene_mesh = trimesh.load_scene(args.scene)
     T_center = np.eye(4)
-    T_center[:3,3] = [12,-5.5,-5]
+    T_center[:3,3] = [-1,-0.3,0]
     scene_mesh.apply_transform(T_center)
     for node_name in scene_mesh.graph.nodes_geometry:
-        # la tupla è (T, geom_name)
         T, geom_name = scene_mesh.graph[node_name]
         geom = scene_mesh.geometry[geom_name]
         pyr_mesh = pyrender.Mesh.from_trimesh(geom, smooth=True)
@@ -160,20 +181,20 @@ for name, (mesh, placement, parentFrame) in robot2_cache.items():
     mesh_nodes2.append((node, placement, parentFrame))
 
 # luce
-key_light = pyrender.DirectionalLight(color=[1.0, 1.0, 1.0], intensity=2.0)
+key_light = pyrender.DirectionalLight(color=[1.0, 1.0, 1.0], intensity=1.0)
 pyr_scene.add(key_light, pose=np.eye(4))  
 
 fill_light = pyrender.DirectionalLight(color=[1.0, 1.0, 1.0], intensity=1.0)
 pose_fill = np.eye(4)
 pose_fill[:3,3] = [-2,2,1]  # spostala un po’
-pyr_scene.add(fill_light, pose=pose_fill)
+#pyr_scene.add(fill_light, pose=pose_fill)
 
 
 # luce di retro (back light)
 back_light = pyrender.DirectionalLight(color=[1.0, 1.0, 1.0], intensity=1.0)
 pose_back = np.eye(4)
 pose_back[:3,3] = [0,-3,1]
-pyr_scene.add(back_light, pose=pose_back)
+#pyr_scene.add(back_light, pose=pose_back)
 
 Rcam = np.eye(4)
 Rcam[:3,3] = [-1,0,-1]
@@ -244,9 +265,30 @@ for t in tqdm(range(n_frames)):
         robot_pos2_bounds = np.ptp(np.vstack(robot_pos2), axis=0)
         human_bounds2 = np.ptp(human2_js[t], axis=0)
         s2 = robot_pos2_bounds / human_bounds2
+    
+    
+
+    
     t2_s *= s2
     T2 = np.eye(4)
     T2[:3,3] = t2_s
+    
+    if t == 0:
+        robot_pos1 = np.vstack(robot_pos1) + t1_s
+        robot_pos2 = np.vstack(robot_pos2) + t2_s
+    
+        robot1_center = np.array([((robot_pos1[:,i].max() + robot_pos1[:,i].min())/2) for i in range(3)]) 
+        robot2_center = np.array([((robot_pos2[:,i].max() + robot_pos2[:,i].min())/2) for i in range(3)])
+        
+
+        camera_pose = look_at(
+            camera_pos=(t1_s + t2_s)/2 + np.array([0,0.75,0]),   # posizione camera
+            target=(robot1_center+robot2_center)/2        # punto verso cui guarda
+        )
+
+    
+    
+    
     #cam_node.matrix = T2 @cam_node.matrix
     if camera_mode == "exo":
         if t == 0:
@@ -254,7 +296,7 @@ for t in tqdm(range(n_frames)):
             T0 = np.eye(4)
             T0[:3,:3] = Rz@Rz@Ry
             T0[:3,3] = (t1_s + t2_s)/2 + np.array([0,0.75,0])
-            cam_node.matrix = T0
+            cam_node.matrix = camera_pose
     else:
         camera_frame = 20
         camera_dir = robot2.data.oMf[camera_frame]
@@ -275,9 +317,9 @@ for t in tqdm(range(n_frames)):
         frames.append(color)
 if args.debug:
     pyrender.Viewer(pyr_scene, use_raymond_lighting=True) 
-# ------------------- salva video -------------------
+# ------------------- save video -------------------
 
 if not args.debug:
     r.delete()
 if args.video:
-    imageio.mimsave('robot_animation.mp4', frames, fps=30)
+    imageio.mimsave('room_exo.mp4', frames, fps=120)

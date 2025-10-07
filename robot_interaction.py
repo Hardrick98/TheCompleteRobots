@@ -17,19 +17,17 @@ import joblib
 
 
 def preload_robot_meshes(robot):
+    frames = robot.body
     cache = {}
     for visual in robot.visual_model.geometryObjects:
         mesh_path = os.path.join(visual.meshPath.replace(".dae", ".stl"))
         if not os.path.exists(mesh_path):
             continue
-        try:
-            mesh = Mesh(mesh_path)
-            mesh.color(visual.meshColor[:3])
-            mesh.scale(visual.meshScale)
-            cache[visual.name] = (mesh, visual.placement, visual.parentFrame)
-        except Exception as e:
-            print(f"Errore caricando mesh {mesh_path}: {e}")
-            continue
+        mesh = Mesh(mesh_path)
+        mesh.color(visual.meshColor[:3])
+        mesh.scale(visual.meshScale)
+        cache[visual.name] = (mesh, visual.placement, frames[visual.name[:-2]])
+  
     return cache
 
 
@@ -78,6 +76,8 @@ smpl_model = SMPLX(
     gender='male',
     batch_size=8
 ).to("cuda:0")
+
+frames_list = robot1.body
 
 robotoid = Robotoid(robot1, wheeled)
 F, R = robotoid.build()
@@ -158,9 +158,9 @@ for t in tqdm(range(len(joint_configurations1))):
     meshes1 = []
     robot_pos1 = []
 
-    for name, (base_mesh, placement, parentFrame) in robot1_cache.items():
+    for name, (base_mesh, placement, frame) in robot1_cache.items():
         m = base_mesh.clone()
-        placement_world = robot1.data.oMf[parentFrame].act(placement)
+        placement_world = robot1.data.oMf[frame].act(placement)
         R = placement_world.rotation
         p = placement_world.translation
         T = np.eye(4)
