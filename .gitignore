@@ -9,8 +9,8 @@ models_smplx_v1_1.zip
 *.npz
 .vscode/launch.json
 profile_output.prof
-*.pkl
 *.mp4
 *.obj
 *.mtl
 *.glb
+nao_pose.pkl
