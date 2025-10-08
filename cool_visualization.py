@@ -3,7 +3,7 @@ from human_interaction import load_simple_all
 from pinocchio.visualize import MeshcatVisualizer
 import pinocchio as pin
 import argparse
-import cv2
+import joblib
 import os
 from tqdm import tqdm
 from scipy.spatial.transform import Rotation as Rot
@@ -140,6 +140,7 @@ robot2_poses = np.load(f"{args.interaction}/data/{robot_name2}2_poses.npy")
 robot1_cache = preload_robot_meshes(robot1)
 robot2_cache = preload_robot_meshes(robot2)
 
+cameras = joblib.load(os.path.join(f"{args.interaction}/data",f"cameras.pkl"))
 # ------------------- setup pyrender -------------------
 pyr_scene = pyrender.Scene(ambient_light=[0.5,0.5,0.5]) #bg_color=[0,255,0]
 mesh_nodes1 = []
@@ -277,14 +278,15 @@ for t in tqdm(range(n_frames)):
             #T0[:3,:3] = Rz@Rz@Ry
             #T0[:3,3] = (t1_s + t2_s)/2 + np.array([0,0.75,0])
             cam_node.matrix = camera_pose
-    else:
-        camera_frame = 20
-        camera_dir = robot2.data.oMf[camera_frame]
-        T0 = np.eye(4)
-        T0[:3,:3] = np.linalg.inv(Rz)@Ry
-        T0[:3,3] = camera_dir.translation
-        
-        cam_node.matrix = T2 @ T0 
+    if camera_mode == "ego1":
+        F = np.eye(4)
+        F[:3,:3] = np.linalg.inv(Rz)@Ry
+        cam_node.matrix = cameras["camera1"][t] @ F
+    
+    if camera_mode == "ego2":
+        F = np.eye(4)
+        F[:3,:3] = np.linalg.inv(Rz)@Ry
+        cam_node.matrix = cameras["camera2"][t] @ F
 
 
 
