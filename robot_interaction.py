@@ -1,6 +1,6 @@
 from utils import *
 from human_interaction import load_simple_all
-from pinocchio.visualize import MeshcatVisualizer
+import joblib
 import pinocchio as pin
 import argparse
 from vedo import Plotter, Mesh, Video, Axes
@@ -12,23 +12,26 @@ import matplotlib.pyplot as plt
 from inverse_kinematics import InverseKinematicSolver
 from robotoid import Robotoid
 from smplx import SMPLX
-import time
-import joblib
+import trimesh
+from trimesh.collision import CollisionManager
 
 
 def preload_robot_meshes(robot):
-    frames = robot.body
     cache = {}
+    frames = robot.body
     for visual in robot.visual_model.geometryObjects:
-        mesh_path = os.path.join(visual.meshPath.replace(".dae", ".stl"))
+        mesh_path = visual.meshPath
         if not os.path.exists(mesh_path):
             continue
-        mesh = Mesh(mesh_path)
-        mesh.color(visual.meshColor[:3])
-        mesh.scale(visual.meshScale)
-        cache[visual.name] = (mesh, visual.placement, frames[visual.name[:-2]])
-  
+        try:
+            mesh = trimesh.load_mesh(mesh_path)
+            mesh.apply_scale(visual.meshScale)
+            cache[visual.name] = (mesh, visual.placement, frames[visual.name[:-2]])
+        except Exception as e:
+            print(f"Errore caricando mesh {mesh_path}: {e}")
+            continue
     return cache
+
 
 
 robot_list = [r.removesuffix(".urdf") for r in os.listdir("URDF") if r.endswith(".urdf")]
@@ -144,10 +147,24 @@ if args.video:
 else:
     video = None
 
+manager1 = CollisionManager()
+manager2 = CollisionManager()
+names = []
 
+for name, (base_mesh, placement, frame) in robot1_cache.items():
+    manager1.add_object(name=f"{args.robot1}1_{name}", mesh=base_mesh)
+    names.append(name)
+
+for name, (base_mesh, placement, frame) in robot2_cache.items():
+    manager2.add_object(name=f"{args.robot2}2_{name}", mesh=base_mesh)
 
 prev_meshes1 = []
 prev_meshes2 = []
+
+robot1_poses_all = []
+robot2_poses_all = []
+
+collision_list = []
 
 for t in tqdm(range(len(joint_configurations1))):
 
@@ -157,19 +174,23 @@ for t in tqdm(range(len(joint_configurations1))):
 
     meshes1 = []
     robot_pos1 = []
+    poses1 = []
+    poses2 = []
 
     for name, (base_mesh, placement, frame) in robot1_cache.items():
-        m = base_mesh.clone()
-        placement_world = robot1.data.oMf[frame].act(placement)
+        placement_world = robot1.data.oMf[frame]
         R = placement_world.rotation
         p = placement_world.translation
         T = np.eye(4)
         T[:3, :3] = R
         T[:3, 3] = p
-        m.apply_transform(T)
-        m.color("blue")
-        meshes1.append(m)
+        meshes1.append(base_mesh)
         robot_pos1.append(p)
+        poses1.append(T[None,:,:])
+        
+    
+    poses1 = np.vstack(poses1)
+    robot1_poses_all.append(poses1[None,:,:,:])
 
     q2 = joint_configurations2[t]
     pin.forwardKinematics(robot2.model, robot2.data, q2)
@@ -177,21 +198,24 @@ for t in tqdm(range(len(joint_configurations1))):
 
     meshes2 = []
     robot_pos2 = []
-    for name, (base_mesh, placement, parentFrame) in robot2_cache.items():
-        m = base_mesh.clone()
-        placement_world = robot2.data.oMf[parentFrame].act(placement)
+    for name, (base_mesh, placement, frame) in robot2_cache.items():
+        placement_world = robot2.data.oMf[frame]
         R = placement_world.rotation
         p = placement_world.translation
+        meshes2.append(base_mesh)
         T = np.eye(4)
         T[:3, :3] = R
         T[:3, 3] = p
-        m.apply_transform(T)
-        m.color("red")
-        meshes2.append(m)
         robot_pos2.append(p)
+        poses2.append(T[None,:,:])
+    
+    
+    poses2 = np.vstack(poses2)
+    robot2_poses_all.append(poses2[None,:,:,:])
 
     t1 = trans1[t].copy()
     t2 = trans2[t].copy()
+
 
     if t == 0:
         robot_pos1 = np.vstack(robot_pos1)
@@ -211,8 +235,12 @@ for t in tqdm(range(len(joint_configurations1))):
     t1_s = t1_s * s1
     T1[:3, 3] = t1_s
     
-    for m in meshes1:
-        m.apply_transform(T1)
+
+
+    for i, m in enumerate(meshes1):
+        T0 = poses1[i]
+        manager1.set_transform(f"{args.robot1}1_{names[i]}", T1@T0)
+        
 
     T2 = np.eye(4)
     min_z = np.min(human2_js[t,:,2])
@@ -223,9 +251,26 @@ for t in tqdm(range(len(joint_configurations1))):
 
     T2[:3, 3] = t2_s
     
-    for m in meshes2:
-        m.apply_transform(T2)
+    
+    for i, m in enumerate(meshes2):
+        T0 = poses2[i]
+        manager2.set_transform(f"{args.robot2}2_{names[i]}", T2@T0)
         
+    collisions = manager1.in_collision_other(manager2, return_names=True)
+
+    collision_list.append(collisions[1])
+
+    """
+    for i, m in enumerate(meshes1):
+        T0 = poses1[i]
+        manager1.set_transform(f"robot1_{names[i]}", np.linalg.inv(T1@T0))
+       
+    
+    for i, m in enumerate(meshes2):
+        T0 = poses2[i]
+        manager2.set_transform(f"robot2_{names[i]}", np.linalg.inv(T2@T0))
+
+    
     axes_opts = dict(
         xtitle="X",
         ytitle="Y",
@@ -250,6 +295,7 @@ for t in tqdm(range(len(joint_configurations1))):
         video.add_frame()
 
     time.sleep(0.01)
+    """
 
     prev_meshes1 = meshes1
     prev_meshes2 = meshes2
@@ -257,5 +303,23 @@ for t in tqdm(range(len(joint_configurations1))):
 if video:
     video.close()
 
-vp.interactive()
-vp.close()
+#vp.interactive()
+#vp.close()
+
+robot1_poses = np.vstack(robot1_poses_all)
+robot2_poses = np.vstack(robot2_poses_all)
+
+try:
+    os.mkdir(f"{args.interaction}/data")
+except:
+    pass
+
+np.save(os.path.join(f"{args.interaction}/data",f"{args.robot1}1_poses.npy"),robot1_poses)
+np.save(os.path.join(f"{args.interaction}/data",f"{args.robot2}2_poses.npy"),robot2_poses)
+np.save(os.path.join(f"{args.interaction}/data",f"human1_poses.npy"),human1_js)
+np.save(os.path.join(f"{args.interaction}/data",f"human2_poses.npy"),human2_js)
+np.save(os.path.join(f"{args.interaction}/data",f"human1_trans.npy"),trans1)
+np.save(os.path.join(f"{args.interaction}/data",f"human2_trans.npy"),trans2)
+joblib.dump(collision_list, os.path.join(f"{args.interaction}/data",f"{args.robot1}_{args.robot2}_collisions.pkl"))
+
+print("Data successfully saved!")

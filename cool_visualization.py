@@ -3,7 +3,7 @@ from human_interaction import load_simple_all
 from pinocchio.visualize import MeshcatVisualizer
 import pinocchio as pin
 import argparse
-from vedo import Video
+import cv2
 import os
 from tqdm import tqdm
 from scipy.spatial.transform import Rotation as Rot
@@ -118,6 +118,7 @@ robotoid = Robotoid(robot1, wheeled)
 F, R = robotoid.build()
 solver = InverseKinematicSolver(model, data)
 
+"""
 # ------------------- carica dati umani -------------------
 arr1 = np.load(f"{args.interaction}/P1.npz", allow_pickle=True)
 arr2 = np.load(f"{args.interaction}/P2.npz", allow_pickle=True)
@@ -125,23 +126,15 @@ arr2 = np.load(f"{args.interaction}/P2.npz", allow_pickle=True)
 joint_positions1, _, translation1, _, _, _ = load_simple_all(smpl_model, arr1)
 joint_positions2, _, translation2, _, _, _ = load_simple_all(smpl_model, arr2)
 smpl_model = 0  # libera GPU
+"""
+human1_js = np.load(os.path.join(args.interaction,"data","human1_poses.npy"))
+trans1 = np.load(os.path.join(args.interaction,"data","human1_trans.npy"))
+human2_js = np.load(os.path.join(args.interaction,"data","human2_poses.npy"))
+trans2 = np.load(os.path.join(args.interaction,"data","human2_trans.npy"))
 
-human1_js = joint_positions1.detach().cpu().numpy()
-trans1 = translation1.detach().cpu().numpy()
-human2_js = joint_positions2.detach().cpu().numpy()
-trans2 = translation2.detach().cpu().numpy()
 
-trans1[:, 0] *= -1
-trans1[:, [1, 2]] = trans1[:, [2, 1]]
-trans2[:, 0] *= -1
-trans2[:, [1, 2]] = trans2[:, [2, 1]]
-human1_js[:, :, 0] *= -1
-human1_js[:, :, [1, 2]] = human1_js[:, :, [2, 1]]
-human2_js[:, :, 0] *= -1
-human2_js[:, :, [1, 2]] = human2_js[:, :, [2, 1]]
-
-joint_configurations1 = np.load(f"{args.interaction}/{robot_name1}1.npy")
-joint_configurations2 = np.load(f"{args.interaction}/{robot_name2}2.npy")
+robot1_poses= np.load(f"{args.interaction}/data/{robot_name1}1_poses.npy")
+robot2_poses = np.load(f"{args.interaction}/data/{robot_name2}2_poses.npy")
 
 # ------------------- preload robot meshes -------------------
 robot1_cache = preload_robot_meshes(robot1)
@@ -208,70 +201,59 @@ if not args.debug:
 frames = []
 
 if not args.debug:
-    n_frames = len(joint_configurations1)
+    n_frames = robot1_poses.shape[0]
 else:
     n_frames = 1
-# ------------------- loop frame -------------------
+
 for t in tqdm(range(n_frames)):
 
-    # --- robot1 ---
-    q1 = joint_configurations1[t]
-    pin.forwardKinematics(robot1.model, robot1.data, q1)
-    pin.updateFramePlacements(robot1.model, robot1.data)
 
-
-
+    i = 0
     robot_pos1 = []
-    for node, placement, parentFrame in mesh_nodes1:
-        placement_world = robot1.data.oMf[parentFrame].act(placement)
-        T = np.eye(4)
-        T[:3,:3] = placement_world.rotation
-        T[:3,3] = placement_world.translation
+    for node,_,_ in mesh_nodes1:
+        T = robot1_poses[t][i]
         node.matrix = T 
-        robot_pos1.append(placement_world.translation)
+        robot_pos1.append(T[:3,3])
+        i+= 1
 
-    # --- robot2 ---
-    q2 = joint_configurations2[t]
-    pin.forwardKinematics(robot2.model, robot2.data, q2)
-    pin.updateFramePlacements(robot2.model, robot2.data)
 
     robot_pos2 = []
-    for node, placement, parentFrame in mesh_nodes2:
-        placement_world = robot2.data.oMf[parentFrame].act(placement)
-        T = np.eye(4)
-        T[:3,:3] = placement_world.rotation
-        T[:3,3] = placement_world.translation
-        node.matrix = T
-        robot_pos2.append(placement_world.translation)
+    i = 0
+    for node,_,_ in mesh_nodes2:
+        T = robot2_poses[t][i]
+        node.matrix = T 
+        robot_pos2.append(T[:3,3])
+        i += 1
 
-    # --- applica traslazioni/scalature dei robot rispetto umano ---
+    # --- scaling ---
     t1_s = trans1[t].copy()
     t1_s[2] -= np.min(human1_js[t,:,2])
-    if t == 0:
-        robot_pos1_bounds = np.ptp(np.vstack(robot_pos1), axis=0)
-        human_bounds1 = np.ptp(human1_js[t], axis=0)
-        s1 = robot_pos1_bounds / human_bounds1
-    t1_s *= s1
-    T1 = np.eye(4)
-    T1[:3,3] = t1_s
-    for node, _, _ in mesh_nodes1:
-        node.matrix = T1 @ node.matrix  # conserva le rotazioni originali
-    
-    
-
     t2_s = trans2[t].copy()
     t2_s[2] -= np.min(human2_js[t,:,2])
+
     if t == 0:
+        robot_pos1_bounds = np.ptp(np.vstack(robot_pos1), axis=0) #find lenghts on the three axis
+        human_bounds1 = np.ptp(human1_js[t], axis=0)
+        s1 = robot_pos1_bounds / human_bounds1
         robot_pos2_bounds = np.ptp(np.vstack(robot_pos2), axis=0)
         human_bounds2 = np.ptp(human2_js[t], axis=0)
         s2 = robot_pos2_bounds / human_bounds2
     
     
+    t1_s *= s1 #scale translations
+    T1 = np.eye(4)
+    T1[:3,3] = t1_s
+    for node, _, _ in mesh_nodes1:
+        node.matrix = T1 @ node.matrix  # translate nodes in the world    
 
     
     t2_s *= s2
     T2 = np.eye(4)
     T2[:3,3] = t2_s
+
+    for node, _, _ in mesh_nodes2:
+        node.matrix = T2 @ node.matrix # translate nodes in the world 
+
     
     if t == 0:
         robot_pos1 = np.vstack(robot_pos1) + t1_s
@@ -279,7 +261,6 @@ for t in tqdm(range(n_frames)):
     
         robot1_center = np.array([((robot_pos1[:,i].max() + robot_pos1[:,i].min())/2) for i in range(3)]) 
         robot2_center = np.array([((robot_pos2[:,i].max() + robot_pos2[:,i].min())/2) for i in range(3)])
-        
 
         camera_pose = look_at(
             camera_pos=(t1_s + t2_s)/2 + np.array([0,0.75,0]),   # posizione camera
@@ -289,26 +270,22 @@ for t in tqdm(range(n_frames)):
     
     
     
-    #cam_node.matrix = T2 @cam_node.matrix
     if camera_mode == "exo":
         if t == 0:
             
-            T0 = np.eye(4)
-            T0[:3,:3] = Rz@Rz@Ry
-            T0[:3,3] = (t1_s + t2_s)/2 + np.array([0,0.75,0])
+            #T0 = np.eye(4)
+            #T0[:3,:3] = Rz@Rz@Ry
+            #T0[:3,3] = (t1_s + t2_s)/2 + np.array([0,0.75,0])
             cam_node.matrix = camera_pose
     else:
         camera_frame = 20
         camera_dir = robot2.data.oMf[camera_frame]
         T0 = np.eye(4)
-        T0[:3,:3] = Rz@Ry
+        T0[:3,:3] = np.linalg.inv(Rz)@Ry
         T0[:3,3] = camera_dir.translation
         
         cam_node.matrix = T2 @ T0 
 
-
-    for node, _, _ in mesh_nodes2:
-        node.matrix = T2 @ node.matrix
 
 
     # --- render frame ---
@@ -322,4 +299,4 @@ if args.debug:
 if not args.debug:
     r.delete()
 if args.video:
-    imageio.mimsave('room_exo.mp4', frames, fps=120)
+    imageio.mimsave('video.mp4', frames, fps=120)
