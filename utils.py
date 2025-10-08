@@ -439,24 +439,15 @@ def compute_global_orientations_batch(global_orient: torch.Tensor, body_pose: to
 
     return global_orientations
 
-import open3d as o3d
 
-def compute_collisions(mesh1, mesh2):
+def get_camera_placement(robot, frame_number, trans):
     
-    mesh1.compute_vertex_normals()
-    mesh2.compute_vertex_normals()
-
-    # Ottieni punti di mesh1
-    points = np.asarray(mesh1.vertices)
-
-    # Costruisci KDTree di mesh2 per distanza
-    pcd2 = mesh2.sample_points_poisson_disk(5000)
-    tree = o3d.geometry.KDTreeFlann(pcd2)
-
-    intersecting = []
-    for p in points:
-        [_, idx, dist] = tree.search_knn_vector_3d(p, 1)
-        if dist[0] < 1e-3:  # soglia piccola → collisione
-            intersecting.append(p)
+    camera_placement = robot.data.oMf[frame_number]
+    R = camera_placement.rotation
+    p = camera_placement.translation
     
-    return intersecting
+    T = np.eye(4)
+    T[:3, :3] = R
+    T[:3, 3] = p
+
+    return trans @ T

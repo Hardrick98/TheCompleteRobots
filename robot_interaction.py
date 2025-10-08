@@ -118,7 +118,7 @@ arr2 = np.load(f"{args.interaction}/P2.npz", allow_pickle=True)
 
 joint_positions1, _, translation1, _, _, _ = load_simple_all(smpl_model, arr1)
 joint_positions2, _, translation2, _, _, _ = load_simple_all(smpl_model, arr2)
-smpl_model = 0  # libera GPU
+smpl_model = 0  # Free GPU
 
 human1_js = joint_positions1.detach().cpu().numpy()
 trans1 = translation1.detach().cpu().numpy()
@@ -158,8 +158,7 @@ for name, (base_mesh, placement, frame) in robot1_cache.items():
 for name, (base_mesh, placement, frame) in robot2_cache.items():
     manager2.add_object(name=f"{args.robot2}2_{name}", mesh=base_mesh)
 
-prev_meshes1 = []
-prev_meshes2 = []
+cameras = {"camera1":[],"camera2":[]}
 
 robot1_poses_all = []
 robot2_poses_all = []
@@ -176,6 +175,8 @@ for t in tqdm(range(len(joint_configurations1))):
     robot_pos1 = []
     poses1 = []
     poses2 = []
+
+    # Get positions and rotations
 
     for name, (base_mesh, placement, frame) in robot1_cache.items():
         placement_world = robot1.data.oMf[frame]
@@ -198,6 +199,7 @@ for t in tqdm(range(len(joint_configurations1))):
 
     meshes2 = []
     robot_pos2 = []
+    # Get positions and rotations
     for name, (base_mesh, placement, frame) in robot2_cache.items():
         placement_world = robot2.data.oMf[frame]
         R = placement_world.rotation
@@ -210,14 +212,18 @@ for t in tqdm(range(len(joint_configurations1))):
         poses2.append(T[None,:,:])
     
     
+
+
+
     poses2 = np.vstack(poses2)
     robot2_poses_all.append(poses2[None,:,:,:])
 
+    #Load translation in world
     t1 = trans1[t].copy()
     t2 = trans2[t].copy()
 
 
-    if t == 0:
+    if t == 0:      #calculate scaling factor
         robot_pos1 = np.vstack(robot_pos1)
         human_bounds = np.ptp(human1_js[t], axis=0)
         robot_bounds = np.ptp(robot_pos1, axis=0)
@@ -229,10 +235,10 @@ for t in tqdm(range(len(joint_configurations1))):
         s2 = robot_bounds / human_bounds   
   
     T1 = np.eye(4)
-    min_z = np.min(human1_js[t,:,2])
+    min_z = np.min(human1_js[t,:,2]) 
     t1_s = t1.copy()
     t1_s[2] -= min_z           #make sure it is on the ground
-    t1_s = t1_s * s1
+    t1_s = t1_s * s1           #apply scaling
     T1[:3, 3] = t1_s
     
 
@@ -259,6 +265,12 @@ for t in tqdm(range(len(joint_configurations1))):
     collisions = manager1.in_collision_other(manager2, return_names=True)
 
     collision_list.append(collisions[1])
+
+    camera1 = get_camera_placement(robot1, 20, T1)
+    camera2 = get_camera_placement(robot2, 20, T2)
+
+    cameras["camera1"].append(camera1)
+    cameras["camera2"].append(camera2)
 
     """
     for i, m in enumerate(meshes1):
@@ -297,9 +309,6 @@ for t in tqdm(range(len(joint_configurations1))):
     time.sleep(0.01)
     """
 
-    prev_meshes1 = meshes1
-    prev_meshes2 = meshes2
-
 if video:
     video.close()
 
@@ -321,5 +330,6 @@ np.save(os.path.join(f"{args.interaction}/data",f"human2_poses.npy"),human2_js)
 np.save(os.path.join(f"{args.interaction}/data",f"human1_trans.npy"),trans1)
 np.save(os.path.join(f"{args.interaction}/data",f"human2_trans.npy"),trans2)
 joblib.dump(collision_list, os.path.join(f"{args.interaction}/data",f"{args.robot1}_{args.robot2}_collisions.pkl"))
+joblib.dump(cameras, os.path.join(f"{args.interaction}/data",f"cameras.pkl"))
 
 print("Data successfully saved!")

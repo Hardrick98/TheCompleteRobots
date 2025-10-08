@@ -33,13 +33,18 @@ python retarget_pose.py --interaction PATH_TO_INTERACTION --robot ROBOT_NAME
 
 This will save robot configurations in the same folder.
 
-To visualize and create a video run 
+To extract data like poses and collisions run:
 ```
 python robot_interaction.py --interaction PATH_TO_INTERACTION --robot1 ROBOT1_NAME --robot2 ROBOT2_NAME --video 
 ```
-When the interactive window opens, adjust the camera as you like then press q. The interaction will start and the video will be recorded. Once the motion stops press q to end.
 
-The output will be a video.mp4 file.
+To create visualization 
+
+```
+python cool_visualization.py --robot1 ROBOT1 --robot2 ROBOT2 --interaction PATH_TO_INTERACTION --scene SCENE --video --camera_mode CAMERA MODE
+```
+
+
 
 <p align="center">
   <img src="images/human_play.gif" width="300"/>
