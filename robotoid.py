@@ -591,7 +591,7 @@ class Robotoid:
                 self.N["RWrist"]: [directions[H["RWrist"]], self.cR], 
                 self.N["LWrist"]: [directions[H["LWrist"]], self.cL],
                 #F["LAnkle"]: [directions[H["LAnkle"]], [1,0,0]],
-                #F["Head"]: [directions[H["Head"]], [1,0,0]]
+                self.N["Head"]: [directions[H["Head"]], [1,0,0]]
     }
             
             frame_names = [k for k,v in target_orientations_global.items()]

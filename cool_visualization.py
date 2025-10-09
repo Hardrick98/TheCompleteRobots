@@ -301,4 +301,4 @@ if args.debug:
 if not args.debug:
     r.delete()
 if args.video:
-    imageio.mimsave('video.mp4', frames, fps=120)
+    imageio.mimsave(f'{args.robot1}_{args.robot2}_{args.camera_mode}.mp4', frames, fps=120)
