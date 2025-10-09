@@ -47,24 +47,32 @@ python cool_visualization.py --robot1 ROBOT1 --robot2 ROBOT2 --interaction PATH_
 
 Alternatively you can use ./compute_data.sh INTERACTION
 
-
 <p align="center">
-  <img src="images/human.gif" width="300"/>
-  <img src="images/nao_exo.gif", width="300">
+  <figure style="display:inline-block; text-align:center; margin:10px;">
+    <img src="images/human.gif" width="300"/>
+    <figcaption>Human Vision</figcaption>
+  </figure>
+
+  <figure style="display:inline-block; text-align:center; margin:10px;">
+    <img src="images/nao_exo.gif" width="300"/>
+    <figcaption>Exo Vision</figcaption>
+  </figure>
 </p>
 
-<center>
-Human and Exo Vision
-</center>
 
 
 <p align="center">
-  <img src="images/nao_ego1.gif" width="300"/>
-  <img src="images/nao_ego2.gif", width="300">
+  <figure style="display:inline-block; text-align:center; margin:10px;">
+    <img src="images/nao_ego1.gif" width="300"/>
+    <figcaption>Ego Vision 1</figcaption>
+  </figure>
+
+  <figure style="display:inline-block; text-align:center; margin:10px;">
+    <img src="images/nao_ego2.gif" width="300"/>
+    <figcaption>Ego Vision 2</figcaption>
+  </figure>
 </p>
 
-<center>
-Ego Vision
-</center>
 
-The displayed action is Push
+
+The displayed action is **Push**.
