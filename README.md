@@ -51,15 +51,16 @@ Alternatively you can use ./compute_data.sh INTERACTION
 <p align="center">
   <img src="images/human.gif" width="300"/>
   <img src="images/nao_exo.gif", width="300">
+  Human sample - Exo Vision
 </p>
 
-Human sample - Exo Vision
+
 
 <p align="center">
   <img src="images/nao_ego1.gif" width="300"/>
   <img src="images/nao_ego2.gif", width="300">
+  Ego Vision
 </p>
 
-Ego Vision
 
 The displayed action is Push
