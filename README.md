@@ -47,31 +47,33 @@ python cool_visualization.py --robot1 ROBOT1 --robot2 ROBOT2 --interaction PATH_
 
 Alternatively you can use ./compute_data.sh INTERACTION
 
-<p align="center">
-  <figure style="display:inline-block; text-align:center; margin:10px;">
-    <img src="images/human.gif" width="300"/>
-    <figcaption>Human Vision</figcaption>
-  </figure>
+<table align="center">
+  <tr>
+    <td align="center">
+      <img src="images/human.gif" width="300"/><br>
+      <sub>Human Vision</sub>
+    </td>
+    <td align="center">
+      <img src="images/nao_exo.gif" width="300"/><br>
+      <sub>Exo Vision</sub>
+    </td>
+  </tr>
+</table>
 
-  <figure style="display:inline-block; text-align:center; margin:10px;">
-    <img src="images/nao_exo.gif" width="300"/>
-    <figcaption>Exo Vision</figcaption>
-  </figure>
-</p>
 
+<table align="center">
+  <tr>
+    <td align="center">
+      <img src="images/nao_ego1.gif" width="300"/><br>
+      <sub>Ego Vision 1</sub>
+    </td>
+    <td align="center">
+      <img src="images/nao_ego2.gif" width="300"/><br>
+      <sub>Ego Vision 2</sub>
+    </td>
+  </tr>
+</table>
 
-
-<p align="center">
-  <figure style="display:inline-block; text-align:center; margin:10px;">
-    <img src="images/nao_ego1.gif" width="300"/>
-    <figcaption>Ego Vision 1</figcaption>
-  </figure>
-
-  <figure style="display:inline-block; text-align:center; margin:10px;">
-    <img src="images/nao_ego2.gif" width="300"/>
-    <figcaption>Ego Vision 2</figcaption>
-  </figure>
-</p>
 
 
 
