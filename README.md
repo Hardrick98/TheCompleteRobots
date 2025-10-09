@@ -45,10 +45,18 @@ python cool_visualization.py --robot1 ROBOT1 --robot2 ROBOT2 --interaction PATH_
 ```
 
 
+Alternatively you can use ./compute_data.sh INTERACTION
+
 
 <p align="center">
-  <img src="images/human_play.gif" width="300"/>
-  <img src="images/robot_play.gif", width="300">
+  <img src="images/human.gif" width="300"/>
+  Human Sample
+  <img src="images/nao_exo.gif", width="300">
 </p>
 
-On the left humans on the right robots playing ROCK-PAPER-SCISSORS
+<p align="center">
+  <img src="images/nao_ego1.gif" width="300"/>
+  <img src="images/nao_ego2.gif", width="300">
+</p>
+
+The displayed action is Push

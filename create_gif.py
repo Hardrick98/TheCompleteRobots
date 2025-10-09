@@ -1,7 +1,7 @@
 from moviepy import VideoFileClip
 
 # Load video file
-clip = VideoFileClip("videos/robot_play.mp4")
+clip = VideoFileClip("nao_nao_exo.mp4")
 
 # Optionally, trim the clip (e.g., first 5 seconds)
 # clip = clip.subclip(0, 5)
@@ -10,6 +10,6 @@ clip = VideoFileClip("videos/robot_play.mp4")
 clip = clip.resized(0.5)
 
 # Write to GIF
-clip.write_gif("images/robot_play.gif", fps=120)
+clip.write_gif("images/nao_exo.gif", fps=120)
 
 #ffmpeg -i human_play.mp4 -vf "fps=30,scale=600:-1:flags=lanczos" -gifflags -transdiff -y human_play.gif
