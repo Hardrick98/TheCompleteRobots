@@ -50,12 +50,12 @@ Alternatively you can use ./compute_data.sh INTERACTION
 <table align="center">
   <tr>
     <td align="center">
-      <img src="images/human.gif" width="300"/><br>
-      <sub>Human Vision</sub>
+      <img src="images/nao_exoL.gif" width="300"/><br>
+      <sub>Exo Camera L</sub>
     </td>
     <td align="center">
-      <img src="images/nao_exo.gif" width="300"/><br>
-      <sub>Exo Vision</sub>
+      <img src="images/nao_exoR.gif" width="300"/><br>
+      <sub>Exo Camera R</sub>
     </td>
   </tr>
 </table>
@@ -64,12 +64,25 @@ Alternatively you can use ./compute_data.sh INTERACTION
 <table align="center">
   <tr>
     <td align="center">
-      <img src="images/nao_ego1.gif" width="300"/><br>
-      <sub>Ego Vision 1</sub>
+      <img src="images/nao_ego1L.gif" width="300"/><br>
+      <sub>Robot1 Camera L</sub>
     </td>
     <td align="center">
-      <img src="images/nao_ego2.gif" width="300"/><br>
-      <sub>Ego Vision 2</sub>
+      <img src="images/nao_ego1R.gif" width="300"/><br>
+      <sub>Robot1 Camera R</sub>
+    </td>
+  </tr>
+</table>
+
+<table align="center">
+  <tr>
+    <td align="center">
+      <img src="images/nao_ego2L.gif" width="300"/><br>
+      <sub>Robot2 Camera L</sub>
+    </td>
+    <td align="center">
+      <img src="images/nao_ego2R.gif" width="300"/><br>
+      <sub>Robot2 Camera R</sub>
     </td>
   </tr>
 </table>
@@ -77,4 +90,4 @@ Alternatively you can use ./compute_data.sh INTERACTION
 
 
 
-The displayed action is **Push**.
+The displayed action is **Slap**.
