@@ -50,11 +50,11 @@ Alternatively you can use ./compute_data.sh INTERACTION
 <table align="center">
   <tr>
     <td align="center">
-      <img src="images/nao_exoL.gif" width="500"/><br>
+      <img src="images/nao_exoL.gif" width="300"/><br>
       <sub>Exo Camera L</sub>
     </td>
     <td align="center">
-      <img src="images/nao_exoR.gif" width="500"/><br>
+      <img src="images/nao_exoR.gif" width="300"/><br>
       <sub>Exo Camera R</sub>
     </td>
   </tr>
@@ -64,11 +64,11 @@ Alternatively you can use ./compute_data.sh INTERACTION
 <table align="center">
   <tr>
     <td align="center">
-      <img src="images/nao_ego1L.gif" width="500"/><br>
+      <img src="images/nao_ego1L.gif" width="300"/><br>
       <sub>Robot1 Camera L</sub>
     </td>
     <td align="center">
-      <img src="images/nao_ego1R.gif" width="500"/><br>
+      <img src="images/nao_ego1R.gif" width="300"/><br>
       <sub>Robot1 Camera R</sub>
     </td>
   </tr>
@@ -77,11 +77,11 @@ Alternatively you can use ./compute_data.sh INTERACTION
 <table align="center">
   <tr>
     <td align="center">
-      <img src="images/nao_ego2L.gif" width="500"/><br>
+      <img src="images/nao_ego2L.gif" width="300"/><br>
       <sub>Robot2 Camera L</sub>
     </td>
     <td align="center">
-      <img src="images/nao_ego2R.gif" width="500"/><br>
+      <img src="images/nao_ego2R.gif" width="300"/><br>
       <sub>Robot2 Camera R</sub>
     </td>
   </tr>
