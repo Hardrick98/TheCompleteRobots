@@ -158,7 +158,7 @@ for name, (base_mesh, placement, frame) in robot1_cache.items():
 for name, (base_mesh, placement, frame) in robot2_cache.items():
     manager2.add_object(name=f"{args.robot2}2_{name}", mesh=base_mesh)
 
-cameras = {"camera1":[],"camera2":[]}
+cameras = {"ego1R":[],"ego2R":[], "ego1L":[], "ego2L":[]}
 
 robot1_poses_all = []
 robot2_poses_all = []
@@ -266,11 +266,16 @@ for t in tqdm(range(len(joint_configurations1))):
 
     collision_list.append(collisions[1])
 
-    camera1 = get_camera_placement(robot1, 20, T1)
-    camera2 = get_camera_placement(robot2, 20, T2)
+    camera1L = get_camera_placement(robot1, 30, T1)
+    camera1R = get_camera_placement(robot1, 32, T1)
+    camera2L = get_camera_placement(robot2, 30, T1)
+    camera2R = get_camera_placement(robot2, 32, T2)
 
-    cameras["camera1"].append(camera1)
-    cameras["camera2"].append(camera2)
+    cameras["ego1L"].append(camera1L)
+    cameras["ego1R"].append(camera1R)
+    cameras["ego2L"].append(camera2L)
+    cameras["ego2R"].append(camera2R)
+    
 
     """
     for i, m in enumerate(meshes1):
@@ -330,6 +335,6 @@ np.save(os.path.join(f"{args.interaction}/data",f"human2_poses.npy"),human2_js)
 np.save(os.path.join(f"{args.interaction}/data",f"human1_trans.npy"),trans1)
 np.save(os.path.join(f"{args.interaction}/data",f"human2_trans.npy"),trans2)
 joblib.dump(collision_list, os.path.join(f"{args.interaction}/data",f"{args.robot1}_{args.robot2}_collisions.pkl"))
-joblib.dump(cameras, os.path.join(f"{args.interaction}/data",f"cameras.pkl"))
+joblib.dump(cameras, os.path.join(f"{args.interaction}/data",f"{args.robot1}_cameras.pkl"))
 
 print("Data successfully saved!")
