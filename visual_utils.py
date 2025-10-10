@@ -92,10 +92,11 @@ def calculate_scale_factors(human1, human2, robot1, robot2):
         return s1,s2
 
 
-placements = {"room": [[-1,-0.3,0]]}
+placements = {"room": [[-1,-0.3,0]], "city":[[-1,-0.3,0]], "hospital":[[-1,-0.3,0]], "estensi_light":[[-40,35,-0.1]]}
 
 
 def load_background(pyr_scene, scene_path):
+    
     
     scene_mesh = trimesh.load_scene(scene_path)
     scene_name = scene_path.split("/")[-1].removesuffix(".glb")
@@ -108,7 +109,10 @@ def load_background(pyr_scene, scene_path):
         geom = scene_mesh.geometry[geom_name]
         pyr_mesh = pyrender.Mesh.from_trimesh(geom, smooth=True)
         T0 = np.eye(4)
-        T0[:3,:3] = Ry
+        if "estensi_light":
+            pass
+        else:
+            T0[:3,:3] = Ry
         pyr_scene.add(pyr_mesh, pose=T0@T)
 
     scene_mesh.matrix = T0

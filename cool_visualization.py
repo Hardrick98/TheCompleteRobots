@@ -164,8 +164,6 @@ for t in tqdm(range(n_frames)):
 
     if t == 0:
         s1, s2 = calculate_scale_factors(human1_js[t],human2_js[t], robot_pos1, robot_pos2)
-
-    print(s1)
     
     t1_s *= s1 #scale translations
     T1 = np.eye(4)
@@ -196,8 +194,8 @@ for t in tqdm(range(n_frames)):
             ortho = np.array([-direction[1], -direction[0],0])
             
             distance = 0.1
-            R = np.array([distance/ortho[0], 2*s1[2],0])
             L = np.array([distance/ortho[0], 2*s1[2],0])
+            R = np.array([-distance/ortho[0], 2*s1[2],0])
              
             if camera_mode == "exoR":
                 camera_pos = target + R * ortho
