@@ -1,11 +1,9 @@
 from utils import *
-import pinocchio as pin
 import argparse
 import joblib
 import os
 from tqdm import tqdm
 import numpy as np
-from inverse_kinematics import InverseKinematicSolver
 from robotoid import Robotoid
 import pyrender
 import trimesh
@@ -42,6 +40,8 @@ parser.add_argument("--camera_mode", type=str, default="exo")
 parser.add_argument("--interaction", type=str)
 parser.add_argument("--video", action="store_true")
 parser.add_argument("--scene", type=str, default=None)
+parser.add_argument("--green_screen",action="store_true")
+parser.add_argument("--bb_mode",action="store_true")
 parser.add_argument("--debug", action="store_true")
 args = parser.parse_args()
 
@@ -86,7 +86,14 @@ robot2_cache = preload_robot_meshes(robot2)
 
 cameras = joblib.load(os.path.join(f"{args.interaction}/data",f"{robot_name1}_cameras.pkl"))
 # ------------------- setup pyrender -------------------
-pyr_scene = pyrender.Scene(ambient_light=[0.5,0.5,0.5]) #bg_color=[0,255,0]
+
+
+if args.green_screen == True:
+    pyr_scene = pyrender.Scene(ambient_light=[0.5,0.5,0.5],bg_color=[0,255,0])
+else:
+    pyr_scene = pyrender.Scene(ambient_light=[0.5,0.5,0.5])
+
+
 mesh_nodes1 = []
 mesh_nodes2 = []
 
@@ -96,6 +103,7 @@ for name, (mesh, placement, parentFrame) in robot1_cache.items():
     pyr_mesh = pyrender.Mesh.from_trimesh(mesh, smooth=True)
     node = pyr_scene.add(pyr_mesh)
     mesh_nodes1.append((node, placement, parentFrame))
+
 
 # loading robot2 meshes
 for name, (mesh, placement, parentFrame) in robot2_cache.items():
@@ -109,6 +117,9 @@ for name, (mesh, placement, parentFrame) in robot2_cache.items():
 
 if args.scene != None:
     load_background(pyr_scene, args.scene)
+
+
+
 
 
 #SET LIGHTS
@@ -146,8 +157,8 @@ for t in tqdm(range(n_frames)):
         node.matrix = T 
         robot_pos1.append(T[:3,3])
         i+= 1
-
-
+    robot_pos1 = [np.zeros((3,1)) for i in mesh_nodes2]
+    
     robot_pos2 = []
     i = 0
     for node,_,_ in mesh_nodes2:
@@ -175,7 +186,6 @@ for t in tqdm(range(n_frames)):
     t2_s *= s2
     T2 = np.eye(4)
     T2[:3,3] = t2_s
-
     for node, _, _ in mesh_nodes2:
         node.matrix = T2 @ node.matrix # translate nodes in the world 
 
@@ -213,6 +223,20 @@ for t in tqdm(range(n_frames)):
     # --- render frame ---
     if not args.debug:
         color, _ = r.render(pyr_scene)
+        color = color.copy()
+        if args.bb_mode:
+            
+            import cv2
+            not_green_idx = np.argwhere(np.all(color != [0,255,0], axis=-1))
+            
+            if not_green_idx.size != 0:
+                min_y = np.min(not_green_idx[:,0])
+                min_x = np.min(not_green_idx[:,1])
+                max_y = np.max(not_green_idx[:,0])
+                max_x = np.max(not_green_idx[:,1])
+                cv2.rectangle(color,pt1=(min_x,min_y),pt2=(max_x,max_y), color=(255,0,0),thickness=2)
+
+
         frames.append(color)
 if args.debug:
     pyrender.Viewer(pyr_scene, use_raymond_lighting=True) 
