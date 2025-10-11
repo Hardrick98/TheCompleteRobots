@@ -3,7 +3,6 @@ from human_interaction import load_simple_all
 import joblib
 import pinocchio as pin
 import argparse
-from vedo import Plotter, Mesh, Video, Axes
 import os
 from tqdm import tqdm
 from scipy.spatial.transform import Rotation as Rot
@@ -14,24 +13,10 @@ from robotoid import Robotoid
 from smplx import SMPLX
 import trimesh
 from trimesh.collision import CollisionManager
+from visual_utils import preload_robot_meshes
 
 
-def preload_robot_meshes(robot):
-    cache = {}
-    frames = robot.body
-    for visual in robot.visual_model.geometryObjects:
-        mesh_path = visual.meshPath
-        if not os.path.exists(mesh_path):
-            continue
-        try:
-            mesh = trimesh.load_mesh(mesh_path)
-            mesh.apply_scale(visual.meshScale)
-            cache[visual.name] = (mesh, visual.placement, frames[visual.name[:-2]])
-        except Exception as e:
-            print(f"Errore caricando mesh {mesh_path}: {e}")
-            continue
-    return cache
-
+robot_cameras_indexes = {"nao": [30,32]}
 
 
 robot_list = [r.removesuffix(".urdf") for r in os.listdir("URDF") if r.endswith(".urdf")]
@@ -111,7 +96,7 @@ H = {
     "RWrist": 21
 }
 
-print("\nCONSTRUCTING VISUALIZATION...")
+print("\nExtracting Data...")
 
 arr1 = np.load(f"{args.interaction}/P1.npz", allow_pickle=True)
 arr2 = np.load(f"{args.interaction}/P2.npz", allow_pickle=True)
@@ -140,12 +125,6 @@ joint_configurations2 = np.load(f"{args.interaction}/{robot_name2}2.npy")
 robot1_cache = preload_robot_meshes(robot1)
 robot2_cache = preload_robot_meshes(robot2)
 
-vp = Plotter(interactive=True, axes=0, title="SMPLX Retargeting", bg='white')
-
-if args.video:
-    video = Video("video.mp4", duration=len(joint_configurations1)/60, fps=60)
-else:
-    video = None
 
 manager1 = CollisionManager()
 manager2 = CollisionManager()
@@ -185,7 +164,6 @@ for t in tqdm(range(len(joint_configurations1))):
         T = np.eye(4)
         T[:3, :3] = R
         T[:3, 3] = p
-        meshes1.append(base_mesh)
         robot_pos1.append(p)
         poses1.append(T[None,:,:])
         
@@ -204,15 +182,12 @@ for t in tqdm(range(len(joint_configurations1))):
         placement_world = robot2.data.oMf[frame]
         R = placement_world.rotation
         p = placement_world.translation
-        meshes2.append(base_mesh)
         T = np.eye(4)
         T[:3, :3] = R
         T[:3, 3] = p
         robot_pos2.append(p)
         poses2.append(T[None,:,:])
     
-    
-
 
 
     poses2 = np.vstack(poses2)
@@ -277,48 +252,6 @@ for t in tqdm(range(len(joint_configurations1))):
     cameras["ego2R"].append(camera2R)
     
 
-    """
-    for i, m in enumerate(meshes1):
-        T0 = poses1[i]
-        manager1.set_transform(f"robot1_{names[i]}", np.linalg.inv(T1@T0))
-       
-    
-    for i, m in enumerate(meshes2):
-        T0 = poses2[i]
-        manager2.set_transform(f"robot2_{names[i]}", np.linalg.inv(T2@T0))
-
-    
-    axes_opts = dict(
-        xtitle="X",
-        ytitle="Y",
-        ztitle="Z",
-        xyplane_color="yellow",
-        xyalpha=0.5,
-        zrange=[0,2],
-        xrange=[-1,1],
-        yrange=[-1,1]
-    )
-
-    ax = Axes(vp, **axes_opts)
-    if t == 0:
-        vp.show(*meshes1, *meshes2, axes=ax, resetcam=True)
-
-    else:
-        vp.remove(*prev_meshes1, *prev_meshes2)
-        vp.add(*meshes1, *meshes2)
-        vp.render()
-
-    if video:
-        video.add_frame()
-
-    time.sleep(0.01)
-    """
-
-if video:
-    video.close()
-
-#vp.interactive()
-#vp.close()
 
 robot1_poses = np.vstack(robot1_poses_all)
 robot2_poses = np.vstack(robot2_poses_all)
