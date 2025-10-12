@@ -243,7 +243,7 @@ for t in tqdm(range(len(joint_configurations1))):
 
     camera1L = get_camera_placement(robot1, 30, T1)
     camera1R = get_camera_placement(robot1, 32, T1)
-    camera2L = get_camera_placement(robot2, 30, T1)
+    camera2L = get_camera_placement(robot2, 30, T2)
     camera2R = get_camera_placement(robot2, 32, T2)
 
     cameras["ego1L"].append(camera1L)

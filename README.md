@@ -1,5 +1,7 @@
 # The Complete Robots
 
+We are creating a dataset of robots interacting with each other. 
+
 ## Install environment
 
 
@@ -13,13 +15,17 @@ conda activate Robots
 ```
 
 
-## TO find robot configurations
+## To use the code
 
 
-Download SMPL models here: https://drive.google.com/file/d/1eF2DCk7GhbSAYfC8eKVFCU27P4VeKNPV/view?usp=sharing
+Download SMPL-X models here: https://drive.google.com/file/d/1eF2DCk7GhbSAYfC8eKVFCU27P4VeKNPV/view?usp=sharing
 
 Put the models_smplx_v1_1 in the main folder.
-You can use the interaction sample to test the code.
+
+Download the Inter-X dataset https://github.com/liangxuy/Inter-X, and extract the motion folder wherever you want. That will be your PATH_TO_INTERACTION.
+
+
+Retargeting pose from human to robot:
 
 ```
 python retarget_motion.py --interaction PATH_TO_INTERACTION --robot ROBOT_NAME
@@ -33,19 +39,25 @@ python retarget_pose.py --interaction PATH_TO_INTERACTION --robot ROBOT_NAME
 
 This will save robot configurations in the same folder.
 
+
 To extract data like poses and collisions run:
+
 ```
 python robot_interaction.py --interaction PATH_TO_INTERACTION --robot1 ROBOT1_NAME --robot2 ROBOT2_NAME --video 
 ```
 
-To create visualization 
+To create videos 
 
 ```
 python cool_visualization.py --robot1 ROBOT1 --robot2 ROBOT2 --interaction PATH_TO_INTERACTION --scene SCENE --video --camera_mode CAMERA MODE
 ```
 
 
-Alternatively you can use ./compute_data.sh INTERACTION
+
+Alternatively you can use ./compute_data.sh INTERACTION, tp do it all at once.
+
+
+## Sample of interaction:
 
 <table align="center">
   <tr>
@@ -86,8 +98,6 @@ Alternatively you can use ./compute_data.sh INTERACTION
     </td>
   </tr>
 </table>
-
-
 
 
 The displayed action is **Slap**.
