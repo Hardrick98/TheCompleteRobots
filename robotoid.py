@@ -10,7 +10,7 @@ import trimesh
 from vedo import Mesh
 from scipy.spatial.transform import Rotation as Rot
 
-class Robotoid:
+class Robotoid():
 
     def __init__(self, robot, wheeled = False):
         
@@ -438,6 +438,8 @@ class Robotoid:
         robotoid = new_robotoid
         robotoid_labels = new_robotoid_labels 
 
+
+
         print("\n")
         print("Defined Chains:\n", robotoid_labels)
         print("\n")
@@ -495,6 +497,54 @@ class Robotoid:
 
         return final_reduced, final_values
 
+
+    def manual_build(self):
+
+        chains = {'g1':{0: [[None]], 
+          1: [['left_shoulder_pitch_joint', 'left_shoulder_roll_joint', 'left_shoulder_yaw_joint'], ['left_elbow_joint'], ['left_wrist_roll_joint']], 
+          2: [['right_shoulder_pitch_joint', 'right_shoulder_roll_joint', 'right_shoulder_yaw_joint'], ['right_elbow_joint'], ['right_wrist_roll_joint']],
+          3: [['left_hip_pitch_joint', 'left_hip_roll_joint', 'left_hip_yaw_joint'], ['left_knee_joint'], ['left_ankle_pitch_joint', 'left_ankle_roll_joint']], 
+          4: [['right_hip_pitch_joint', 'right_hip_roll_joint', 'right_hip_yaw_joint'], ['right_knee_joint'], ['right_ankle_pitch_joint', 'right_ankle_roll_joint']]}}
+
+        robotoid_labels = chains["g1"]
+        
+        final = {}
+
+        final["Head"] = robotoid_labels[0][0]
+
+        
+        final["LShoulder"] = robotoid_labels[1][0]
+        final["LElbow"] = robotoid_labels[1][1]
+        final["LWrist"] = robotoid_labels[1][2]
+        final["RShoulder"] = robotoid_labels[2][0]
+        final["RElbow"] = robotoid_labels[2][1]
+        final["RWrist"] = robotoid_labels[2][2]
+        
+              
+        if robotoid_labels[4][0][0] is not None:
+            final["LHip"] = robotoid_labels[3][0]
+            final["LKnee"] = robotoid_labels[3][1]
+            final["LAnkle"] = robotoid_labels[3][2]
+            final["RHip"] = robotoid_labels[4][0]
+            final["RKnee"] = robotoid_labels[4][1]
+            final["RAnkle"] = robotoid_labels[4][2]
+        else:
+         
+            final["Hip"] = robotoid_labels[3][0][0:2]
+            final["Knee"]  = [robotoid_labels[3][0][2]]
+
+        final_reduced = {}
+        final_values = {}
+        for k,v in final.items():
+            if v[0] is not None:
+                final_reduced[k] = v[0]
+                final_values[k] = self.model.getJointId(v[0])-1
+
+
+        final_reduced["root_joint"] = "root_joint"
+        final_values["root_joint"] = self.model.getJointId("root_joint") - 1
+
+        return final_reduced, final_values
     
     def retarget(self, human_action, idx=None):
         """

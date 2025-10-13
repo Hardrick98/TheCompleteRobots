@@ -16,7 +16,7 @@ from trimesh.collision import CollisionManager
 from visual_utils import preload_robot_meshes
 
 
-robot_cameras_indexes = {"nao": [30,32]}
+robot_cameras_indexes = {"nao": [30,32], "g1":[34, 34]}
 
 
 robot_list = [r.removesuffix(".urdf") for r in os.listdir("URDF") if r.endswith(".urdf")]
@@ -165,6 +165,7 @@ for t in tqdm(range(len(joint_configurations1))):
         T[:3, :3] = R
         T[:3, 3] = p
         robot_pos1.append(p)
+        meshes1.append(base_mesh)
         poses1.append(T[None,:,:])
         
     
@@ -185,6 +186,7 @@ for t in tqdm(range(len(joint_configurations1))):
         T = np.eye(4)
         T[:3, :3] = R
         T[:3, 3] = p
+        meshes2.append(base_mesh)
         robot_pos2.append(p)
         poses2.append(T[None,:,:])
     
@@ -241,10 +243,10 @@ for t in tqdm(range(len(joint_configurations1))):
 
     collision_list.append(collisions[1])
 
-    camera1L = get_camera_placement(robot1, 30, T1)
-    camera1R = get_camera_placement(robot1, 32, T1)
-    camera2L = get_camera_placement(robot2, 30, T2)
-    camera2R = get_camera_placement(robot2, 32, T2)
+    camera1L = get_camera_placement(robot1, robot_cameras_indexes[args.robot1][0], T1)
+    camera1R = get_camera_placement(robot1, robot_cameras_indexes[args.robot1][1], T1)
+    camera2L = get_camera_placement(robot2, robot_cameras_indexes[args.robot2][0], T2)
+    camera2R = get_camera_placement(robot2, robot_cameras_indexes[args.robot2][1], T2)
 
     cameras["ego1L"].append(camera1L)
     cameras["ego1R"].append(camera1R)

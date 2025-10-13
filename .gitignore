@@ -16,3 +16,4 @@ profile_output.prof
 nao_pose.pkl
 credits.txt
 *.zip
+*not_colored/

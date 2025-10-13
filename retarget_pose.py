@@ -63,6 +63,7 @@ if __name__ == "__main__":
     if args.robot == "pepper":
         wheeled = True
     
+    print(robot.get_frames())
 
     robotoid1 = Robotoid(robot, wheeled)
     robotoid2 = Robotoid(robot, wheeled)

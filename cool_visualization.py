@@ -157,7 +157,7 @@ for t in tqdm(range(n_frames)):
         node.matrix = T 
         robot_pos1.append(T[:3,3])
         i+= 1
-    robot_pos1 = [np.zeros((3,1)) for i in mesh_nodes2]
+    #robot_pos1 = [np.zeros((3,1)) for i in mesh_nodes2]
     
     robot_pos2 = []
     i = 0
