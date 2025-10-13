@@ -49,7 +49,7 @@ python robot_interaction.py --interaction PATH_TO_INTERACTION --robot1 ROBOT1_NA
 To create videos 
 
 ```
-python cool_visualization.py --robot1 ROBOT1 --robot2 ROBOT2 --interaction PATH_TO_INTERACTION --scene SCENE --video --camera_mode CAMERA MODE
+python render.py --robot1 ROBOT1 --robot2 ROBOT2 --interaction PATH_TO_INTERACTION --scene SCENE --video --camera_mode CAMERA MODE
 ```
 
 
