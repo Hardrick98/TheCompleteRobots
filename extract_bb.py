@@ -41,7 +41,8 @@ parser.add_argument("--interaction", type=str)
 parser.add_argument("--video", action="store_true")
 parser.add_argument("--scene", type=str, default=None)
 parser.add_argument("--green_screen",action="store_true")
-parser.add_argument("--bb_mode",action="store_true")
+parser.add_argument("--bb_mode1",action="store_true")
+parser.add_argument("--bb_mode2",action="store_true")
 parser.add_argument("--debug", action="store_true")
 args = parser.parse_args()
 
@@ -264,11 +265,22 @@ for t in tqdm(range(n_frames)):
 
     if args.bb_mode1:
         for node, _, _ in mesh_nodes2:
-            pyr_scene.remove_node(node)
-    
-    if args.bb_mode2:
+            if node in pyr_scene.get_nodes():
+                pyr_scene.remove_node(node)
+    elif args.bb_mode2:
         for node, _, _ in mesh_nodes1:
-            pyr_scene.remove_node(node)
+            if node in pyr_scene.get_nodes():
+                pyr_scene.remove_node(node)
+
+    # dopo il rendering, reinserisci
+    if args.bb_mode1:
+        for node, _, _ in mesh_nodes2:
+            if node not in pyr_scene.get_nodes():
+                pyr_scene.add_node(node)
+    elif args.bb_mode2:
+        for node, _, _ in mesh_nodes1:
+            if node not in pyr_scene.get_nodes():
+                pyr_scene.add_node(node)
 
     # --- render frame ---
     if not args.debug:
@@ -276,7 +288,7 @@ for t in tqdm(range(n_frames)):
         color = color.copy()
 
         
-        if args.bb_mode:
+        if args.bb_mode1 or args.bb_mode2:
             
             import cv2
             not_green_idx = np.argwhere(np.all(color != [0,255,0], axis=-1))
@@ -286,7 +298,7 @@ for t in tqdm(range(n_frames)):
                 min_x = np.min(not_green_idx[:,1])
                 max_y = np.max(not_green_idx[:,0])
                 max_x = np.max(not_green_idx[:,1])
-                bounding_boxes.append(np.array(min_x,min_y,max_x, max_y))
+                bounding_boxes.append(np.array([[min_x,min_y,max_x, max_y]]))
                 cv2.rectangle(color,pt1=(min_x,min_y),pt2=(max_x,max_y), color=(255,0,0),thickness=2)
 
 
@@ -305,10 +317,10 @@ if args.video:
 
 if args.bb_mode1:
     if f"2d_bb_{args.camera_mode}" not in data1: 
-        data1[f"2d_bb_{args.camera_mode}"] = np.vstack(bounding_boxes[None,:])
+        data1[f"2d_bb_{args.camera_mode}"] = np.vstack(bounding_boxes)
 if args.bb_mode2:
     if f"2d_bb_{args.camera_mode}" not in data2:
-        data2[f"2d_bb_{args.camera_mode}"] = np.vstack(bounding_boxes[None,:])
+        data2[f"2d_bb_{args.camera_mode}"] = np.vstack(bounding_boxes)
 
 
 joblib.dump(data1, f"{args.interaction}/data/data_{args.robot1}1.pkl" )
