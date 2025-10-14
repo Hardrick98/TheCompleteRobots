@@ -23,6 +23,7 @@ Rz = np.array([
 ])
 
 def look_at(camera_pos, target):
+    
     forward = (target - camera_pos)
     forward /= np.linalg.norm(forward)
     right = np.cross(forward, np.array([0, 0, 1]))
@@ -109,7 +110,7 @@ def load_background(pyr_scene, scene_path):
         geom = scene_mesh.geometry[geom_name]
         pyr_mesh = pyrender.Mesh.from_trimesh(geom, smooth=True)
         T0 = np.eye(4)
-        if "estensi_light":
+        if scene_name == "estensi_light":
             pass
         else:
             T0[:3,:3] = Ry
@@ -120,6 +121,7 @@ def load_background(pyr_scene, scene_path):
 def preload_robot_meshes(robot):
     cache = {}
     frames = robot.body
+    
     for visual in robot.visual_model.geometryObjects:
         mesh_path = visual.meshPath
         if not os.path.exists(mesh_path):

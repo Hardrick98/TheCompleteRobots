@@ -6,7 +6,7 @@ from tqdm import tqdm
 import numpy as np
 from robotoid import Robotoid
 import pyrender
-import trimesh
+from scipy.spatial.transform import Rotation as Rot
 import imageio
 from visual_utils import *
 
@@ -41,7 +41,6 @@ parser.add_argument("--interaction", type=str)
 parser.add_argument("--video", action="store_true")
 parser.add_argument("--scene", type=str, default=None)
 parser.add_argument("--green_screen",action="store_true")
-parser.add_argument("--bb_mode",action="store_true")
 parser.add_argument("--debug", action="store_true")
 args = parser.parse_args()
 
@@ -63,7 +62,7 @@ except Exception as e:
 
 
 
-
+masks = {"nao": [0, 1, 3, 6, 7, 9, 11, 12, 13, 16, 17, 19, 21, 22], "g1":[14,15,2,4,5,17,19,20,9,11,13,23,25,26]}
 
 model = robot1.model
 data = robot1.data
@@ -72,6 +71,8 @@ q0 = robot1.q0
 
 robotoid = Robotoid(robot1, wheeled)
 F, R = robotoid.build()
+
+
 
 human1_js = np.load(os.path.join(args.interaction,"data","human1_poses.npy"))
 trans1 = np.load(os.path.join(args.interaction,"data","human1_trans.npy"))
@@ -82,13 +83,13 @@ trans2 = np.load(os.path.join(args.interaction,"data","human2_trans.npy"))
 robot1_poses= np.load(f"{args.interaction}/data/{robot_name1}_1_poses.npy")
 robot2_poses = np.load(f"{args.interaction}/data/{robot_name2}_2_poses.npy")
 
-if os.path.exists(f"{args.interaction}/data/data_{args.robot1}_1.pkl"):  
-    data1 = joblib.load(f"{args.interaction}/data/data_{args.robot1}_1.pkl")
+if os.path.exists(f"{args.interaction}/data/{args.robot1}_1_data.pkl"):  
+    data1 = joblib.load(f"{args.interaction}/data/{args.robot1}_1_data.pkl")
 else:
     data1 = {}
 
-if os.path.exists(f"{args.interaction}/data/data_{args.robot2}_2.pkl"):  
-    data2 = joblib.load(f"{args.interaction}/data/data_{args.robot2}_2.pkl")
+if os.path.exists(f"{args.interaction}/data/{args.robot2}_2_data.pkl"):  
+    data2 = joblib.load(f"{args.interaction}/data/{args.robot2}_2_data.pkl")
 else:
     data2 = {}
     
@@ -167,6 +168,10 @@ K = np.array([[f_x, 0, c_x],
               [0, 0, 1]])
 
 
+
+camera_params = {"K": K, "E":[]}
+
+
 poses1_2d = []
 poses2_2d = []
 poses1_3d = []
@@ -194,7 +199,6 @@ for t in tqdm(range(n_frames)):
         node.matrix = T 
         robot_pos1.append(T[:3,3])
         i+= 1
-    #robot_pos1 = [np.zeros((3,1)) for i in mesh_nodes2]
     
     robot_pos2 = []
     i = 0
@@ -241,25 +245,40 @@ for t in tqdm(range(n_frames)):
     if "exo" in camera_mode:
         if t == 0:
 
-            robot1_center = np.array([((robot_pos1[:,i].max() + robot_pos1[:,i].min())/2) for i in range(3)]) 
-            robot2_center = np.array([((robot_pos2[:,i].max() + robot_pos2[:,i].min())/2) for i in range(3)])
+            robot1_center = np.mean(robot_pos1, axis=0)
+            robot2_center = np.mean(robot_pos2, axis=0)
 
-            target = (robot1_center + robot2_center)/2
+            
+            target = (robot1_center + robot2_center) / 2.0
+
             direction = robot2_center - robot1_center
             direction[2] = 0
             direction /= np.linalg.norm(direction)
-            ortho = np.array([-direction[1], -direction[0],0])
+
+            rot_axis = np.array([0, 0, 1.0])  # ruota attorno all'asse Z
+            rot = Rot.from_rotvec(rot_axis * np.pi/2).as_matrix()
+            robot_direction = direction.copy()
+            direction = rot @ direction
             
-            distance = 0.1
-            L = np.array([distance/ortho[0], 2*s1[2],0])
-            R = np.array([-distance/ortho[0], 2*s1[2],0])
-             
-            if camera_mode == "exoR":
-                camera_pos = target + R * ortho
+
+            up = np.array([0, 0, 1.0])
+
+
+            # Parametri camera
+            horizontal_offset = 0.3   
+            vertical_offset = 0.15   
+            distance_back = 2 * s1[2]      
+
+            center_pos = target - direction * distance_back + np.array([0, 0, vertical_offset])
+
+            if camera_mode == "exoL":
+                camera_pos = center_pos - 0.5 * horizontal_offset * robot_direction
             else:
-                camera_pos = target + L * ortho
+                camera_pos = center_pos + 0.5 * horizontal_offset * robot_direction
+    
 
             E = place_camera(camera_mode, camera_pos, target, t=t)
+            camera_params["E"].append(E[None,:,:])
         
             cam_node.matrix = E
         
@@ -268,6 +287,7 @@ for t in tqdm(range(n_frames)):
     else:
 
         E = place_camera(camera_mode, cameras, target=None,  t=t)
+        camera_params["E"].append(E[None,:,:])
         cam_node.matrix = E
 
     poses1_3d.append(robot_pos1)
@@ -310,27 +330,14 @@ for t in tqdm(range(n_frames)):
         color = color.copy()
 
         import cv2
-        for p in pose1_2d:
-            cv2.circle(color,center=(int(p[0]),int(p[1])),radius=1,color=(255,0,0),thickness=2)
-        for p in pose2_2d:
-            cv2.circle(color,center=(int(p[0]),int(p[1])),radius=1,color=(0,0,255),thickness=2)
+        #for p in pose1_2d:
+        #    cv2.circle(color,center=(int(p[0]),int(p[1])),radius=1,color=(255,0,0),thickness=2)
+        #for p in pose2_2d:
+        #    cv2.circle(color,center=(int(p[0]),int(p[1])),radius=1,color=(0,0,255),thickness=2)
 
-        
-        if args.bb_mode:
-            
-            import cv2
-            not_green_idx = np.argwhere(np.all(color != [0,255,0], axis=-1))
-            
-            if not_green_idx.size != 0:
-                min_y = np.min(not_green_idx[:,0])
-                min_x = np.min(not_green_idx[:,1])
-                max_y = np.max(not_green_idx[:,0])
-                max_x = np.max(not_green_idx[:,1])
-                cv2.rectangle(color,pt1=(min_x,min_y),pt2=(max_x,max_y), color=(255,0,0),thickness=2)
-
-
+        cv2.imwrite("test.png", color[:,:,::-1])
         frames.append(color)
-        
+    
 if args.debug:
 
     pyrender.Viewer(pyr_scene, use_raymond_lighting=True) 
@@ -339,12 +346,17 @@ if args.debug:
 if not args.debug:
     r.delete()
 if args.video:
-    imageio.mimsave(f'{args.robot1}_{args.robot2}_{args.camera_mode}.mp4', frames, fps=120)
+    imageio.mimsave(f'{args.interaction}/{args.robot1}_{args.camera_mode}.mp4', frames, fps=120)
 
 
 
-data1[args.camera_mode]["pose2D"] = np.vstack(np.array(poses1_2d)[None,:,:])
-data2[args.camera_mode]["pose2D"] = np.vstack(np.array(poses2_2d)[None,:,:])
+data1[args.camera_mode]["pose2D_total"] = np.vstack(np.array(poses1_2d)[None,:,:])
+data2[args.camera_mode]["pose2D_total"] = np.vstack(np.array(poses2_2d)[None,:,:])
+
+data1[args.camera_mode]["pose2D"] = np.vstack(np.array(poses1_2d)[None,:,:])[:,masks[args.robot1],:]
+data2[args.camera_mode]["pose2D"] = np.vstack(np.array(poses2_2d)[None,:,:])[:,masks[args.robot2],:]
+
+
 
 if "world" not in data1.keys():
     data1["world"] = {}
@@ -353,8 +365,17 @@ if "world" not in data1.keys():
     data2["world"]["pose3D"] = np.vstack(np.array(poses2_3d)[None,:,:])
 
 
-data1[args.camera_mode]["pose3D"]  = np.vstack(np.array(poses1_3d_cam)[None,:,:])
-data2[args.camera_mode]["pose3D"]  = np.vstack(np.array(poses2_3d_cam)[None,:,:])
+data1[args.camera_mode]["pose3D_total"]  = np.vstack(np.array(poses1_3d_cam)[None,:,:])
+data2[args.camera_mode]["pose3D_total"]  = np.vstack(np.array(poses2_3d_cam)[None,:,:])
 
-joblib.dump(data1, f"{args.interaction}/data/data_{args.robot1}_1.pkl" )
-joblib.dump(data2, f"{args.interaction}/data/data_{args.robot2}_2.pkl" )
+data1[args.camera_mode]["pose3D"]  = np.vstack(np.array(poses1_3d_cam)[None,:,:])[:,masks[args.robot1],:]
+data2[args.camera_mode]["pose3D"]  = np.vstack(np.array(poses2_3d_cam)[None,:,:])[:,masks[args.robot2],:]
+
+camera_params["E"] = np.vstack(camera_params["E"])
+
+data1[args.camera_mode]["camera_params"] = camera_params
+data2[args.camera_mode]["camera_params"] = camera_params
+
+
+joblib.dump(data1, f"{args.interaction}/data/{args.robot1}_1_data.pkl" )
+joblib.dump(data2, f"{args.interaction}/data/{args.robot2}_2_data.pkl" )

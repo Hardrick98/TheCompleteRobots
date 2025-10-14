@@ -17,3 +17,5 @@ nao_pose.pkl
 credits.txt
 *.zip
 *not_colored/
+*.png
+*.txt

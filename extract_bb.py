@@ -6,7 +6,7 @@ from tqdm import tqdm
 import numpy as np
 from robotoid import Robotoid
 import pyrender
-import trimesh
+from scipy.spatial.transform import Rotation as Rot
 import imageio
 from visual_utils import *
 
@@ -83,13 +83,13 @@ trans2 = np.load(os.path.join(args.interaction,"data","human2_trans.npy"))
 robot1_poses= np.load(f"{args.interaction}/data/{robot_name1}_1_poses.npy")
 robot2_poses = np.load(f"{args.interaction}/data/{robot_name2}_2_poses.npy")
 
-if os.path.exists(f"{args.interaction}/data/data_{args.robot1}_1.pkl"):  
-    data1 = joblib.load(f"{args.interaction}/data/data_{args.robot1}_1.pkl")
+if os.path.exists(f"{args.interaction}/data/{args.robot1}_1_data.pkl"):  
+    data1 = joblib.load(f"{args.interaction}/data/{args.robot1}_1_data.pkl")
 else:
     data1 = {}
 
-if os.path.exists(f"{args.interaction}/data/data_{args.robot2}_2.pkl"):  
-    data2 = joblib.load(f"{args.interaction}/data/data_{args.robot2}_2.pkl")
+if os.path.exists(f"{args.interaction}/data/{args.robot2}_2_data.pkl"):  
+    data2 = joblib.load(f"{args.interaction}/data/{args.robot2}_2_data.pkl")
 else:
     data2 = {}
     
@@ -170,6 +170,7 @@ K = np.array([[f_x, 0, c_x],
               [0, 0, 1]])
 
 
+
 bounding_boxes = []
 
 # renderer offscreen
@@ -240,23 +241,37 @@ for t in tqdm(range(n_frames)):
     if "exo" in camera_mode:
         if t == 0:
 
-            robot1_center = np.array([((robot_pos1[:,i].max() + robot_pos1[:,i].min())/2) for i in range(3)]) 
-            robot2_center = np.array([((robot_pos2[:,i].max() + robot_pos2[:,i].min())/2) for i in range(3)])
+            robot1_center = np.mean(robot_pos1, axis=0)
+            robot2_center = np.mean(robot_pos2, axis=0)
 
-            target = (robot1_center + robot2_center)/2
+            
+            target = (robot1_center + robot2_center) / 2.0
+
             direction = robot2_center - robot1_center
             direction[2] = 0
             direction /= np.linalg.norm(direction)
-            ortho = np.array([-direction[1], -direction[0],0])
+
+            rot_axis = np.array([0, 0, 1.0])  # ruota attorno all'asse Z
+            rot = Rot.from_rotvec(rot_axis * np.pi/2).as_matrix()
+            robot_direction = direction.copy()
+            direction = rot @ direction
             
-            distance = 0.1
-            L = np.array([distance/ortho[0], 2*s1[2],0])
-            R = np.array([-distance/ortho[0], 2*s1[2],0])
-             
-            if camera_mode == "exoR":
-                camera_pos = target + R * ortho
+
+            up = np.array([0, 0, 1.0])
+
+
+            # Parametri camera
+            horizontal_offset = 0.3   
+            vertical_offset = 0.15   
+            distance_back = 2 * s1[2]      
+
+            center_pos = target - direction * distance_back + np.array([0, 0, vertical_offset])
+
+            if camera_mode == "exoL":
+                camera_pos = center_pos - 0.5 * horizontal_offset * robot_direction
             else:
-                camera_pos = target + L * ortho
+                camera_pos = center_pos + 0.5 * horizontal_offset * robot_direction
+    
 
             E = place_camera(camera_mode, camera_pos, target, t=t)
         
@@ -330,5 +345,5 @@ if args.bb_mode2:
     data2[args.camera_mode]["bb2D"] = np.vstack(bounding_boxes)
 
 
-joblib.dump(data1, f"{args.interaction}/data/data_{args.robot1}_1.pkl" )
-joblib.dump(data2, f"{args.interaction}/data/data_{args.robot2}_2.pkl" )
+joblib.dump(data1, f"{args.interaction}/data/{args.robot1}_1_data.pkl" )
+joblib.dump(data2, f"{args.interaction}/data/{args.robot2}_2_data.pkl" )

@@ -101,15 +101,15 @@ class Robotoid():
             dir = np.argmin(np.array([x,y,z]))
 
             if dir == 0:
-                print("Palm direction is x")
+                #print("Palm direction is x")
                 cL = [1,0,0]
                 cR = [1,0,0]
             elif dir == 1:
-                print("Palm direction is y")
+                #print("Palm direction is y")
                 cL = [0,-1,0]
                 cR = [0,1,0]
             elif dir == 2:
-                print("Palm direction is z")
+                #print("Palm direction is z")
                 cL = [0,0,-1]
                 cR = [0,0,-1]
             #combined.show()  # oppure: combined.export("combined_mesh.obj")
@@ -283,7 +283,7 @@ class Robotoid():
                 parent_name = self.model.names[parent_idx]
             parent_child[joint_name] = parent_name
 
-        print(parent_child)
+        #print(parent_child)
 
         all_parents = set(self.model.parents)
 
@@ -374,7 +374,7 @@ class Robotoid():
                         robotoid_labels[chain_value] = [[None]]
                         chain_value += 1
                     else:
-                        print("Head not movable")
+                        #print("Head not movable")
                         robotoid[chain_value] = np.array([[100,100,100]])
                         robotoid_labels[chain_value] = [[None]]
                         chain_value += 1
@@ -440,8 +440,8 @@ class Robotoid():
 
 
 
-        print("\n")
-        print("Defined Chains:\n", robotoid_labels)
+        #print("\n")
+        #print("Defined Chains:\n", robotoid_labels)
         print("\n")
 
         final = {}
