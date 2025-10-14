@@ -263,8 +263,8 @@ try:
 except:
     pass
 
-np.save(os.path.join(f"{args.interaction}/data",f"{args.robot1}1_poses.npy"),robot1_poses)
-np.save(os.path.join(f"{args.interaction}/data",f"{args.robot2}2_poses.npy"),robot2_poses)
+np.save(os.path.join(f"{args.interaction}/data",f"{args.robot1}_1_poses.npy"),robot1_poses)
+np.save(os.path.join(f"{args.interaction}/data",f"{args.robot2}_2_poses.npy"),robot2_poses)
 np.save(os.path.join(f"{args.interaction}/data",f"human1_poses.npy"),human1_js)
 np.save(os.path.join(f"{args.interaction}/data",f"human2_poses.npy"),human2_js)
 np.save(os.path.join(f"{args.interaction}/data",f"human1_trans.npy"),trans1)

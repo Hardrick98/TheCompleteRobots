@@ -79,18 +79,23 @@ human2_js = np.load(os.path.join(args.interaction,"data","human2_poses.npy"))
 trans2 = np.load(os.path.join(args.interaction,"data","human2_trans.npy"))
 
 
-robot1_poses= np.load(f"{args.interaction}/data/{robot_name1}1_poses.npy")
-robot2_poses = np.load(f"{args.interaction}/data/{robot_name2}2_poses.npy")
+robot1_poses= np.load(f"{args.interaction}/data/{robot_name1}_1_poses.npy")
+robot2_poses = np.load(f"{args.interaction}/data/{robot_name2}_2_poses.npy")
 
-if os.path.exists(f"{args.interaction}/data/data_{args.robot1}1.pkl"):  
-    data1 = joblib.load(f"{args.interaction}/data/data_{args.robot1}1.pkl")
+if os.path.exists(f"{args.interaction}/data/data_{args.robot1}_1.pkl"):  
+    data1 = joblib.load(f"{args.interaction}/data/data_{args.robot1}_1.pkl")
 else:
     data1 = {}
 
-if os.path.exists(f"{args.interaction}/data/data_{args.robot2}2.pkl"):  
-    data2 = joblib.load(f"{args.interaction}/data/data_{args.robot2}2.pkl")
+if os.path.exists(f"{args.interaction}/data/data_{args.robot2}_2.pkl"):  
+    data2 = joblib.load(f"{args.interaction}/data/data_{args.robot2}_2.pkl")
 else:
     data2 = {}
+    
+if args.camera_mode not in data1.keys(): 
+    data1[args.camera_mode] = {}
+if args.camera_mode not in data2.keys():
+        data2[args.camera_mode] = {}
 
 # ------------------- preload robot meshes -------------------
 robot1_cache = preload_robot_meshes(robot1)
@@ -338,20 +343,18 @@ if args.video:
 
 
 
-if f"2d_poses_{args.camera_mode}" not in data1: 
-    data1[f"2d_poses_{args.camera_mode}"] = np.vstack(np.array(poses1_2d)[None,:,:])
-if f"2d_poses" not in data2:
-    data2[f"2d_poses_{args.camera_mode}"] = np.vstack(np.array(poses2_2d)[None,:,:])
+data1[args.camera_mode]["pose2D"] = np.vstack(np.array(poses1_2d)[None,:,:])
+data2[args.camera_mode]["pose2D"] = np.vstack(np.array(poses2_2d)[None,:,:])
 
-if "3d_poses_world" not in data1:
-    data1["3d_poses_world"] = np.vstack(np.array(poses1_3d)[None,:,:])
-if "3d_poses_world" not in data2:
-    data2["3d_poses_world"] = np.vstack(np.array(poses2_3d)[None,:,:])
+if "world" not in data1.keys():
+    data1["world"] = {}
+    data1["world"]["pose3D"] = np.vstack(np.array(poses1_3d)[None,:,:])
+    data2["world"] = {}
+    data2["world"]["pose3D"] = np.vstack(np.array(poses2_3d)[None,:,:])
 
-if f"3d_poses_{args.camera_mode}" not in data1:
-    data1[f"3d_poses_{args.camera_mode}"] = np.vstack(np.array(poses1_3d_cam)[None,:,:])
-if f"3d_poses_{args.camera_mode}" not in data2:
-    data2[f"3d_poses_{args.camera_mode}"] = np.vstack(np.array(poses2_3d_cam)[None,:,:])
 
-joblib.dump(data1, f"{args.interaction}/data/data_{args.robot1}1.pkl" )
-joblib.dump(data2, f"{args.interaction}/data/data_{args.robot2}2.pkl" )
+data1[args.camera_mode]["pose3D"]  = np.vstack(np.array(poses1_3d_cam)[None,:,:])
+data2[args.camera_mode]["pose3D"]  = np.vstack(np.array(poses2_3d_cam)[None,:,:])
+
+joblib.dump(data1, f"{args.interaction}/data/data_{args.robot1}_1.pkl" )
+joblib.dump(data2, f"{args.interaction}/data/data_{args.robot2}_2.pkl" )

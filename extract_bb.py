@@ -80,18 +80,25 @@ human2_js = np.load(os.path.join(args.interaction,"data","human2_poses.npy"))
 trans2 = np.load(os.path.join(args.interaction,"data","human2_trans.npy"))
 
 
-robot1_poses= np.load(f"{args.interaction}/data/{robot_name1}1_poses.npy")
-robot2_poses = np.load(f"{args.interaction}/data/{robot_name2}2_poses.npy")
+robot1_poses= np.load(f"{args.interaction}/data/{robot_name1}_1_poses.npy")
+robot2_poses = np.load(f"{args.interaction}/data/{robot_name2}_2_poses.npy")
 
-if os.path.exists(f"{args.interaction}/data/data_{args.robot1}1.pkl"):  
-    data1 = joblib.load(f"{args.interaction}/data/data_{args.robot1}1.pkl")
+if os.path.exists(f"{args.interaction}/data/data_{args.robot1}_1.pkl"):  
+    data1 = joblib.load(f"{args.interaction}/data/data_{args.robot1}_1.pkl")
 else:
     data1 = {}
 
-if os.path.exists(f"{args.interaction}/data/data_{args.robot2}2.pkl"):  
-    data2 = joblib.load(f"{args.interaction}/data/data_{args.robot2}2.pkl")
+if os.path.exists(f"{args.interaction}/data/data_{args.robot2}_2.pkl"):  
+    data2 = joblib.load(f"{args.interaction}/data/data_{args.robot2}_2.pkl")
 else:
     data2 = {}
+    
+if args.bb_mode1:
+    if args.camera_mode not in data1.keys(): 
+        data1[args.camera_mode] = {}
+if args.bb_mode2:
+    if args.camera_mode not in data2.keys():
+        data2[args.camera_mode] = {}
 
 # ------------------- preload robot meshes -------------------
 robot1_cache = preload_robot_meshes(robot1)
@@ -185,8 +192,7 @@ for t in tqdm(range(n_frames)):
         node.matrix = T 
         robot_pos1.append(T[:3,3])
         i+= 1
-    
-    robot_pos1 = [np.zeros((3,1)) for i in mesh_nodes2]
+
     
     robot_pos2 = []
     i = 0
@@ -272,15 +278,6 @@ for t in tqdm(range(n_frames)):
             if node in pyr_scene.get_nodes():
                 pyr_scene.remove_node(node)
 
-    # dopo il rendering, reinserisci
-    if args.bb_mode1:
-        for node, _, _ in mesh_nodes2:
-            if node not in pyr_scene.get_nodes():
-                pyr_scene.add_node(node)
-    elif args.bb_mode2:
-        for node, _, _ in mesh_nodes1:
-            if node not in pyr_scene.get_nodes():
-                pyr_scene.add_node(node)
 
     # --- render frame ---
     if not args.debug:
@@ -300,10 +297,21 @@ for t in tqdm(range(n_frames)):
                 max_x = np.max(not_green_idx[:,1])
                 bounding_boxes.append(np.array([[min_x,min_y,max_x, max_y]]))
                 cv2.rectangle(color,pt1=(min_x,min_y),pt2=(max_x,max_y), color=(255,0,0),thickness=2)
-
+            else:
+                bounding_boxes.append(np.array([[-1,-1,-1,-1]]))
 
         frames.append(color)
-        
+    
+        # dopo il rendering, reinserisci
+    if args.bb_mode1:
+        for node, _, _ in mesh_nodes2:
+            if node not in pyr_scene.get_nodes():
+                pyr_scene.add_node(node)
+    elif args.bb_mode2:
+        for node, _, _ in mesh_nodes1:
+            if node not in pyr_scene.get_nodes():
+                pyr_scene.add_node(node)
+            
 if args.debug:
 
     pyrender.Viewer(pyr_scene, use_raymond_lighting=True) 
@@ -316,12 +324,11 @@ if args.video:
 
 
 if args.bb_mode1:
-    if f"2d_bb_{args.camera_mode}" not in data1: 
-        data1[f"2d_bb_{args.camera_mode}"] = np.vstack(bounding_boxes)
+    data1[args.camera_mode]["bb2D"] = np.vstack(bounding_boxes)
 if args.bb_mode2:
-    if f"2d_bb_{args.camera_mode}" not in data2:
-        data2[f"2d_bb_{args.camera_mode}"] = np.vstack(bounding_boxes)
+    
+    data2[args.camera_mode]["bb2D"] = np.vstack(bounding_boxes)
 
 
-joblib.dump(data1, f"{args.interaction}/data/data_{args.robot1}1.pkl" )
-joblib.dump(data2, f"{args.interaction}/data/data_{args.robot2}2.pkl" )
+joblib.dump(data1, f"{args.interaction}/data/data_{args.robot1}_1.pkl" )
+joblib.dump(data2, f"{args.interaction}/data/data_{args.robot2}_2.pkl" )
