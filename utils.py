@@ -16,7 +16,7 @@ class HumanoidRobot:
         self.collision_model = self.robot.collision_model
         self.visual_model = self.robot.visual_model
         self.body, self.joints = self.get_frames()
-        
+        self.name = urdf_path.split("/")[-1].removesuffix(".urdf")
 
           # Initial configuration
 
@@ -28,7 +28,8 @@ class HumanoidRobot:
         robot = pin.RobotWrapper.BuildFromURDF(
             filename=urdf_path,
             package_dirs=["."],
-            root_joint=pin.JointModelSpherical() 
+            root_joint=pin.JointModelSpherical(), 
+            verbose=False
         )
         print(f"URDF description successfully loaded in {robot}")
         

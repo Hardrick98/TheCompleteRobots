@@ -139,7 +139,11 @@ if args.scene != None:
     load_background(pyr_scene, args.scene)
 
 
-
+if not os.path.exists(f"{args.interaction}/data/random_rotation.npy"):
+    Rand_Rz =random_rotation()
+    np.save(f"{args.interaction}/data/random_rotation.npy", Rand_Rz)
+else:
+    Rand_Rz = np.load(f"{args.interaction}/data/random_rotation.npy")
 
 
 #SET LIGHTS
@@ -222,6 +226,7 @@ for t in tqdm(range(n_frames)):
     T1[:3,3] = t1_s
     for node, _, _ in mesh_nodes1:
         Q = T1 @ node.matrix 
+        Q = Rand_Rz @ Q
         node.matrix = Q # translate nodes in the world 
         robot_pos1.append(Q[:3,3])
     
@@ -231,6 +236,7 @@ for t in tqdm(range(n_frames)):
     T2[:3,3] = t2_s
     for node, _, _ in mesh_nodes2:
         Q = T2@node.matrix
+        Q = Rand_Rz @ Q
         node.matrix = Q
         robot_pos2.append(Q[:3,3])
 

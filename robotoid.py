@@ -24,7 +24,10 @@ class Robotoid():
         self.collision_model = robot.collision_model
         self.solver = InverseKinematicSolver(self.model,self.data)
         self.wheeled = wheeled
-        self.N, self.J = self.build()
+        if robot.name == "g1":
+            self.N, self.J = self.manual_build()
+        else:
+            self.N, self.J = self.build()
         self.links_positions = self.robot.get_links_positions(self.q0)
         self.cL, self.cR = self.find_palm_convention()
         self.head_fixed = False
@@ -442,7 +445,7 @@ class Robotoid():
 
         #print("\n")
         #print("Defined Chains:\n", robotoid_labels)
-        print("\n")
+        #print("\n")
 
         final = {}
 

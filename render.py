@@ -24,9 +24,10 @@ Ry = np.array([
 ])
 
 Rz = np.array([
-[ np.cos(theta), -np.sin(theta), 0],
-[ np.sin(theta),  np.cos(theta), 0],
-[ 0,              0,             1]
+[ np.cos(theta), -np.sin(theta), 0,0],
+[ np.sin(theta),  np.cos(theta), 0,0],
+[ 0,              0,             1,0],
+[0,0,0,1]
 ])
     
 
@@ -38,7 +39,7 @@ parser.add_argument("--robot1", type=str, default="nao")
 parser.add_argument("--robot2", type=str, default="nao")
 parser.add_argument("--camera_mode", type=str, default="exo")
 parser.add_argument("--interaction", type=str)
-parser.add_argument("--video", action="store_true")
+parser.add_argument("--video", type=str, default=".")
 parser.add_argument("--scene", type=str, default=None)
 parser.add_argument("--green_screen",action="store_true")
 parser.add_argument("--debug", action="store_true")
@@ -109,7 +110,7 @@ cameras = joblib.load(os.path.join(f"{args.interaction}/data",f"{robot_name1}_ca
 if args.green_screen == True:
     pyr_scene = pyrender.Scene(ambient_light=[0.5,0.5,0.5],bg_color=[0,255,0])
 else:
-    pyr_scene = pyrender.Scene(ambient_light=[0.5,0.5,0.5])
+    pyr_scene = pyrender.Scene(ambient_light=[0.5,0.5,0.5],bg_color=[135,206,235])
 
 
 mesh_nodes1 = []
@@ -188,6 +189,14 @@ if not args.debug:
     n_frames = robot1_poses.shape[0]
 else:
     n_frames = 1
+    
+## Randomly rotate interaction
+    
+if not os.path.exists(f"{args.interaction}/data/random_rotation.npy"):
+    Rand_Rz =random_rotation()
+    np.save(f"{args.interaction}/data/random_rotation.npy", Rand_Rz)
+else:
+    Rand_Rz = np.load(f"{args.interaction}/data/random_rotation.npy")
 
 for t in tqdm(range(n_frames)):
 
@@ -221,11 +230,14 @@ for t in tqdm(range(n_frames)):
     robot_pos2 = []
     robot_pos1 = []
 
+        
+    
     t1_s *= s1 #scale translations
     T1 = np.eye(4)
     T1[:3,3] = t1_s
     for node, _, _ in mesh_nodes1:
         Q = T1 @ node.matrix 
+        Q = Rand_Rz@Q
         node.matrix = Q # translate nodes in the world 
         robot_pos1.append(Q[:3,3])
 
@@ -235,6 +247,7 @@ for t in tqdm(range(n_frames)):
     T2[:3,3] = t2_s
     for node, _, _ in mesh_nodes2:
         Q = T2@node.matrix
+        Q = Rand_Rz@Q
         node.matrix = Q
         robot_pos2.append(Q[:3,3])
 
@@ -345,8 +358,8 @@ if args.debug:
 
 if not args.debug:
     r.delete()
-if args.video:
-    imageio.mimsave(f'{args.interaction}/{args.robot1}_{args.camera_mode}.mp4', frames, fps=120)
+if args.video != None:
+    imageio.mimsave(f'{args.video}/{args.robot1}_{args.camera_mode}.mp4', frames, fps=120)
 
 
 

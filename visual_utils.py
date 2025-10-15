@@ -1,6 +1,7 @@
 import numpy as np
 import pyrender
 import trimesh
+import random
 import os
 
 theta = np.pi / 2 
@@ -93,8 +94,23 @@ def calculate_scale_factors(human1, human2, robot1, robot2):
         return s1,s2
 
 
-placements = {"room": [[-1,-0.3,0]], "city":[[-1,-0.3,0]], "hospital":[[-1,-0.3,0]], "estensi_light":[[-40,35,-0.1]]}
+placements = {"room": [[-1,-0.3,0]], "city":[[-1,-0.3,0]], "hospital":[[-1,0,0],[-1.8,0,0]], "estensi_light":[[-40,35,-0.1]]}
 
+def random_rotation():
+    
+    theta = random.uniform(0, 2*np.pi)
+    Rz = np.array([
+    [ np.cos(theta), -np.sin(theta), 0,0],
+    [ np.sin(theta),  np.cos(theta), 0,0],
+    [ 0,              0,             1,0],
+    [0,0,0,1]
+    ])
+    
+
+            
+    
+    return Rz
+    
 
 def load_background(pyr_scene, scene_path):
     
@@ -113,7 +129,7 @@ def load_background(pyr_scene, scene_path):
         if scene_name == "estensi_light":
             pass
         else:
-            T0[:3,:3] = Ry
+            T0[:3,:3] = Ry 
         pyr_scene.add(pyr_mesh, pose=T0@T)
 
     scene_mesh.matrix = T0
