@@ -287,7 +287,7 @@ for t in tqdm(range(n_frames)):
 
     else:
 
-        E = place_camera(camera_mode, cameras, target=None,  t=t)
+        E = place_camera(camera_mode, cameras, target=None,  t=t, random_rotation=Rand_Rz)
         cam_node.matrix = E
 
     if args.bb_mode1:
