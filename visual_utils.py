@@ -36,7 +36,7 @@ def look_at(camera_pos, target):
     rot[:3, 3] = camera_pos
     return rot
 
-def place_camera(camera_mode, camera_poses, target, t):
+def place_camera(camera_mode, camera_poses, target, t, random_rotation=np.eye(4)):
     
     if "exo" in camera_mode:
         
@@ -57,7 +57,7 @@ def place_camera(camera_mode, camera_poses, target, t):
     else:
         F = np.eye(4)
         F[:3,:3] = np.linalg.inv(Rz)@Ry
-        P = camera_poses[camera_mode][t] @ F
+        P = (random_rotation @ camera_poses[camera_mode][t]) @ F
 
 
     return P

@@ -299,7 +299,7 @@ for t in tqdm(range(n_frames)):
 
     else:
 
-        E = place_camera(camera_mode, cameras, target=None,  t=t)
+        E = place_camera(camera_mode, cameras, target=None,  t=t, random_rotation=Rand_Rz)
         camera_params["E"].append(E[None,:,:])
         cam_node.matrix = E
 
