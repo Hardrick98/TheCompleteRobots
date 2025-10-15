@@ -46,6 +46,23 @@ actions_dict = {
 }
 
 
+"""
+YES "Hug", "Hit", "Kick", "Push", "Pull", "Slap", "Pat on back", "Step on foot", "Link arms", "Pat on cheek","Touch head"
+NO "Wave", "Point finger at","Chase", "Rock-paper-scissors", "Bend", "Chat", "Thumb up","Imitate","Look back","Fly kiss"
+
+G049T000A000R004
+G004T003A002R016
+G044T002A010R004
+G024T004A020R004
+G026T003A015R000
+G041T010A037R013
+G012T002A011R008
+G028T008A039R018
+G022T009A032R010
+G020T004A024R021
+
+
+"""
 
 def pick_random_action(action):
 
