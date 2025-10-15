@@ -340,15 +340,6 @@ for t in tqdm(range(n_frames)):
     # --- render frame ---
     if not args.debug:
         color, _ = r.render(pyr_scene)
-        color = color.copy()
-
-        import cv2
-        #for p in pose1_2d:
-        #    cv2.circle(color,center=(int(p[0]),int(p[1])),radius=1,color=(255,0,0),thickness=2)
-        #for p in pose2_2d:
-        #    cv2.circle(color,center=(int(p[0]),int(p[1])),radius=1,color=(0,0,255),thickness=2)
-
-        cv2.imwrite("test.png", color[:,:,::-1])
         frames.append(color)
     
 if args.debug:

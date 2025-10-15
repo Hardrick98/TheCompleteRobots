@@ -441,7 +441,7 @@ def compute_global_orientations_batch(global_orient: torch.Tensor, body_pose: to
     return global_orientations
 
 
-def get_camera_placement(robot, frame_number, trans):
+def get_camera_placement(robot, frame_number, trans, robot_name = None, stereo=None):
     
     camera_placement = robot.data.oMf[frame_number]
     R = camera_placement.rotation
@@ -451,4 +451,29 @@ def get_camera_placement(robot, frame_number, trans):
     T[:3, :3] = R
     T[:3, 3] = p
 
-    return trans @ T
+    print(robot_name)
+    if robot_name == "g1":
+        
+        forward = T[:3, 0]  # asse X locale
+        up = T[:3, 2]       # asse Z locale
+        right = np.cross(forward, up)
+        right /= np.linalg.norm(right)
+
+        d = 0.05  # distanza in metri (10 cm)
+
+        T_left  = T.copy()
+        T_right = T.copy()
+        T_left[:3, 3] -= right * d
+        T_right[:3, 3] += right * d
+         
+        
+        if stereo == "L":
+            trans[:3, 3] -= right * d
+            return trans @ T_left
+        else:
+            trans[:3, 3] += right * d
+            return trans @ T_right
+    
+    else:
+
+        return trans @ T

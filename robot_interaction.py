@@ -243,10 +243,11 @@ for t in tqdm(range(len(joint_configurations1))):
 
     collision_list.append(collisions[1])
 
-    camera1L = get_camera_placement(robot1, robot_cameras_indexes[args.robot1][0], T1)
-    camera1R = get_camera_placement(robot1, robot_cameras_indexes[args.robot1][1], T1)
-    camera2L = get_camera_placement(robot2, robot_cameras_indexes[args.robot2][0], T2)
-    camera2R = get_camera_placement(robot2, robot_cameras_indexes[args.robot2][1], T2)
+
+    camera1L = get_camera_placement(robot1, robot_cameras_indexes[args.robot1][0], T1, robot_name= args.robot1, stereo="L")
+    camera1R = get_camera_placement(robot1, robot_cameras_indexes[args.robot1][1], T1, robot_name= args.robot1, stereo="R")
+    camera2L = get_camera_placement(robot2, robot_cameras_indexes[args.robot2][0], T2, robot_name= args.robot2, stereo="L")
+    camera2R = get_camera_placement(robot2, robot_cameras_indexes[args.robot2][1], T2, robot_name= args.robot2, stereo="R")
 
     cameras["ego1L"].append(camera1L)
     cameras["ego1R"].append(camera1R)
