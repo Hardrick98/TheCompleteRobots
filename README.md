@@ -57,6 +57,87 @@ python render.py --robot1 ROBOT1 --robot2 ROBOT2 --interaction PATH_TO_INTERACTI
 Alternatively you can use ./compute_data.sh INTERACTION, tp do it all at once.
 
 
+
+## Organization of sample data
+
+
+```
+robot_dataset_samples/
+├── G020T004A024R021/
+│   ├── g1/
+│   │   ├── g1_exoL.mp4
+|   |   ├── g1_exoR.mp4
+|   |   ├── g1_ego1L.mp4
+|   |   ├── g1_ego1R.mp4
+|   |   ├── g1_ego2L.mp4
+|   |   ├── g1_ego2R.mp4
+│   │   └── data/
+│   │       ├── g1_data_1.pkl
+│   │       ├── g1_data_2.pkl
+│   │       ├── g1_cameras.pkl
+│   │       └── g1_g1_collisions.pkl
+│   │
+│   └── nao/
+│       ├── nao_exoL.mp4
+|       ├── nao_exoR.mp4
+|       ├── nao_ego1L.mp4
+|       ├── nao_ego1R.mp4
+|       ├── nao_ego2L.mp4
+|       ├── nao_ego2R.mp4
+│       └── data/
+│           ├── nao_1_data.pkl
+│           ├── nao_2_data.pkl
+│           ├── nao_cameras.pkl
+│           └── nao_nao_collisions.pkl
+│
+├── G022T009A032R010
+├── G024T004A020R004
+└── ...
+```
+
+
+
+Each file `data_{num}_{robot}.pkl` contains a Python dictionary with the following top-level structure:
+
+```
+dict_keys(['exoR', 'world', 'ego2R', 'exoL', 'ego1L', 'ego2L', 'ego1R'])
+```
+
+world contains only the 3D pose (pose3D) in the global coordinate system.
+
+All other views (exoR, exoL, ego1R, ego2R, ego1L, ego2L) include:
+
+```
+dict_keys(['pose2D_total', 'pose2D', 'pose3D_total', 'pose3D', 'camera_params', 'bb2D'])
+```
+
+pose3D_total and pose2D_total
+Contain the poses of all links or entities visible in the scene.
+The number of joints may vary between robots, depending on their kinematic structure.
+
+pose3D and pose2D
+Contain the pose of the main robot, represented with a consistent joint hierarchy across all samples.
+
+| Joint Index | Joint Name     |
+|--------------|----------------|
+| 0 | Torso |
+| 1 | Neck |
+| 2 | Left Hip |
+| 3 | Left Knee |
+| 4 | Left Ankle |
+| 5 | Left Shoulder |
+| 6 | Left Elbow |
+| 7 | Left Wrist |
+| 8 | Right Hip |
+| 9 | Right Knee |
+| 10 | Right Ankle |
+| 11 | Right Shoulder |
+| 12 | Right Elbow |
+| 13 | Right Wrist |
+
+
+
+
 ## Sample of interaction:
 
 <table align="center">

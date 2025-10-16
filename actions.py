@@ -50,16 +50,16 @@ actions_dict = {
 YES "Hug", "Hit", "Kick", "Push", "Pull", "Slap", "Pat on back", "Step on foot", "Link arms", "Pat on cheek","Touch head"
 NO "Wave", "Point finger at","Chase", "Rock-paper-scissors", "Bend", "Chat", "Thumb up","Imitate","Look back","Fly kiss"
 
-G049T000A000R004
-G004T003A002R016
-G044T002A010R004
-G024T004A020R004
-G026T003A015R000
-G041T010A037R013
-G012T002A011R008
-G028T008A039R018
-G022T009A032R010
-G020T004A024R021
+G049T000A000R004  Hug
+G004T003A002R016  Wave
+G044T002A010R004  Slap
+G024T004A020R004  Rock-paper-scissors
+G026T003A015R000  Step on foot
+G041T010A037R013  Look Back
+G012T002A011R008  Pat on Back
+G028T008A039R018  Fly Kiss
+G022T009A032R010  Touch Head
+G020T004A024R021  Bend
 
 
 """
