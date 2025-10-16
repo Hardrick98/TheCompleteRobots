@@ -94,7 +94,7 @@ def calculate_scale_factors(human1, human2, robot1, robot2):
         return s1,s2
 
 
-placements = {"room": [[-1,-0.3,0]], "city":[[-1,-0.3,0]], "hospital":[[-1,0,0],[-1.8,0,0]], "estensi_light":[[-40,35,-0.1]]}
+placements = {"room": [[-1,-0.3,0]], "room2":[[-1,-0.5,0]], "city":[[-1,-0.3,0]], "hospital":[[-1,0,0],[-1.8,0,0]], "estensi_light":[[-40,35,-0.1]]}
 
 def random_rotation():
     
