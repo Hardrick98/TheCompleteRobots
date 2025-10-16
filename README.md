@@ -15,7 +15,7 @@ conda activate Robots
 ```
 
 
-## To use the code
+## Generating Videos and Data
 
 
 Download SMPL-X models here: https://drive.google.com/file/d/1eF2DCk7GhbSAYfC8eKVFCU27P4VeKNPV/view?usp=sharing
@@ -111,12 +111,10 @@ All other views (exoR, exoL, ego1R, ego2R, ego1L, ego2L) include:
 dict_keys(['pose2D_total', 'pose2D', 'pose3D_total', 'pose3D', 'camera_params', 'bb2D'])
 ```
 
-pose3D_total and pose2D_total
-Contain the poses of all links or entities visible in the scene.
+`pose3D_total` and `pose2D_total` contain the poses of all links or entities visible in the scene.
 The number of joints may vary between robots, depending on their kinematic structure.
 
-pose3D and pose2D
-Contain the pose of the main robot, represented with a consistent joint hierarchy across all samples.
+`pose3D` and `pose2D` contain the pose of the main robot, represented with a consistent joint hierarchy across all samples.
 
 | Joint Index | Joint Name     |
 |--------------|----------------|
@@ -136,6 +134,19 @@ Contain the pose of the main robot, represented with a consistent joint hierarch
 | 13 | Right Wrist |
 
 
+`bb2D` contains the bounding box of the robot in the current file.
+Note that in egocentric (Ego) views, the first-person robot is not visible, so its bounding box is not included.
+
+For example:
+
+In ego1R, the robot holding the camera is not visible, so 'bb2D' is not present in data_1_{robot}.pkl.
+In data_2_{robot}.pkl, which corresponds to the other robot, 'bb2D' is included.
+
+FINAL NOTE: If you can't load the data with pickle, i suggest to:
+  
+  ```
+  pip install joblib
+  ```
 
 
 ## Sample of interaction:
