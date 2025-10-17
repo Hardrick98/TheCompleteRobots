@@ -16,7 +16,7 @@ from trimesh.collision import CollisionManager
 from visual_utils import preload_robot_meshes
 
 
-robot_cameras_indexes = {"nao": [30,32], "g1":[34, 34], "atlas":[36,36]}
+robot_cameras_indexes = {"nao": [30,32], "g1":[34, 34], "atlas":[36,36], "pepper":[20,22]}
 
 
 robot_list = [r.removesuffix(".urdf") for r in os.listdir("URDF") if r.endswith(".urdf")]
@@ -66,6 +66,7 @@ smpl_model = SMPLX(
 ).to("cuda:0")
 
 frames_list = robot1.body
+print(frames_list)
 
 robotoid = Robotoid(robot1, wheeled)
 F, R = robotoid.build()

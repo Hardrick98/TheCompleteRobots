@@ -61,8 +61,9 @@ if __name__ == "__main__":
     wheeled = False
     if args.robot == "pepper":
         wheeled = True
+        print("Robot is wheeled")
     
-    print(wheeled)
+   
 
     robotoid1 = Robotoid(robot, wheeled)
     robotoid2 = Robotoid(robot, wheeled)
