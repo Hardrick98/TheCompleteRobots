@@ -12,7 +12,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh filename="meshes/atlas_description/multisense_sl_description/meshes/head.dae" />
+        <mesh filename="meshes/atlas_description/meshes_v3/head.dae" />
       </geometry>
       <material name="">
         <color rgba="0.9098 0.44314 0.031373 1" />
