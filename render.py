@@ -9,6 +9,7 @@ import pyrender
 from scipy.spatial.transform import Rotation as Rot
 import imageio
 from visual_utils import *
+from pose_masks import masks
 
 theta = np.pi / 2 
 
@@ -63,7 +64,6 @@ except Exception as e:
 
 
 
-masks = {"nao": [0, 1, 3, 6, 7, 9, 11, 12, 21,23,25, 27,29,30], "g1":[14,15,2,4,5,17,19,20,9,11,13,23,25,26], "atlas":[i for i in range(14)], "pepper":[i for i in range(14)]}
 
 model = robot1.model
 data = robot1.data
@@ -149,15 +149,11 @@ set_lights(pyr_scene)
 #INITIALIZE CAMERA
 
 Rcam = np.eye(4)
-#Rcam[:3,3] = [-1,0,-1]
-# camera
 cam = pyrender.PerspectiveCamera(yfov=np.pi/2, aspectRatio=1280/720)
-
 cam_node = pyr_scene.add(cam, pose=Rcam)
 
 w = 1280
 h = 720
-aspect = 1280/720
 yfov = np.pi/2
 
 f_y = 0.5 * h / np.tan(yfov/2)

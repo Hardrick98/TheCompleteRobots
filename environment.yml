@@ -130,7 +130,7 @@ dependencies:
       - narwhals==2.2.0
       - nbformat==5.10.4
       - networkx==3.4.2
-      - numpy==1.26.0
+      - numpy==2.2.0
       - nvidia-cublas-cu12==12.6.4.1
       - nvidia-cuda-cupti-cu12==12.6.80
       - nvidia-cuda-nvrtc-cu12==12.6.77

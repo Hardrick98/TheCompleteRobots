@@ -1,7 +1,7 @@
 echo "Starting Retargeting"
 
 python retarget_motion.py --robot $3 --interaction $1
-python robot_interaction.py --robot1 $3 --robot2 $3 --interaction $1
+python compute_data.py --robot1 $3 --robot2 $3 --interaction $1
 
 echo "Rendering videos..."
 
