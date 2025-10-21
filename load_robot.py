@@ -54,6 +54,24 @@ if __name__ == "__main__":
 
     #compose_hand_mesh(model, visual_model, "RWristYaw")
 
+    dict = {}
+    for visual in visual_model.geometryObjects:
+        placement = visual.placement
+        rot = placement.rotation
+        t = placement.translation
+
+        T = np.eye(4)
+        T[:3,:3] = rot
+        T[:3,3] = t
+
+        dict[visual.name] = T
+
+    import joblib
+    print(dict)
+    joblib.dump(dict, "icub_init.pkl")
+
+
+
 
     viz = MeshcatVisualizer(model, robot.collision_model, robot.visual_model)
     viz.initViewer(open=True) 

@@ -16,7 +16,7 @@ from trimesh.collision import CollisionManager
 from visual_utils import preload_robot_meshes
 
 
-robot_cameras_indexes = {"nao": [30,32], "g1":[34, 34], "atlas":[36,36], "pepper":[20,22]}
+robot_cameras_indexes = {"nao": [30,32], "g1":[34, 34], "atlas":[24,24], "pepper":[20,22], "icub":[90,90]}
 
 
 robot_list = [r.removesuffix(".urdf") for r in os.listdir("URDF") if r.endswith(".urdf")]
@@ -165,7 +165,10 @@ for t in tqdm(range(len(joint_configurations1))):
         T = np.eye(4)
         T[:3, :3] = R
         T[:3, 3] = p
-        robot_pos1.append(p)
+
+        if args.robot1 == "icub":
+            T = T @ placement
+        robot_pos1.append(T[:3, 3])
         meshes1.append(base_mesh)
         poses1.append(T[None,:,:])
         
@@ -187,8 +190,10 @@ for t in tqdm(range(len(joint_configurations1))):
         T = np.eye(4)
         T[:3, :3] = R
         T[:3, 3] = p
+        if args.robot2 == "icub":
+            T = T @ placement
+        robot_pos2.append(T[:3, 3])
         meshes2.append(base_mesh)
-        robot_pos2.append(p)
         poses2.append(T[None,:,:])
     
 
