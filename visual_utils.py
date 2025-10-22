@@ -146,7 +146,6 @@ def preload_robot_meshes(robot):
 
     if robot.name == "icub":
         init = joblib.load("icub_init.pkl")
-
     
     for visual in robot.visual_model.geometryObjects:
         mesh_path = visual.meshPath
@@ -155,7 +154,10 @@ def preload_robot_meshes(robot):
         try:
             mesh = trimesh.load_mesh(mesh_path)
             mesh.apply_scale(visual.meshScale)
-            cache[visual.name] = (mesh, init[visual.name], frames[visual.name[:-2]])
+            if robot.name == "icub":
+                cache[visual.name] = (mesh, init[visual.name], frames[visual.name[:-2]])
+            else:
+                cache[visual.name] = (mesh, visual.placement, frames[visual.name[:-2]])
         except Exception as e:
             print(f"Errore caricando mesh {mesh_path}: {e}")
             continue

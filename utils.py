@@ -28,13 +28,20 @@ class HumanoidRobot:
         robot = pin.RobotWrapper.BuildFromURDF(
             filename=urdf_path,
             package_dirs=["."],
-            root_joint=pin.JointModelSpherical(), 
+            root_joint=pin.JointModelSpherical(), #
             verbose=False
         )
+
+
+        """
+        fixed_joint_names = ['HipRoll', 'HipPitch', 'KneePitch',"WheelFR", "WheelFL", "WheelB"]
+        robot = pin.RobotWrapper.buildReducedRobot(
+                    fixed_joint_names, robot.q0
+            )
         print(f"URDF description successfully loaded in {robot}")
         
         print(f"Number of DoF: {len(robot.model.joints)}")
-        
+        """
         return robot
 
     def forwardK(robot, q):

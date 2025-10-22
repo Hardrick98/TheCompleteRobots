@@ -1,6 +1,6 @@
 from tqdm import tqdm
 import numpy as np
-from inverse_kinematics import InverseKinematicSolver
+from inverse_kinematics import InverseKinematicSolver, EvolvedInverseKinematicSolver
 import os
 from utils import compute_global_orientations_batch
 from smplx import SMPLX
@@ -9,7 +9,7 @@ import pinocchio as pin
 import trimesh
 from vedo import Mesh
 from scipy.spatial.transform import Rotation as Rot
-
+import cma
 class Robotoid():
 
     def __init__(self, robot, wheeled = False):
@@ -22,10 +22,10 @@ class Robotoid():
         self.data = robot.data
         self.visual_model = robot.visual_model
         self.collision_model = robot.collision_model
-        self.solver = InverseKinematicSolver(self.model,self.data)
+        self.solver = EvolvedInverseKinematicSolver(self.model,self.data)
         self.wheeled = wheeled
-        if robot.name == "g1":
-            self.N, self.J = self.manual_build()
+        if robot.name == "g1" or robot.name == "pepper":
+            self.N, self.J = self.manual_build(robot.name)
         else:
             self.N, self.J = self.build()
         self.links_positions = self.robot.get_links_positions(self.q0)
@@ -213,14 +213,13 @@ class Robotoid():
             HKnee = (human_joints[H["LAnkle"]] + human_joints[H["RAnkle"]])/2
             hipH = np.linalg.norm(HHip-human_joints[H["root_joint"]])
             hipR = np.linalg.norm(robot_joints[R["Hip"]]-robot_joints[R["root_joint"]])
-
             femorH = np.linalg.norm(HKnee-HHip)
             femorR = np.linalg.norm(robot_joints[R["Knee"]]-robot_joints[R["Hip"]])
          
             
             s_hip = hipR / hipH
             s_femor = femorR / femorH
-        
+            
 
         upper_armH = np.linalg.norm(human_joints[H["LElbow"]]-human_joints[H["LShoulder"]])
         upper_armR = np.linalg.norm(robot_joints[R["LElbow"]]-robot_joints[R["LShoulder"]])
@@ -256,7 +255,7 @@ class Robotoid():
         else:
             robot_joints[R["Knee"]] = robot_joints[R["Hip"]] + (HKnee - HHip) * s_femor
             robot_joints[R["Hip"]] = robot_joints[R["root_joint"]] + (HHip- human_joints[H["root_joint"]]) * s_hip
-
+            
 
         robot_joints[R["LElbow"]] = robot_joints[R["LShoulder"]] + (human_joints[H["LElbow"]] - human_joints[H["LShoulder"]]) * s_upper_arm
         robot_joints[R["LWrist"]] = robot_joints[R["LElbow"]] + (human_joints[H["LWrist"]] - human_joints[H["LElbow"]]) * s_forearm
@@ -422,10 +421,6 @@ class Robotoid():
 
 
 
-        
-
-
-
         sorted_chain_ids = sorted(robotoid.keys(), key=lambda i: robotoid[i][0, 2], reverse=True)
 
  
@@ -501,15 +496,20 @@ class Robotoid():
         return final_reduced, final_values
 
 
-    def manual_build(self):
+    def manual_build(self, robot_name):
 
         chains = {'g1':{0: [[None]], 
           1: [['left_shoulder_pitch_joint', 'left_shoulder_roll_joint', 'left_shoulder_yaw_joint'], ['left_elbow_joint'], ['left_wrist_roll_joint']], 
           2: [['right_shoulder_pitch_joint', 'right_shoulder_roll_joint', 'right_shoulder_yaw_joint'], ['right_elbow_joint'], ['right_wrist_roll_joint']],
           3: [['left_hip_pitch_joint', 'left_hip_roll_joint', 'left_hip_yaw_joint'], ['left_knee_joint'], ['left_ankle_pitch_joint', 'left_ankle_roll_joint']], 
-          4: [['right_hip_pitch_joint', 'right_hip_roll_joint', 'right_hip_yaw_joint'], ['right_knee_joint'], ['right_ankle_pitch_joint', 'right_ankle_roll_joint']]}}
+          4: [['right_hip_pitch_joint', 'right_hip_roll_joint', 'right_hip_yaw_joint'], ['right_knee_joint'], ['right_ankle_pitch_joint', 'right_ankle_roll_joint']]},
+          'pepper': {0: [['HeadYaw', 'HeadPitch']], 
+                     1: [['LShoulderPitch', 'LShoulderRoll'], ['LElbowYaw', 'LElbowRoll'], ['LWristYaw']], 
+                     2: [['RShoulderPitch', 'RShoulderRoll'], ['RElbowYaw', 'RElbowRoll'], ['RWristYaw']], 
+                     3: [['HipRoll', 'HipPitch', 'KneePitch']], 
+                     4: [['WheelB', 'WheelFR', 'WheelFL']]}}
 
-        robotoid_labels = chains["g1"]
+        robotoid_labels = chains[robot_name]
         
         final = {}
 
@@ -524,7 +524,7 @@ class Robotoid():
         final["RWrist"] = robotoid_labels[2][2]
         
               
-        if robotoid_labels[4][0][0] is not None:
+        if  robot_name == 'g1':
             final["LHip"] = robotoid_labels[3][0]
             final["LKnee"] = robotoid_labels[3][1]
             final["LAnkle"] = robotoid_labels[3][2]
@@ -535,6 +535,7 @@ class Robotoid():
          
             final["Hip"] = robotoid_labels[3][0][0:2]
             final["Knee"]  = [robotoid_labels[3][0][2]]
+            final["Wheels"] = robotoid_labels[4][0]
 
         final_reduced = {}
         final_values = {}
@@ -566,6 +567,7 @@ class Robotoid():
         joint_configurations = []
         sequence_num = human_joints_seq.shape[0]
         #sequence_num = 100
+
 
         for i in tqdm(range(sequence_num)):
         
@@ -625,20 +627,25 @@ class Robotoid():
                     self.N["LShoulder"] : self.robot_joints[self.J["LShoulder"]],
                     self.N["Head"]: self.robot_joints[self.J["Head"]],
                     self.N["Knee"]: self.robot_joints[self.J["Knee"]],
-                    self.N["Hip"] : self.robot_joints[self.J["Hip"]]
+                    self.N["Hip"] : self.robot_joints[self.J["Hip"]],
+                    #"WheelFR" : np.array([0.09002, -0.155 ,  -0.75]),
+                    #"WheelFL" : np.array([0.09002 ,0.155 ,  -0.75]),
+                    #"WheelB" : np.array([-0.16998,0,-0.75])
 
                        
                     }
                 
             
+
+
             if self.head_fixed:
                 target_positions.pop(self.N["Head"])
             
 
             joint_names = [k for k in target_positions.keys()]
             joint_ids = [joints[name]for name in joint_names]
-
-                
+            
+            
 
             target_orientations_global  = {
                 self.N["RWrist"]: [directions[H["RWrist"]], self.cR], 
@@ -653,11 +660,15 @@ class Robotoid():
             
             self.solver.update(self.model,self.data,target_positions,target_orientations_global,joint_names, joint_ids, frame_names, frame_ids)
             
+            pose_weights = np.ones(len(joint_names))
+            ori_weights = np.array([0.001 for i in range(len(frame_names))])
+
+
             if i==0:
-                q1 = self.solver.inverse_kinematics(self.q0)
+                q1, _ = self.solver.inverse_kinematics(self.q0, pose_weights, ori_weights)
             else:
-                q1 = self.solver.inverse_kinematics(q1)
-            
+                q1, _ = self.solver.inverse_kinematics(q1, pose_weights, ori_weights)
+        
             joint_configurations.append(q1)
             
             pin.forwardKinematics(self.model, self.data, q1)
@@ -667,10 +678,153 @@ class Robotoid():
         joint_configurations = np.vstack(joint_configurations)
 
         return joint_configurations
+
+
+    def optimize(self, human_action, idx=None):
+        """
+        Given a human action this function retargets it to the robot.
+        
+        Returns:
+            A numpy array with all the joint configurations for the action
+        """  
+
+        human_joints_seq, orientations_seq, translation_seq, global_orient_seq, _, directions_seq = human_action.get_attributes(idx)  
+        H = human_action.get_joint_dict()
+
+
+        print("\nFINDING CONFIGURATIONS...")
+
+        joint_configurations = []
+        sequence_num = human_joints_seq.shape[0]
+        #sequence_num = 100
+
+
+        for i in tqdm(range(sequence_num)):
+        
+            human_joints = human_joints_seq[i:i+1][0]
+            orientations = orientations_seq[i:i+1][0]
+            translation = translation_seq[i:i+1].copy()
+            global_orient = global_orient_seq[i:i+1]
+            directions = directions_seq[i]
+
+
+            translation[:,[1,2]] = translation[:,[2,1]]
+
+            orientations = orientations.view(-1,3) 
+            orientations = torch.cat((global_orient.view(-1,3),orientations),axis=0)
+                    
+            directions = directions.detach().cpu().numpy()
+
+        
+            human_joints[:,:] -= human_joints[:1,:]
+            human_joints[:,0] *= -1
+            human_joints[:,[1,2]] = human_joints[:,[2,1]]
+            directions[:,0] *= -1
+            directions[:,[1,2]] = directions[:,[2,1]]
+
+
+            
+            self.robot_joints = self.scale_human_to_robot(self.J, self.robot_joints, H, human_joints)        
+            
+            joints = self.robot.joints
+            
     
 
+            if not self.wheeled:
+                target_positions = {
+                    self.N["LHip"] : self.robot_joints[self.J["LHip"]],
+                    self.N["RHip"] : self.robot_joints[self.J["RHip"]], 
+                    self.N["LElbow"]: self.robot_joints[self.J["LElbow"]],
+                    self.N["RElbow"]: self.robot_joints[self.J["RElbow"]],
+                    self.N["LWrist"]: self.robot_joints[self.J["LWrist"]], 
+                    self.N["RWrist"]: self.robot_joints[self.J["RWrist"]], 
+                    self.N["RKnee"]: self.robot_joints[self.J["RKnee"]], 
+                    self.N["LKnee"]: self.robot_joints[self.J["LKnee"]], 
+                    self.N["LAnkle"]: self.robot_joints[self.J["LAnkle"]], 
+                    self.N["RAnkle"]: self.robot_joints[self.J["RAnkle"]], 
+                    self.N["RShoulder"] : self.robot_joints[self.J["RShoulder"]],
+                    self.N["LShoulder"] : self.robot_joints[self.J["LShoulder"]],
+                    self.N["Head"]: self.robot_joints[self.J["Head"]],
+                }
+            else:
+                
+                target_positions = {
+                    self.N["LElbow"]: self.robot_joints[self.J["LElbow"]],
+                    self.N["RElbow"]: self.robot_joints[self.J["RElbow"]],
+                    self.N["LWrist"]: self.robot_joints[self.J["LWrist"]], 
+                    self.N["RWrist"]: self.robot_joints[self.J["RWrist"]], 
+                    self.N["RShoulder"] : self.robot_joints[self.J["RShoulder"]],
+                    self.N["LShoulder"] : self.robot_joints[self.J["LShoulder"]],
+                    self.N["Head"]: self.robot_joints[self.J["Head"]],
+                    self.N["Knee"]: self.robot_joints[self.J["Knee"]],
+                    self.N["Hip"] : self.robot_joints[self.J["Hip"]],
+                    #"WheelFR" : np.array([0.09002, -0.155 ,  -0.75]),
+                    #"WheelFL" : np.array([0.09002 ,0.155 ,  -0.75]),
+                    #"WheelB" : np.array([-0.16998,0,-0.75])
+
+                       
+                    }
+                
+            
 
 
+            if self.head_fixed:
+                target_positions.pop(self.N["Head"])
+            
+
+            joint_names = [k for k in target_positions.keys()]
+            joint_ids = [joints[name]for name in joint_names]
+            
+            
+
+            target_orientations_global  = {
+                self.N["RWrist"]: [directions[H["RWrist"]], self.cR], 
+                self.N["LWrist"]: [directions[H["LWrist"]], self.cL],
+                #F["LAnkle"]: [directions[H["LAnkle"]], [1,0,0]],
+                self.N["Head"]: [directions[H["Head"]], [1,0,0]]
+    }
+            
+            frame_names = [k for k,v in target_orientations_global.items()]
+            frame_ids = [self.model.getFrameId(f) for f in frame_names]
+
+            
+            self.solver.update(self.model,self.data,target_positions,target_orientations_global,joint_names, joint_ids, frame_names, frame_ids)
+            
+            pose_weights = np.ones(len(joint_names))
+            ori_weights = np.array([0.001 for i in range(len(frame_names))])
+
+
+            if i==0:
+                q1, loss = self.solver.inverse_kinematics(self.q0, pose_weights, ori_weights)
+            else:
+                q1, loss = self.solver.inverse_kinematics(q1, pose_weights, ori_weights)
+
+            n_joints = len(joint_names)
+            n_ori = len(frame_ids)
+            x0 = np.ones(n_joints + n_ori) * 0.01
+            sigma0 = 0.01
+            es = cma.CMAEvolutionStrategy(x0, sigma0, {'bounds':[1e-5,1.0]})
+
+            max_iter = 50
+            for step in range(max_iter):
+                solutions = es.ask()
+                fitness = []
+                for candidate in solutions:
+                    pose_w = candidate[:n_joints]
+                    ori_w = candidate[n_joints:]
+                    _, loss_candidate = self.solver.inverse_kinematics(self.q0, pose_w, ori_w)
+                    fitness.append(loss_candidate)
+                
+                es.tell(solutions, fitness)
+                es.disp()
+
+            best_weights = es.result.xbest
+            weights_pos_opt = best_weights[:n_joints]
+            weights_ori_opt = best_weights[n_joints:]
+
+
+
+        return weights_pos_opt, weights_ori_opt
 
 
 

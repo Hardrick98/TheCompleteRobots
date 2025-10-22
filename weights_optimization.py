@@ -76,84 +76,8 @@ if __name__ == "__main__":
 
     human_action1 = HumanAction(action1)
     human_action2 = HumanAction(action2)
+    
+    w_pos, w_ori = robotoid1.optimize(human_action1, idx=0)
 
-    H = human_action1.get_joint_dict()
-    q1 = robotoid1.retarget(human_action1, idx)[0]
-    q2 = robotoid2.retarget(human_action2, idx)[0]
-
-
-    if args.visualize:
-            
-        
-
-        
-        human_action = human_action2
-       
-        human_joints_seq, orientations_seq, translation_seq, global_orient_seq, human_meshes, directions_seq = human_action.get_attributes()  
-        human_origin = translation_seq[0]
-        human_mesh = human_meshes[0]
-
-        viz = MeshcatVisualizer(robotoid1.model, robotoid1.collision_model, robotoid1.visual_model)
-        viz.initViewer(open=False) 
-        viz.loadViewerModel()
-        viz.display(q2)
-        input("Press Enter to reset the visualization...")
-        viz.reset()
-        
-        visual_model = robot.visual_model   
-
-
-        vp = Plotter(title="Human and Robot", axes=1, interactive=False)
-
-        for visual in visual_model.geometryObjects:
-            
-            mesh_path = os.path.join(visual.meshPath)
-            if not os.path.exists(mesh_path):
-                print(f"Mesh not found: {mesh_path}")
-                continue
-
-            try:
-                m = Mesh(mesh_path)
-            except Exception as e:
-                print(f"Error during loading of {mesh_path}: {e}")
-                continue
-
-            color = visual.meshColor
-            m.color(color[:3])
-            placement = data.oMf[visual.parentFrame]
-
-            
-            placement_world = placement.act(visual.placement)
-            R = placement_world.rotation
-            p = placement_world.translation
-
-
-            
-            T = np.eye(4)
-            T[:3, :3] = R
-            T[:3, 3] = p
-
-            m.scale(visual.meshScale)
-            m.apply_transform(T)
-
-            vp += m
-
-
-        M = np.array([
-            [-1, 0, 0],
-            [0, 0, 1],
-            [0, 1, 0]
-        ])
-        T = np.eye(4)
-        T[:3, :3] = M
-        human_origin[0] *= -1
-
-        T[:3, 3] = -human_origin + (np.array([0,0.7,1]))
-        human_mesh.apply_transform(T)
-        vp += human_mesh
-        vp.camera.SetPosition([3, 0, 1])        
-        vp.camera.SetFocalPoint([0, 0, 0])      
-        vp.camera.SetViewUp([0, 0, 1])         
-
-        vp.show(axes=1, interactive=True)
-
+    print(w_pos)
+    print(w_ori)

@@ -52,8 +52,22 @@ if __name__ == "__main__":
     q0 = robot.q0  
     visual_model = robot.visual_model
 
+    pin.forwardKinematics(model, data, q0)
+    pin.updateFramePlacements(model, data)
+
+    print(robot.joints)
+    print(q0.shape)
+    #print('root_joint',data.oMf[1].translation)
+    #print('HipRoll',data.oMf[37].translation)
+    #print('KneePitch',data.oMf[41].translation)
+    #print('HipPitch',data.oMf[39].translation)
+    #print('WheelB', data.oMf[73].translation)
+    #print('WheelFL', data.oMf[75].translation)
+    #print('WheelFR', data.oMf[77].translation)
+
     #compose_hand_mesh(model, visual_model, "RWristYaw")
 
+    """
     dict = {}
     for visual in visual_model.geometryObjects:
         placement = visual.placement
@@ -69,7 +83,7 @@ if __name__ == "__main__":
     import joblib
     print(dict)
     joblib.dump(dict, "icub_init.pkl")
-
+    """
 
 
 
@@ -82,6 +96,7 @@ if __name__ == "__main__":
     plt.show()
     input("Press Enter to reset the visualization...")
     viz.reset()
+    
     
     
     

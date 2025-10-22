@@ -69,7 +69,7 @@ frames_list = robot1.body
 print(frames_list)
 
 robotoid = Robotoid(robot1, wheeled)
-F, R = robotoid.build()
+#F, R = robotoid.build()
 solver = InverseKinematicSolver(model, data)
 
 H = {

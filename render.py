@@ -70,11 +70,6 @@ data = robot1.data
 q0 = robot1.q0
 
 
-robotoid = Robotoid(robot1, wheeled)
-F, R = robotoid.build()
-
-
-
 human1_js = np.load(os.path.join(args.interaction,"data","human1_poses.npy"))
 trans1 = np.load(os.path.join(args.interaction,"data","human1_trans.npy"))
 human2_js = np.load(os.path.join(args.interaction,"data","human2_poses.npy"))
