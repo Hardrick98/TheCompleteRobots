@@ -74,8 +74,8 @@ if __name__ == "__main__":
     robotoid2 = Robotoid(robot, wheeled)
     
     
-    file1 = args.interaction + "/P2.npz"
-    file2 = args.interaction + "/P1.npz"
+    file1 = args.interaction + "/P1.npz"
+    file2 = args.interaction + "/P2.npz"
     action1 = np.load(file1, allow_pickle=True)
     action2 = np.load(file2, allow_pickle=True)
 

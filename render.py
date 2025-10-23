@@ -77,8 +77,8 @@ human2_js = np.load(os.path.join(robot_folder,"data","human2_poses.npy"))
 trans2 = np.load(os.path.join(robot_folder,"data","human2_trans.npy"))
 
 
-robot1_poses= np.load(f"{robot_folder}/data/{robot_name1}_1_poses.npy")
-robot2_poses = np.load(f"{robot_folder}/data/{robot_name2}_2_poses.npy")
+robot1_poses= np.load(f"{robot_folder}/data/{robot1.name}_1_poses.npy")
+robot2_poses = np.load(f"{robot_folder}/data/{robot2.name}_2_poses.npy")
 
 if  not os.path.exists(f"{robot_folder}/{args.camera_mode}"):  
     os.makedirs(f"{robot_folder}/{args.camera_mode}")
