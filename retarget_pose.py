@@ -37,7 +37,7 @@ if __name__ == "__main__":
     args  = parser.parse_args()
     robot_name = args.robot.lower() 
     idx = args.idx
-
+    print(idx)
     print(robot_name)
     try:
         robot = HumanoidRobot(f"URDF/{args.robot}.urdf")
@@ -90,10 +90,10 @@ if __name__ == "__main__":
         human_action = human_action2
        
         human_joints_seq, orientations_seq, translation_seq, global_orient_seq, human_meshes, directions_seq = human_action.get_attributes()  
-        human_origin = translation_seq[0]
-        human_mesh = human_meshes[0]
+        human_origin = translation_seq[idx]
+        human_mesh = human_meshes[idx]
 
-        viz = MeshcatVisualizer(robotoid1.model, robotoid1.collision_model, robotoid1.visual_model)
+        viz = MeshcatVisualizer(robotoid2.model, robotoid2.collision_model, robotoid2.visual_model)
         viz.initViewer(open=False) 
         viz.loadViewerModel()
         viz.display(q2)

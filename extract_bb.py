@@ -70,26 +70,28 @@ model = robot1.model
 data = robot1.data
 q0 = robot1.q0
 
-
+robot_folder = f"{args.interaction}/{args.robot1}"
 robotoid = Robotoid(robot1, wheeled)
 F, R = robotoid.build()
 
-human1_js = np.load(os.path.join(args.interaction,"data","human1_poses.npy"))
-trans1 = np.load(os.path.join(args.interaction,"data","human1_trans.npy"))
-human2_js = np.load(os.path.join(args.interaction,"data","human2_poses.npy"))
-trans2 = np.load(os.path.join(args.interaction,"data","human2_trans.npy"))
+human1_js = np.load(os.path.join(robot_folder,"data","human1_poses.npy"))
+trans1 = np.load(os.path.join(robot_folder,"data","human1_trans.npy"))
+human2_js = np.load(os.path.join(robot_folder,"data","human2_poses.npy"))
+trans2 = np.load(os.path.join(robot_folder,"data","human2_trans.npy"))
 
+robot1_poses= np.load(f"{robot_folder}/data/{robot_name1}_1_poses.npy")
+robot2_poses = np.load(f"{robot_folder}/data/{robot_name2}_2_poses.npy")
 
-robot1_poses= np.load(f"{args.interaction}/data/{robot_name1}_1_poses.npy")
-robot2_poses = np.load(f"{args.interaction}/data/{robot_name2}_2_poses.npy")
+if  not os.path.exists(f"{robot_folder}/{args.camera_mode}"):  
+    os.makedirs(f"{robot_folder}/{args.camera_mode}")
 
-if os.path.exists(f"{args.interaction}/data/{args.robot1}_1_data.pkl"):  
-    data1 = joblib.load(f"{args.interaction}/data/{args.robot1}_1_data.pkl")
+if os.path.exists(f"{robot_folder}/data/{args.robot1}_1_data.pkl"):  
+    data1 = joblib.load(f"{robot_folder}/data/{args.robot1}_1_data.pkl")
 else:
     data1 = {}
 
-if os.path.exists(f"{args.interaction}/data/{args.robot2}_2_data.pkl"):  
-    data2 = joblib.load(f"{args.interaction}/data/{args.robot2}_2_data.pkl")
+if os.path.exists(f"{robot_folder}/data/{args.robot2}_2_data.pkl"):  
+    data2 = joblib.load(f"{robot_folder}/data/{args.robot2}_2_data.pkl")
 else:
     data2 = {}
     
@@ -139,11 +141,12 @@ if args.scene != None:
     load_background(pyr_scene, args.scene)
 
 
-if not os.path.exists(f"{args.interaction}/data/random_rotation.npy"):
+    
+if not os.path.exists(f"{robot_folder}/data/random_rotation.npy"):
     Rand_Rz =random_rotation()
-    np.save(f"{args.interaction}/data/random_rotation.npy", Rand_Rz)
+    np.save(f"{robot_folder}/data/random_rotation.npy", Rand_Rz)
 else:
-    Rand_Rz = np.load(f"{args.interaction}/data/random_rotation.npy")
+    Rand_Rz = np.load(f"{robot_folder}/data/random_rotation.npy")
 
 
 #SET LIGHTS
@@ -341,7 +344,7 @@ if args.debug:
 if not args.debug:
     r.delete()
 if args.video:
-    imageio.mimsave(f'{args.robot1}_{args.robot2}_{args.camera_mode}.mp4', frames, fps=120)
+    imageio.mimsave(f'f"{robot_folder}/{args.robot1}_{args.robot2}_{args.camera_mode}.mp4', frames, fps=120)
 
 
 if args.bb_mode1:
@@ -351,5 +354,5 @@ if args.bb_mode2:
     data2[args.camera_mode]["bb2D"] = np.vstack(bounding_boxes)
 
 
-joblib.dump(data1, f"{args.interaction}/data/{args.robot1}_1_data.pkl" )
-joblib.dump(data2, f"{args.interaction}/data/{args.robot2}_2_data.pkl" )
+joblib.dump(data1, f"{robot_folder}/data/{args.robot1}_1_data.pkl" )
+joblib.dump(data2, f"{robot_folder}/data/{args.robot2}_2_data.pkl" )

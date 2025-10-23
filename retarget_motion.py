@@ -47,6 +47,11 @@ if __name__ == "__main__":
             print(f"- {r}")
         exit(1)  
     
+
+    robot_folder = f"{args.interaction}/{args.robot}"
+
+    if not os.path.exists(robot_folder):
+        os.makedirs(robot_folder)
     
     model = robot.model
     data = robot.data
@@ -81,12 +86,11 @@ if __name__ == "__main__":
     joint_config1 = robotoid1.retarget(human_action1)
     joint_config2 = robotoid2.retarget(human_action2)
 
-
     path = file1.removesuffix(".npz")
-    path = path[:-2] + robot_name + path[-1] + ".npy"
+    path = f"{args.interaction}/{args.robot}/{args.robot}1_joints_config.npy"
     np.save(path, joint_config1)
     path = file2.removesuffix(".npz")
-    path = path[:-2] + robot_name + path[-1] + ".npy"
+    path = f"{args.interaction}/{args.robot}/{args.robot}2_joints_config.npy"
     np.save(path, joint_config2)
 
     

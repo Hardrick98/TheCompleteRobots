@@ -69,23 +69,27 @@ model = robot1.model
 data = robot1.data
 q0 = robot1.q0
 
+robot_folder = f"{args.interaction}/{args.robot1}"
 
-human1_js = np.load(os.path.join(args.interaction,"data","human1_poses.npy"))
-trans1 = np.load(os.path.join(args.interaction,"data","human1_trans.npy"))
-human2_js = np.load(os.path.join(args.interaction,"data","human2_poses.npy"))
-trans2 = np.load(os.path.join(args.interaction,"data","human2_trans.npy"))
+human1_js = np.load(os.path.join(robot_folder,"data","human1_poses.npy"))
+trans1 = np.load(os.path.join(robot_folder,"data","human1_trans.npy"))
+human2_js = np.load(os.path.join(robot_folder,"data","human2_poses.npy"))
+trans2 = np.load(os.path.join(robot_folder,"data","human2_trans.npy"))
 
 
-robot1_poses= np.load(f"{args.interaction}/data/{robot_name1}_1_poses.npy")
-robot2_poses = np.load(f"{args.interaction}/data/{robot_name2}_2_poses.npy")
+robot1_poses= np.load(f"{robot_folder}/data/{robot_name1}_1_poses.npy")
+robot2_poses = np.load(f"{robot_folder}/data/{robot_name2}_2_poses.npy")
 
-if os.path.exists(f"{args.interaction}/data/{args.robot1}_1_data.pkl"):  
-    data1 = joblib.load(f"{args.interaction}/data/{args.robot1}_1_data.pkl")
+if  not os.path.exists(f"{robot_folder}/{args.camera_mode}"):  
+    os.makedirs(f"{robot_folder}/{args.camera_mode}")
+
+if os.path.exists(f"{robot_folder}/data/{args.robot1}_1_data.pkl"):  
+    data1 = joblib.load(f"{robot_folder}/data/{args.robot1}_1_data.pkl")
 else:
     data1 = {}
 
-if os.path.exists(f"{args.interaction}/data/{args.robot2}_2_data.pkl"):  
-    data2 = joblib.load(f"{args.interaction}/data/{args.robot2}_2_data.pkl")
+if os.path.exists(f"{robot_folder}/data/{args.robot2}_2_data.pkl"):  
+    data2 = joblib.load(f"{robot_folder}/data/{args.robot2}_2_data.pkl")
 else:
     data2 = {}
     
@@ -98,7 +102,7 @@ if args.camera_mode not in data2.keys():
 robot1_cache = preload_robot_meshes(robot1)
 robot2_cache = preload_robot_meshes(robot2)
 
-cameras = joblib.load(os.path.join(f"{args.interaction}/data",f"{robot_name1}_cameras.pkl"))
+cameras = joblib.load(os.path.join(f"{robot_folder}/data",f"{robot_name1}_cameras.pkl"))
 # ------------------- setup pyrender -------------------
 
 
@@ -183,11 +187,11 @@ else:
     
 ## Randomly rotate interaction
     
-if not os.path.exists(f"{args.interaction}/data/random_rotation.npy"):
+if not os.path.exists(f"{robot_folder}/data/random_rotation.npy"):
     Rand_Rz =random_rotation()
-    np.save(f"{args.interaction}/data/random_rotation.npy", Rand_Rz)
+    np.save(f"{robot_folder}/data/random_rotation.npy", Rand_Rz)
 else:
-    Rand_Rz = np.load(f"{args.interaction}/data/random_rotation.npy")
+    Rand_Rz = np.load(f"{robot_folder}/data/random_rotation.npy")
 
 for t in tqdm(range(n_frames)):
 
@@ -331,10 +335,10 @@ for t in tqdm(range(n_frames)):
     # --- render frame ---
     if not args.debug:
         color, _ = r.render(pyr_scene)
+        #imageio.imwrite(f"{args.interaction}/{args.robot1}_{args.camera_mode}/frame_{t:05d}.png", color)
         frames.append(color)
     
 if args.debug:
-
     pyrender.Viewer(pyr_scene, use_raymond_lighting=True) 
 # ------------------- save video -------------------
 
@@ -372,5 +376,5 @@ data1[args.camera_mode]["camera_params"] = camera_params
 data2[args.camera_mode]["camera_params"] = camera_params
 
 
-joblib.dump(data1, f"{args.interaction}/data/{args.robot1}_1_data.pkl" )
-joblib.dump(data2, f"{args.interaction}/data/{args.robot2}_2_data.pkl" )
+joblib.dump(data1, f"{robot_folder}/data/{args.robot1}_1_data.pkl" )
+joblib.dump(data2, f"{robot_folder}/data/{args.robot2}_2_data.pkl" )

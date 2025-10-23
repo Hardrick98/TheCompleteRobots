@@ -16,7 +16,7 @@ from trimesh.collision import CollisionManager
 from visual_utils import preload_robot_meshes
 
 
-robot_cameras_indexes = {"nao": [30,32], "g1":[34, 34], "atlas":[24,24], "pepper":[20,22], "icub":[90,90]}
+robot_cameras_indexes = {"nao": [30,32], "g1":[34, 34], "atlas":[24,24], "pepper":[20,22], "icub":[92,92]}
 
 
 robot_list = [r.removesuffix(".urdf") for r in os.listdir("URDF") if r.endswith(".urdf")]
@@ -99,6 +99,8 @@ H = {
 
 print("\nExtracting Data...")
 
+robot_folder = f"{args.interaction}/{args.robot1}"
+
 arr1 = np.load(f"{args.interaction}/P1.npz", allow_pickle=True)
 arr2 = np.load(f"{args.interaction}/P2.npz", allow_pickle=True)
 
@@ -120,8 +122,8 @@ human1_js[:, :, [1, 2]] = human1_js[:, :, [2, 1]]
 human2_js[:, :, 0] *= -1
 human2_js[:, :, [1, 2]] = human2_js[:, :, [2, 1]]
 
-joint_configurations1 = np.load(f"{args.interaction}/{robot_name1}1.npy")
-joint_configurations2 = np.load(f"{args.interaction}/{robot_name2}2.npy")
+joint_configurations1 = np.load(f"{robot_folder}/{robot_name1}1_joints_config.npy")
+joint_configurations2 = np.load(f"{robot_folder}/{robot_name2}2_joints_config.npy")
 
 robot1_cache = preload_robot_meshes(robot1)
 robot2_cache = preload_robot_meshes(robot2)
@@ -266,17 +268,17 @@ robot1_poses = np.vstack(robot1_poses_all)
 robot2_poses = np.vstack(robot2_poses_all)
 
 try:
-    os.mkdir(f"{args.interaction}/data")
+    os.mkdir(f"{robot_folder}/data")
 except:
     pass
 
-np.save(os.path.join(f"{args.interaction}/data",f"{args.robot1}_1_poses.npy"),robot1_poses)
-np.save(os.path.join(f"{args.interaction}/data",f"{args.robot2}_2_poses.npy"),robot2_poses)
-np.save(os.path.join(f"{args.interaction}/data",f"human1_poses.npy"),human1_js)
-np.save(os.path.join(f"{args.interaction}/data",f"human2_poses.npy"),human2_js)
-np.save(os.path.join(f"{args.interaction}/data",f"human1_trans.npy"),trans1)
-np.save(os.path.join(f"{args.interaction}/data",f"human2_trans.npy"),trans2)
-joblib.dump(collision_list, os.path.join(f"{args.interaction}/data",f"{args.robot1}_{args.robot2}_collisions.pkl"))
-joblib.dump(cameras, os.path.join(f"{args.interaction}/data",f"{args.robot1}_cameras.pkl"))
+np.save(os.path.join(f"{robot_folder}/data",f"{args.robot1}_1_poses.npy"),robot1_poses)
+np.save(os.path.join(f"{robot_folder}/data",f"{args.robot2}_2_poses.npy"),robot2_poses)
+np.save(os.path.join(f"{robot_folder}/data",f"human1_poses.npy"),human1_js)
+np.save(os.path.join(f"{robot_folder}/data",f"human2_poses.npy"),human2_js)
+np.save(os.path.join(f"{robot_folder}/data",f"human1_trans.npy"),trans1)
+np.save(os.path.join(f"{robot_folder}/data",f"human2_trans.npy"),trans2)
+joblib.dump(collision_list, os.path.join(f"{robot_folder}/data",f"{args.robot1}_{args.robot2}_collisions.pkl"))
+joblib.dump(cameras, os.path.join(f"{robot_folder}/data",f"{args.robot1}_cameras.pkl"))
 
 print("Data successfully saved!")

@@ -650,7 +650,8 @@ class Robotoid():
             target_orientations_global  = {
                 self.N["RWrist"]: [directions[H["RWrist"]], self.cR], 
                 self.N["LWrist"]: [directions[H["LWrist"]], self.cL],
-                #F["LAnkle"]: [directions[H["LAnkle"]], [1,0,0]],
+                #self.N["LAnkle"]: [directions[H["LAnkle"]], [1,0,0]],
+                #self.N["RAnkle"]: [directions[H["LAnkle"]], [1,0,0]],
                 self.N["Head"]: [directions[H["Head"]], [1,0,0]]
     }
             

@@ -56,7 +56,7 @@ if __name__ == "__main__":
     pin.updateFramePlacements(model, data)
 
     print(robot.joints)
-    print(q0.shape)
+    print(robot.get_frames())
     #print('root_joint',data.oMf[1].translation)
     #print('HipRoll',data.oMf[37].translation)
     #print('KneePitch',data.oMf[41].translation)
