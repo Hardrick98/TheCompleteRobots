@@ -652,7 +652,7 @@ class Robotoid():
                 self.N["LWrist"]: [directions[H["LWrist"]], self.cL],
                 #self.N["LAnkle"]: [directions[H["LAnkle"]], [1,0,0]],
                 #self.N["RAnkle"]: [directions[H["LAnkle"]], [1,0,0]],
-                self.N["Head"]: [directions[H["Head"]], [1,0,0]]
+                self.N["Head"]: [directions[H["Head"]], [1,0,0]] #da verificare
     }
             
             frame_names = [k for k,v in target_orientations_global.items()]
@@ -662,7 +662,7 @@ class Robotoid():
             self.solver.update(self.model,self.data,target_positions,target_orientations_global,joint_names, joint_ids, frame_names, frame_ids)
             
             pose_weights = np.ones(len(joint_names))
-            ori_weights = np.array([0.001 for i in range(len(frame_names))])
+            ori_weights = np.array([0.001,0.001,0.001])
 
 
             if i==0:

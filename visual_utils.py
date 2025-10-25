@@ -4,24 +4,39 @@ import trimesh
 import random
 import os
 
-theta = np.pi / 2 
 
-Rx = np.array([
-    [ np.cos(theta), 0, np.sin(theta)],
-    [ 0,             1, 0            ],
-    [-np.sin(theta), 0, np.cos(theta)]
-])
-Ry = np.array([
-[1, 0,           0          ],
-[0, np.cos(theta), -np.sin(theta)],
-[0, np.sin(theta),  np.cos(theta)]
-])
+def get_rotation_matrix(theta=np.pi/2, axis="x"):
 
-Rz = np.array([
-[ np.cos(theta), -np.sin(theta), 0],
-[ np.sin(theta),  np.cos(theta), 0],
-[ 0,              0,             1]
-])
+
+    if axis == "x":
+
+        Rx = np.array([
+            [ np.cos(theta), 0, np.sin(theta)],
+            [ 0,             1, 0            ],
+            [-np.sin(theta), 0, np.cos(theta)]
+        ])
+        return Rx
+    
+    elif axis == "y":
+        Ry = np.array([
+        [1, 0,           0          ],
+        [0, np.cos(theta), -np.sin(theta)],
+        [0, np.sin(theta),  np.cos(theta)]
+        ])
+
+        return Ry
+
+    elif axis == "z":
+        Rz = np.array([
+    [ np.cos(theta), -np.sin(theta), 0],
+    [ np.sin(theta),  np.cos(theta), 0],
+    [ 0,              0,             1]
+    ])
+        return Rz
+
+    else:
+        return np.eye(3)
+    
 
 def look_at(camera_pos, target):
     
@@ -56,6 +71,8 @@ def place_camera(camera_mode, camera_poses, target, t, random_rotation=np.eye(4)
     
     else:
         F = np.eye(4)
+        Rz = get_rotation_matrix(axis="z")
+        Ry = get_rotation_matrix(axis="y")
         F[:3,:3] = np.linalg.inv(Rz)@Ry
         P = (random_rotation @ camera_poses[camera_mode][t]) @ F
 
@@ -133,7 +150,7 @@ def load_background(pyr_scene, scene_path):
         if scene_name == "estensi_light":
             pass
         else:
-            T0[:3,:3] = Ry 
+            T0[:3,:3] = get_rotation_matrix(axis="y") 
         pyr_scene.add(pyr_mesh, pose=T0@T)
 
     scene_mesh.matrix = T0

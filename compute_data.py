@@ -11,12 +11,12 @@ import matplotlib.pyplot as plt
 from inverse_kinematics import InverseKinematicSolver
 from robotoid import Robotoid
 from smplx import SMPLX
-import trimesh
+from visual_utils import get_rotation_matrix
 from trimesh.collision import CollisionManager
 from visual_utils import preload_robot_meshes
 
 
-robot_cameras_indexes = {"nao": [30,32], "g1":[34, 34], "atlas":[24,24], "pepper":[20,22], "icub":[92,92]}
+robot_cameras_indexes = {"nao": [30,32], "g1":[34, 34], "atlas":[24,24], "pepper":[20,22], "icub":[90,90]}
 
 
 robot_list = [r.removesuffix(".urdf") for r in os.listdir("URDF") if r.endswith(".urdf")]
@@ -128,6 +128,8 @@ joint_configurations2 = np.load(f"{robot_folder}/{robot_name2}2_joints_config.np
 robot1_cache = preload_robot_meshes(robot1)
 robot2_cache = preload_robot_meshes(robot2)
 
+camera_base = np.eye(4)
+
 
 manager1 = CollisionManager()
 manager2 = CollisionManager()
@@ -167,7 +169,6 @@ for t in tqdm(range(len(joint_configurations1))):
         T = np.eye(4)
         T[:3, :3] = R
         T[:3, 3] = p
-
         if args.robot1 == "icub":
             T = T @ placement
         robot_pos1.append(T[:3, 3])
@@ -194,6 +195,8 @@ for t in tqdm(range(len(joint_configurations1))):
         T[:3, 3] = p
         if args.robot2 == "icub":
             T = T @ placement
+            if name[:-2] == "head":
+                camera_base = placement
         robot_pos2.append(T[:3, 3])
         meshes2.append(base_mesh)
         poses2.append(T[None,:,:])
@@ -251,11 +254,22 @@ for t in tqdm(range(len(joint_configurations1))):
 
     collision_list.append(collisions[1])
 
+    robot1_camera_left = robot_cameras_indexes[args.robot1][0]
+    robot1_camera_right = robot_cameras_indexes[args.robot1][1]
+    robot2_camera_left = robot_cameras_indexes[args.robot2][0]
+    robot2_camera_right = robot_cameras_indexes[args.robot2][1]
 
-    camera1L = get_camera_placement(robot1, robot_cameras_indexes[args.robot1][0], T1, robot_name= args.robot1, stereo="L")
-    camera1R = get_camera_placement(robot1, robot_cameras_indexes[args.robot1][1], T1, robot_name= args.robot1, stereo="R")
-    camera2L = get_camera_placement(robot2, robot_cameras_indexes[args.robot2][0], T2, robot_name= args.robot2, stereo="L")
-    camera2R = get_camera_placement(robot2, robot_cameras_indexes[args.robot2][1], T2, robot_name= args.robot2, stereo="R")
+    if args.robot1 == "icub":
+        R = np.eye(4)
+        Rz = get_rotation_matrix(axis="z")
+        R[:3,:3] = np.linalg.inv(Rz)
+        R[:3,3] = np.array([0,-0.2,0.05]) #Valore che sarebbe da vedere bene
+        camera_base = camera_base @ R
+
+    camera1L = get_camera_placement(robot1, robot1_camera_left, T1, robot_name= args.robot1, stereo="L", camera_base=camera_base)
+    camera1R = get_camera_placement(robot1, robot1_camera_right, T1, robot_name= args.robot1, stereo="R",camera_base=camera_base)
+    camera2L = get_camera_placement(robot2, robot2_camera_left, T2, robot_name= args.robot2, stereo="L", camera_base=camera_base)
+    camera2R = get_camera_placement(robot2, robot2_camera_right, T2, robot_name= args.robot2, stereo="R", camera_base=camera_base)
 
     cameras["ego1L"].append(camera1L)
     cameras["ego1R"].append(camera1R)

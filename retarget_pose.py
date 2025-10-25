@@ -107,7 +107,7 @@ if __name__ == "__main__":
 
         for visual in visual_model.geometryObjects:
             
-            mesh_path = os.path.join(visual.meshPath)
+            mesh_path = os.path.join(visual.meshPath.removesuffix(".dae")+".stl")
             if not os.path.exists(mesh_path):
                 print(f"Mesh not found: {mesh_path}")
                 continue

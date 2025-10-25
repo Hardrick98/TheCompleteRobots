@@ -448,7 +448,7 @@ def compute_global_orientations_batch(global_orient: torch.Tensor, body_pose: to
     return global_orientations
 
 
-def get_camera_placement(robot, frame_number, trans, robot_name = None, stereo=None):
+def get_camera_placement(robot, frame_number, trans, robot_name = None, stereo=None, camera_base = np.eye(4)):
     
     camera_placement = robot.data.oMf[frame_number]
     R = camera_placement.rotation
@@ -457,6 +457,9 @@ def get_camera_placement(robot, frame_number, trans, robot_name = None, stereo=N
     T = np.eye(4)
     T[:3, :3] = R
     T[:3, 3] = p
+
+    
+    T = T@camera_base
 
     if robot_name != "nao" and robot_name != "pepper":
         
