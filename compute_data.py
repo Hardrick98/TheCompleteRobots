@@ -265,6 +265,13 @@ for t in tqdm(range(len(joint_configurations1))):
         R[:3,:3] = np.linalg.inv(Rz)
         R[:3,3] = np.array([0,-0.2,0.05]) #Valore che sarebbe da vedere bene
         camera_base = camera_base @ R
+    if t==0:
+        if args.robot1 == "g1":
+            R = np.eye(4)
+            Rx = get_rotation_matrix(theta=np.pi/4, axis="x")
+            R[:3,:3] = np.linalg.inv(Rx)
+            camera_base = camera_base @ R
+
 
     camera1L = get_camera_placement(robot1, robot1_camera_left, T1, robot_name= args.robot1, stereo="L", camera_base=camera_base)
     camera1R = get_camera_placement(robot1, robot1_camera_right, T1, robot_name= args.robot1, stereo="R",camera_base=camera_base)
