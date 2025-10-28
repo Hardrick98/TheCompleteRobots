@@ -7,13 +7,14 @@ import os
 from tqdm import tqdm
 from scipy.spatial.transform import Rotation as Rot
 import numpy as np
-import matplotlib.pyplot as plt
+import trimesh
 from inverse_kinematics import InverseKinematicSolver
 from robotoid import Robotoid
 from smplx import SMPLX
 from visual_utils import get_rotation_matrix
 from trimesh.collision import CollisionManager
-from visual_utils import preload_robot_meshes
+from visual_utils import preload_robot_meshes, calculate_scale_factors
+
 
 
 robot_cameras_indexes = {"nao": [30,32], "g1":[34, 34], "atlas":[24,24], "pepper":[20,22], "icub":[90,90]}
@@ -130,6 +131,7 @@ robot2_cache = preload_robot_meshes(robot2)
 
 camera_base = np.eye(4)
 
+n_frames = human1_js.shape[0]
 
 manager1 = CollisionManager()
 manager2 = CollisionManager()
@@ -148,6 +150,9 @@ robot1_poses_all = []
 robot2_poses_all = []
 
 collision_list = []
+temporal_max = np.zeros((n_frames,3))
+temporal_min = np.zeros((n_frames,3))
+
 
 for t in tqdm(range(len(joint_configurations1))):
 
@@ -177,7 +182,7 @@ for t in tqdm(range(len(joint_configurations1))):
         
     
     poses1 = np.vstack(poses1)
-    robot1_poses_all.append(poses1[None,:,:,:])
+    
 
     q2 = joint_configurations2[t]
     pin.forwardKinematics(robot2.model, robot2.data, q2)
@@ -204,23 +209,13 @@ for t in tqdm(range(len(joint_configurations1))):
 
 
     poses2 = np.vstack(poses2)
-    robot2_poses_all.append(poses2[None,:,:,:])
-
     #Load translation in world
     t1 = trans1[t].copy()
     t2 = trans2[t].copy()
 
 
     if t == 0:      #calculate scaling factor
-        robot_pos1 = np.vstack(robot_pos1)
-        human_bounds = np.ptp(human1_js[t], axis=0)
-        robot_bounds = np.ptp(robot_pos1, axis=0)
-        s1 = robot_bounds / human_bounds  
-
-        robot_pos2 = np.vstack(robot_pos2)
-        human_bounds = np.ptp(human2_js[t], axis=0)
-        robot_bounds = np.ptp(robot_pos2, axis=0)
-        s2 = robot_bounds / human_bounds   
+        s1, s2 = calculate_scale_factors(human1_js[t],human2_js[t], robot_pos1, robot_pos2)
   
     T1 = np.eye(4)
     min_z = np.min(human1_js[t,:,2]) 
@@ -229,12 +224,16 @@ for t in tqdm(range(len(joint_configurations1))):
     t1_s = t1_s * s1           #apply scaling
     T1[:3, 3] = t1_s
     
+    meshes1_rot = []
 
 
-    for i, m in enumerate(meshes1):
+    for i, mesh in enumerate(meshes1):
         T0 = poses1[i]
+        m = mesh.copy()
+        m.apply_transform(T1@T0)
+        meshes1_rot.append(m)
         manager1.set_transform(f"{args.robot1}1_{names[i]}", T1@T0)
-        
+        poses1[i] = T1@poses1[i]
 
     T2 = np.eye(4)
     min_z = np.min(human2_js[t,:,2])
@@ -245,14 +244,43 @@ for t in tqdm(range(len(joint_configurations1))):
 
     T2[:3, 3] = t2_s
     
-    
-    for i, m in enumerate(meshes2):
+    meshes2_rot = []
+
+    for i, mesh in enumerate(meshes2):
         T0 = poses2[i]
+        m = mesh.copy()
+        m.apply_transform(T2@T0)
+        meshes2_rot.append(m)
         manager2.set_transform(f"{args.robot2}2_{names[i]}", T2@T0)
-        
+        poses2[i] = T2@poses2[i]
+
+
+    robot1_obj = trimesh.util.concatenate(meshes1_rot).bounding_box_oriented.to_dict()
+    robot2_obj = trimesh.util.concatenate(meshes2_rot).bounding_box_oriented.to_dict()
+
+    T = np.array(robot1_obj["transform"])
+    ext = np.array(robot1_obj["extents"])
+    minsR1 = T[:3, 3] - ext/2
+    maxsR1 = T[:3, 3] + ext/2
+    T = np.array(robot2_obj["transform"])
+    ext = np.array(robot2_obj["extents"])
+    center2 = T[:3, 3] + ext/2
+    minsR2 = T[:3, 3] - ext/2
+    maxsR2 = T[:3, 3] + ext/2
+
+    maxs = np.max(np.concatenate((maxsR1[None,:], maxsR2[None,:]), axis=0), axis=0)
+    mins = np.min(np.concatenate((minsR1[None,:], minsR2[None,:]), axis=0), axis=0)
+
+    temporal_max[t] = maxs
+    temporal_min[t] = mins
+
+
     collisions = manager1.in_collision_other(manager2, return_names=True)
 
     collision_list.append(collisions[1])
+
+    robot1_poses_all.append(poses1[None,:,:,:])
+    robot2_poses_all.append(poses2[None,:,:,:])
 
     robot1_camera_left = robot_cameras_indexes[args.robot1][0]
     robot1_camera_right = robot_cameras_indexes[args.robot1][1]
@@ -288,17 +316,18 @@ for t in tqdm(range(len(joint_configurations1))):
 robot1_poses = np.vstack(robot1_poses_all)
 robot2_poses = np.vstack(robot2_poses_all)
 
+
+maxs = np.max(temporal_max, axis=0)
+mins = np.min(temporal_min, axis=0)
+
 try:
     os.mkdir(f"{robot_folder}/data")
 except:
     pass
 
-np.save(os.path.join(f"{robot_folder}/data",f"{args.robot1}_1_poses.npy"),robot1_poses)
-np.save(os.path.join(f"{robot_folder}/data",f"{args.robot2}_2_poses.npy"),robot2_poses)
-np.save(os.path.join(f"{robot_folder}/data",f"human1_poses.npy"),human1_js)
-np.save(os.path.join(f"{robot_folder}/data",f"human2_poses.npy"),human2_js)
-np.save(os.path.join(f"{robot_folder}/data",f"human1_trans.npy"),trans1)
-np.save(os.path.join(f"{robot_folder}/data",f"human2_trans.npy"),trans2)
+final_dict = {"robot_1_poses":robot1_poses, "robot_2_poses":robot2_poses,"scales":(s1,s2), "ws_max":maxs, "ws_min":mins}
+
+joblib.dump(final_dict, f"{robot_folder}/data/{args.robot1}_prep.pkl")
 joblib.dump(collision_list, os.path.join(f"{robot_folder}/data",f"{args.robot1}_{args.robot2}_collisions.pkl"))
 joblib.dump(cameras, os.path.join(f"{robot_folder}/data",f"{args.robot1}_cameras.pkl"))
 

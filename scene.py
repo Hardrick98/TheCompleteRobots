@@ -71,13 +71,15 @@ data = robot1.data
 q0 = robot1.q0
 
 robot_folder = f"{args.interaction}/{args.robot1}"
-data_dict = joblib.load(f"{robot_folder}/data/{args.robot1}_prep.pkl")
+
+human1_js = np.load(os.path.join(robot_folder,"data","human1_poses.npy"))
+trans1 = np.load(os.path.join(robot_folder,"data","human1_trans.npy"))
+human2_js = np.load(os.path.join(robot_folder,"data","human2_poses.npy"))
+trans2 = np.load(os.path.join(robot_folder,"data","human2_trans.npy"))
 
 
-robot1_poses= data_dict["robot_1_poses"]
-robot2_poses = data_dict["robot_2_poses"]
-s1, s2 = data_dict["scales"]
-robot_box = (data_dict["ws_min"],data_dict["ws_max"])
+robot1_poses= np.load(f"{robot_folder}/data/{robot1.name}_1_poses.npy")
+robot2_poses = np.load(f"{robot_folder}/data/{robot2.name}_2_poses.npy")
 
 if  not os.path.exists(f"{robot_folder}/{args.camera_mode}"):  
     os.makedirs(f"{robot_folder}/{args.camera_mode}")
@@ -121,28 +123,29 @@ mesh_nodes2 = []
 for name, (mesh, placement, parentFrame) in robot1_cache.items():
     pyr_mesh = pyrender.Mesh.from_trimesh(mesh, smooth=True)
     node = pyr_scene.add(pyr_mesh)
-    mesh_nodes1.append((node, placement, parentFrame))
+    mesh_nodes1.append((node, mesh, placement, parentFrame))
 
 
 # loading robot2 meshes
 for name, (mesh, placement, parentFrame) in robot2_cache.items():
     pyr_mesh = pyrender.Mesh.from_trimesh(mesh, smooth=True)
     node = pyr_scene.add(pyr_mesh)
-    mesh_nodes2.append((node, placement, parentFrame))
+    mesh_nodes2.append((node, mesh, placement, parentFrame))
 
 
 
 #SET BACKGROUND (IF PRESENT)
 
 if args.scene != None:
-    scene_point = load_background_new(pyr_scene, args.scene, robot_box)
+    all_points, scene_point = load_background_debug(pyr_scene, args.scene)
 
-
+print(scene_point)
 
 
 
 #SET LIGHTS
 set_lights(pyr_scene)
+
 
 
 
@@ -194,45 +197,106 @@ if not os.path.exists(f"{robot_folder}/data/random_rotation.npy"):
 else:
     Rand_Rz = np.load(f"{robot_folder}/data/random_rotation.npy")
 
+temporal_max = np.zeros((n_frames,3))
+temporal_min = np.zeros((n_frames,3))
+
+
+faces = np.array([
+    # bottom
+    [0, 1, 2], [0, 2, 3],
+    # top
+    [4, 5, 6], [4, 6, 7],
+    # front
+    [0, 1, 5], [0, 5, 4],
+    # back
+    [3, 2, 6], [3, 6, 7],
+    # left
+    [0, 4, 7], [0, 7, 3],
+    # right
+    [1, 5, 6], [1, 6, 2]
+])
+
+
+
 for t in tqdm(range(n_frames)):
-
-
     i = 0
     robot_pos1 = []
-    for node,_,_ in mesh_nodes1:
-        T = robot1_poses[t][i]
-        node.matrix = T 
-        robot_pos1.append(T[:3,3])
+    for node,mesh,_,_ in mesh_nodes1:
+        P = robot1_poses[t][i]
+        node.matrix = P 
+        robot_pos1.append(P[:3,3])
         i+= 1
     
     robot_pos2 = []
     i = 0
-    for node,_,_ in mesh_nodes2:
-        T = robot2_poses[t][i]
-        node.matrix = T 
-        robot_pos2.append(T[:3,3])
+    for node,mesh,_,_ in mesh_nodes2:
+        P = robot2_poses[t][i]
+        node.matrix = P 
+        robot_pos2.append(P[:3,3])
         i += 1
+
+    # --- scaling ---
+    t1_s = trans1[t].copy()
+    t1_s[2] -= np.min(human1_js[t,:,2])
+    t2_s = trans2[t].copy()
+    t2_s[2] -= np.min(human2_js[t,:,2])
+
+
+    if t == 0:
+        s1, s2 = calculate_scale_factors(human1_js[t],human2_js[t], robot_pos1, robot_pos2)
     
     robot_pos2 = []
     robot_pos1 = []
 
-        
+    meshes1 = []
+    meshes2 = []
     
-
-    for node, _, _ in mesh_nodes1:
-        Q = node.matrix 
+    t1_s *= s1 #scale translations
+    T1 = np.eye(4)
+    T1[:3,3] = t1_s
+    for node,mesh, _, _ in mesh_nodes1:
+        Q = T1 @ node.matrix 
         Q = scene_point@Rand_Rz@Q
         node.matrix = Q # translate nodes in the world 
+        m = mesh.copy()
+        m.apply_transform(node.matrix)
+        meshes1.append(m)
         robot_pos1.append(Q[:3,3])
 
-
-    for node, _, _ in mesh_nodes2:
-        Q = node.matrix
+    
+    t2_s *= s2
+    T2 = np.eye(4)
+    T2[:3,3] = t2_s
+    for node,mesh, _, _ in mesh_nodes2:
+        Q = T2@node.matrix
         Q = scene_point@Rand_Rz@Q
         node.matrix = Q
+        m = mesh.copy()
+        m.apply_transform(node.matrix)
+        meshes2.append(m)
         robot_pos2.append(Q[:3,3])
 
     
+
+    robot1_obj = trimesh.util.concatenate(meshes1).bounding_box.to_dict()
+    robot2_obj = trimesh.util.concatenate(meshes2).bounding_box.to_dict()
+
+    T = np.array(robot1_obj["transform"])
+    ext = np.array(robot1_obj["extents"])
+    minsR1 = T[:3, 3] - ext/2
+    maxsR1 = T[:3, 3] + ext/2
+    T = np.array(robot2_obj["transform"])
+    ext = np.array(robot2_obj["extents"])
+    center2 = T[:3, 3] + ext/2
+    minsR2 = T[:3, 3] - ext/2
+    maxsR2 = T[:3, 3] + ext/2
+
+    maxs = np.max(np.concatenate((maxsR1[None,:], maxsR2[None,:]), axis=0), axis=0)
+    mins = np.min(np.concatenate((minsR1[None,:], minsR2[None,:]), axis=0), axis=0)
+
+    temporal_max[t] = maxs
+    temporal_min[t] = mins
+
 
     robot_pos1 = np.vstack(robot_pos1)
     robot_pos2 = np.vstack(robot_pos2)
@@ -275,94 +339,33 @@ for t in tqdm(range(n_frames)):
             camera_params["E"].append(E[None,:,:])
         
             cam_node.matrix = E
-        
-
-
-    else:
-
-        E = place_camera(camera_mode, cameras, target=None,  t=t, random_rotation=Rand_Rz)
-        camera_params["E"].append(E[None,:,:])
-        cam_node.matrix = E
-
-    poses1_3d.append(robot_pos1)
-    poses2_3d.append(robot_pos2)
-
-    robot_pos1_exp = np.concatenate((robot_pos1, np.ones((robot_pos1.shape[0], 1))), axis=-1)
-
-    p_camera = (np.linalg.inv(E) @ robot_pos1_exp.T).T  
-
-    p_camera = p_camera[:, :3]  
-
-    poses1_3d_cam.append(p_camera)
-
-    pixels_h = (K @ p_camera.T).T 
-    pose1_2d = pixels_h[:, :2] / pixels_h[:, 2:3]
-
-    pose1_2d[:,0] = w - pose1_2d[:,0]
-
-
-    robot_pos2_exp = np.concatenate((robot_pos2, np.ones((robot_pos2.shape[0], 1))), axis=-1)
-
-
-    p_camera = (np.linalg.inv(E) @ robot_pos2_exp.T).T  
-
-    p_camera = p_camera[:, :3]  
-
-    poses2_3d_cam.append(p_camera)
-
-    pixels_h = (K @ p_camera.T).T  
-    pose2_2d = pixels_h[:, :2] / pixels_h[:, 2:3]
-
-    pose2_2d[:,0] = w - pose2_2d[:,0]
-
-    poses1_2d.append(pose1_2d)
-    poses2_2d.append(pose2_2d)
+   
 
     # --- render frame ---
     if args.video != None or args.frames:
+
+
+
         color, _ = r.render(pyr_scene)
         frames.append(color)
 
         if args.frames:
             imageio.imwrite(f"{args.interaction}/{args.robot1}/{args.camera_mode}/frame_{t:05d}.png", color)
     
+
+maxs = np.max(temporal_max, axis=0)
+mins = np.min(temporal_min, axis=0)
+#SORT A VALID POINT
+
+robot_box = (mins, maxs)
+
+
+
+
 if args.debug:
     pyrender.Viewer(pyr_scene, use_raymond_lighting=True) 
-# ------------------- save video -------------------
-
 if not args.debug:
     r.delete()
 if args.video != None:
-    imageio.mimsave(f'{args.video}/{args.robot1}_{args.camera_mode}.mp4', frames, fps=120)
+    imageio.mimsave(f'{args.video}/cube.mp4', frames, fps=120)
 
-
-
-data1[args.camera_mode]["pose2D_total"] = np.vstack(np.array(poses1_2d)[None,:,:])
-data2[args.camera_mode]["pose2D_total"] = np.vstack(np.array(poses2_2d)[None,:,:])
-
-data1[args.camera_mode]["pose2D"] = np.vstack(np.array(poses1_2d)[None,:,:])[:,masks[args.robot1],:]
-data2[args.camera_mode]["pose2D"] = np.vstack(np.array(poses2_2d)[None,:,:])[:,masks[args.robot2],:]
-
-
-
-if "world" not in data1.keys():
-    data1["world"] = {}
-    data1["world"]["pose3D"] = np.vstack(np.array(poses1_3d)[None,:,:])
-    data2["world"] = {}
-    data2["world"]["pose3D"] = np.vstack(np.array(poses2_3d)[None,:,:])
-
-
-data1[args.camera_mode]["pose3D_total"]  = np.vstack(np.array(poses1_3d_cam)[None,:,:])
-data2[args.camera_mode]["pose3D_total"]  = np.vstack(np.array(poses2_3d_cam)[None,:,:])
-
-data1[args.camera_mode]["pose3D"]  = np.vstack(np.array(poses1_3d_cam)[None,:,:])[:,masks[args.robot1],:]
-data2[args.camera_mode]["pose3D"]  = np.vstack(np.array(poses2_3d_cam)[None,:,:])[:,masks[args.robot2],:]
-
-camera_params["E"] = np.vstack(camera_params["E"])
-
-data1[args.camera_mode]["camera_params"] = camera_params
-data2[args.camera_mode]["camera_params"] = camera_params
-
-
-joblib.dump(data1, f"{robot_folder}/data/{args.robot1}_1_data.pkl" )
-joblib.dump(data2, f"{robot_folder}/data/{args.robot2}_2_data.pkl" )
