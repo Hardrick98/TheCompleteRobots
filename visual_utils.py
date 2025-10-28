@@ -147,7 +147,7 @@ placements = {"room": [[-1,-0.3,0]],
 correction_factors = {"room": 0.1, 
               "room2":0.4, 
               "city":7.5, 
-              "hospital": 0.25, 
+              "hospital": 0, 
               "estensi_light":20}
 
 def random_rotation():

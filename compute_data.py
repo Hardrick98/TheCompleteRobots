@@ -256,6 +256,7 @@ for t in tqdm(range(len(joint_configurations1))):
 
     bounds1 = np.array(bounds1)
     bounds2 = np.array(bounds2)
+
     minsR1 = bounds1[:,0].min(axis=0)
     maxsR1 = bounds1[:,1].max(axis=0)
     minsR2 = bounds2[:,0].min(axis=0)
