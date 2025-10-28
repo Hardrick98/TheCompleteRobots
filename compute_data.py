@@ -224,14 +224,14 @@ for t in tqdm(range(len(joint_configurations1))):
     t1_s = t1_s * s1           #apply scaling
     T1[:3, 3] = t1_s
     
-    meshes1_rot = []
+    bounds1 = []
 
 
     for i, mesh in enumerate(meshes1):
         T0 = poses1[i]
         m = mesh.copy()
         m.apply_transform(T1@T0)
-        meshes1_rot.append(m)
+        bounds1.append(m.bounds)
         manager1.set_transform(f"{args.robot1}1_{names[i]}", T1@T0)
         poses1[i] = T1@poses1[i]
 
@@ -244,29 +244,24 @@ for t in tqdm(range(len(joint_configurations1))):
 
     T2[:3, 3] = t2_s
     
-    meshes2_rot = []
+    bounds2 = []
 
     for i, mesh in enumerate(meshes2):
         T0 = poses2[i]
         m = mesh.copy()
         m.apply_transform(T2@T0)
-        meshes2_rot.append(m)
+        bounds2.append(m.bounds)
         manager2.set_transform(f"{args.robot2}2_{names[i]}", T2@T0)
         poses2[i] = T2@poses2[i]
 
+    bounds1 = np.array(bounds1)
+    bounds2 = np.array(bounds2)
+    minsR1 = bounds1[:,0].min(axis=0)
+    maxsR1 = bounds1[:,1].max(axis=0)
+    minsR2 = bounds2[:,0].min(axis=0)
+    maxsR2 = bounds2[:,1].max(axis=0)
 
-    robot1_obj = trimesh.util.concatenate(meshes1_rot).bounding_box_oriented.to_dict()
-    robot2_obj = trimesh.util.concatenate(meshes2_rot).bounding_box_oriented.to_dict()
 
-    T = np.array(robot1_obj["transform"])
-    ext = np.array(robot1_obj["extents"])
-    minsR1 = T[:3, 3] - ext/2
-    maxsR1 = T[:3, 3] + ext/2
-    T = np.array(robot2_obj["transform"])
-    ext = np.array(robot2_obj["extents"])
-    center2 = T[:3, 3] + ext/2
-    minsR2 = T[:3, 3] - ext/2
-    maxsR2 = T[:3, 3] + ext/2
 
     maxs = np.max(np.concatenate((maxsR1[None,:], maxsR2[None,:]), axis=0), axis=0)
     mins = np.min(np.concatenate((minsR1[None,:], minsR2[None,:]), axis=0), axis=0)

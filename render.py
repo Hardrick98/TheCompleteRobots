@@ -4,7 +4,6 @@ import joblib
 import os
 from tqdm import tqdm
 import numpy as np
-from robotoid import Robotoid
 import pyrender
 from scipy.spatial.transform import Rotation as Rot
 import imageio
@@ -282,7 +281,7 @@ for t in tqdm(range(n_frames)):
 
         E = place_camera(camera_mode, cameras, target=None,  t=t, random_rotation=Rand_Rz)
         camera_params["E"].append(E[None,:,:])
-        cam_node.matrix = E
+        cam_node.matrix = scene_point@ E
 
     poses1_3d.append(robot_pos1)
     poses2_3d.append(robot_pos2)
