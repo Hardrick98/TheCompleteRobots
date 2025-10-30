@@ -3,6 +3,7 @@ import pyrender
 import trimesh
 import random
 import os
+from scipy.spatial import cKDTree
 
 
 import joblib
@@ -140,15 +141,20 @@ placements = {"room": [[-1,-0.3,0]],
               "room2":[[-1,-0.5,0]], 
               "city":[[-1,-0.3,0]], 
               "hospital":[[-1,0,0],[-1.8,0,0]], 
-              "estensi_light":[[-40,35,-0.1]]}
+              "estensi_light":[[-40,35,-0.1]],
+              "estensi_room":[[0,0,0]]}
 
 
 
 correction_factors = {"room": 0.1, 
               "room2":0.4, 
-              "city":7.5, 
+              "city":1, 
               "hospital": 0, 
-              "estensi_light":20}
+              "estensi_light":20,
+              "office_new":0,
+              "estensi_room":0}
+
+
 
 def random_rotation():
     
@@ -166,157 +172,178 @@ def random_rotation():
     return Rz
     
 
-def load_background(pyr_scene, scene_path):
+
+def fix_materials(mesh):
+    # Se il materiale ha un'immagine con 1-2 canali, convertila o rimuovila
+    mat = getattr(mesh.visual, "material", None)
+    if mat is not None and hasattr(mat, "image"):
+        img = mat.image
+        if img is not None and img.ndim == 3 and img.shape[2] < 3:
+            print(f"Removing unsupported texture with shape {img.shape}")
+            mat.image = None
+    return mesh
+
+def load_background(pyr_scene, scene_path, scene_point=[ -7.01518942 , -2.75, -5.47852708]):
     
     
     scene_mesh = trimesh.load_scene(scene_path)
     scene_name = scene_path.split("/")[-1].removesuffix(".glb")
-    T_center = np.eye(4)
-    T_center[:3,3] = placements[scene_name][0]
-    scene_mesh.apply_transform(T_center)
+
+    T0 = np.eye(4)
+    if scene_name == "estensi_light":
+        pass
+    else:
+        T0[:3,:3] = get_rotation_matrix(axis="y") 
+
+    scene_mesh.apply_transform(T0)
+
+    bbox = scene_mesh.bounding_box_oriented
+    center = bbox.centroid
+    scene_mesh.apply_translation(-center)
+
+    trans = np.eye(4)
+    trans[:3,3] = -center
+
+    vertices = []
 
     for node_name in scene_mesh.graph.nodes_geometry:
         T, geom_name = scene_mesh.graph[node_name]
-        geom = scene_mesh.geometry[geom_name]
+        geom = scene_mesh.geometry[geom_name].copy()
+
+        # Applica T del nodo, poi T0 e poi la traslazione finale
+        geom.apply_transform(T)
+        geom.apply_transform(trans)
+
+        vertices.append(geom.vertices)
+
         pyr_mesh = pyrender.Mesh.from_trimesh(geom, smooth=True)
-        T0 = np.eye(4)
-        if scene_name == "estensi_light":
-            pass
-        else:
-            T0[:3,:3] = get_rotation_matrix(axis="y") 
-        pyr_scene.add(pyr_mesh, pose=T0@T)
+        pyr_scene.add(pyr_mesh)
 
-    scene_mesh.matrix = T0
+    F = np.eye(4)
+    F[:3,3] = np.array(scene_point)
 
-    return np.eye(4)
+    return F
 
 import joblib
 
 
 
 
-def load_background_new(pyr_scene, scene_path, robot_box, max_tries=100):
-    import random, trimesh, numpy as np, pyrender
+def load_background_new(pyr_scene, scene_path, robot_box, max_tries=2):
+    import random, numpy as np, trimesh, pyrender
+    
+    robot_min, robot_max = robot_box
+    robot_center = (robot_max+robot_min)/2
+    offset = robot_max - robot_min
+
 
     scene_mesh = trimesh.load_scene(scene_path)
     scene_name = scene_path.split("/")[-1].removesuffix(".glb")
 
     T0 = np.eye(4)
-    if scene_name != "estensi_light":
-        T0[:3, :3] = get_rotation_matrix(axis="y")
+    if scene_name == "estensi_light":
+        pass
+    elif scene_name == "room2":
+        T0[:3,:3] = get_rotation_matrix(theta=-np.pi/4,axis="z") @ get_rotation_matrix(axis="y") 
+    else:
+        T0[:3,:3] = get_rotation_matrix(axis="y") 
 
     scene_mesh.apply_transform(T0)
-    bbox = scene_mesh.bounding_box_oriented.to_dict()
-    T = np.array(bbox["transform"])
-    center = T[:3, 3]
-    T_center = np.eye(4)
-    T_center[:3, 3] = -center
-    scene_mesh.apply_transform(T_center)
 
-    bbox = scene_mesh.bounding_box_oriented.to_dict()
-    ext = np.array(bbox["extents"])
-    T = np.array(bbox["transform"])
-    center = T[:3, 3]
-    mins = center - ext / 2
-    T_up = np.eye(4)
-    T_up[:3, 3] = np.array([0, 0, -mins[2]])
-    scene_mesh.apply_transform(T_up)
+    bbox = scene_mesh.bounding_box
+    center = bbox.centroid
+    scene_mesh.apply_translation(robot_center-center)
 
-    bbox = scene_mesh.bounding_box_oriented.to_dict()
-    scene_ext = np.array(bbox["extents"])
-    T = np.array(bbox["transform"])
-    scene_center = T[:3, 3]
+    vertices = []
 
-
-    scene_mins = scene_center - scene_ext / 2
-    scene_maxs = scene_center + scene_ext / 2
-
-    transformed_geoms = []
     for node_name in scene_mesh.graph.nodes_geometry:
-        node_T, geom_name = scene_mesh.graph[node_name]
+        T, geom_name = scene_mesh.graph[node_name]
         geom = scene_mesh.geometry[geom_name].copy()
-        geom.apply_transform(node_T)  # porta ogni geom in world coords
-        transformed_geoms.append(geom)
+        geom.apply_transform(T)
+        vertices.append(geom.vertices)
 
-    combined = trimesh.util.concatenate(transformed_geoms)
-    all_points = combined.vertices
+        pyr_mesh = pyrender.Mesh.from_trimesh(geom, smooth=True)
+        pyr_scene.add(pyr_mesh)
 
-
-    pyr_mesh = pyrender.Mesh.from_trimesh(combined, smooth=True)
-    pyr_scene.add(pyr_mesh)
-
-
-    tries = 0
-    percent_inside = 100
-    robot_min, robot_max = robot_box
-    best_score = 100
-    best_scene = scene_center
-
-    floor_z = float(np.min(all_points[:, 2]))
-    scene_mins = np.min(all_points,axis=0)
-    scene_maxs = np.max(all_points,axis=0)
-
-    robot_center = (robot_min + robot_max)/2
-    offset = (robot_max-robot_min)
-    print(offset)
-    safe_mins = scene_mins 
-    safe_maxs = scene_maxs - offset 
+    all_points = np.vstack(vertices)
     
-    while tries < max_tries:
-        # Genera una posizione casuale del robot completamente dentro la scena
-        # Tenendo conto delle dimensioni del robot
 
-        print("safes", safe_mins, safe_maxs)
-        #random.uniform(safe_mins[0], safe_maxs[0])
-        #random.uniform(safe_mins[1], safe_maxs[1])
+    # Calcoli base scena
+    scene_mins = np.min(all_points, axis=0)
+    scene_maxs = np.max(all_points, axis=0)
 
+    floor_z = float(scene_mins[2])
+    # Limiti di posizionamento con margine
+    padding = 1
+    safe_mins = scene_mins + padding
+    safe_maxs = scene_maxs - offset - padding
 
+    print(safe_mins, safe_maxs)
+    # Ricerca posizione valida
+    best_scene = np.array([0,0,0])
+    best_coll = 100
+    threshold = 0.02  # 2 cm: distanza minima accettabile dagli oggetti
 
+    for tries in range(max_tries):
         scene_point = np.array([
-            random.uniform(safe_mins[0], safe_maxs[0])-robot_min[0],
-            random.uniform(safe_mins[1], safe_maxs[1])-robot_min[1],
-            floor_z - robot_min[2] + correction_factors[scene_name]
+            random.uniform(safe_mins[0], safe_maxs[0]),
+            random.uniform(safe_mins[1], safe_maxs[1]),
+            floor_z - robot_min[2] + correction_factors.get(scene_name, 0.0),
         ])
 
-        print("T",scene_point)
-
-        robot_min, robot_max = robot_box
-        maxs = robot_max + scene_point
         mins = robot_min + scene_point
+        maxs = robot_max + scene_point
+        coll = check_collision(mins, maxs, all_points, scene_point)
 
-        print("points", mins,maxs)
-        # Verifica che non compenetri con l’ambiente
-        percent_inside, scene_point = check_collision(maxs, mins, all_points, scene_point)
+        # Se è libero oltre la soglia → accettalo
+        if coll < threshold:
+            print(f"✅ Posizione valida trovata dopo {tries+1} tentativi.")
+            final = np.eye(4)
+            final[:3, 3] = scene_point
+            print(scene_point)
+            return final
 
-        if percent_inside < 0.3:
-            break  # trovato un punto valido
+        # Salva la migliore finora (più distante dagli oggetti)
+        if coll  < best_coll:
+            best_coll = coll
+            best_scene = scene_point
 
-        tries += 1
-
-
-
-    if percent_inside < best_score:
-        best_score = percent_inside
-        best_scene = scene_point
-
-    if percent_inside >= 0.3:
-        print(f"⚠️ Nessuna posizione valida trovata dopo {tries} tentativi. {percent_inside}, {scene_point}")
-        scene_point = best_scene
-    else:
-        print(f"✅ Posizione valida trovata dopo {tries} tentativi: {scene_point}")
+    # Nessuna posizione libera trovata
+    print(f"⚠️ Nessuna posizione totalmente libera trovata dopo {max_tries} tentativi.")
 
     final = np.eye(4)
-    final[:3, 3] = scene_point
+    final[:3, 3] = best_scene
+
+    
+
     return final
 
-   
 
 
+def check_collision(maxs, mins, scene_points, scene_point, threshold=0.01):
+    """
+    Controlla se il bounding box del robot collide con la scena.
+    Ritorna percentuale di punti del robot troppo vicini alla scena.
+    """
+    # Crea una griglia di punti nel volume del robot (approssimazione)
+    xs = np.linspace(mins[0], maxs[0], 5)
+    ys = np.linspace(mins[1], maxs[1], 5)
+    zs = np.linspace(mins[2], maxs[2], 5)
+    xx, yy, zz = np.meshgrid(xs, ys, zs)
+    robot_points = np.stack([xx, yy, zz], axis=-1).reshape(-1, 3)
 
+    # KDTree per velocizzare la ricerca della distanza minima
+    tree = cKDTree(scene_points)
+    dists, _ = tree.query(robot_points, k=1)
+    num_collisions = np.sum(dists < threshold)
+
+    percent_inside = 100 * num_collisions / robot_points.shape[0]
+    print(percent_inside)
+    return percent_inside
 
 def check_collision(maxs, mins, scene_points, scene_point):
 
 
     inside_mask = np.all((scene_points >= mins) & (scene_points <= maxs), axis=1)
     percent_inside = 100 * (inside_mask.sum() / scene_points.shape[0])
-    return percent_inside, scene_point
+    return percent_inside
