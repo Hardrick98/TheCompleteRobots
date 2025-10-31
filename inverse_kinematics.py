@@ -118,8 +118,11 @@ class EvolvedInverseKinematicSolver():
         self.frame_ids = frame_ids
 
     def ik_cost_numpy(self, q_numpy, pose_weights, ori_weights):
+        
+
         pin.forwardKinematics(self.model, self.data, q_numpy)
         pin.updateFramePlacements(self.model, self.data)
+        
         j = 0
         cost = 0.0
         for i, (name, frame_id) in enumerate(zip(self.joint_names, self.joint_ids)):
@@ -141,13 +144,21 @@ class EvolvedInverseKinematicSolver():
 
         q_lower_limits = self.model.lowerPositionLimit
         q_upper_limits = self.model.upperPositionLimit
+
+
         bounds = []
         for i in range(self.model.nq):
             bounds.append((q_lower_limits[i], q_upper_limits[i]))
 
+        
+        cons = {'type': 'eq', 'fun': lambda q: np.linalg.norm(q[0:4]) - 1.0}
         res = minimize(lambda q: self.ik_cost_numpy(q, pose_weights, ori_weights),
-                       q0, bounds=bounds, method='SLSQP', options={'maxiter': 500, 'disp': False})
-        return np.array(res.x), res.fun
+                    q0, bounds=bounds, constraints=cons, method='SLSQP', options={'maxiter':500})
+        
+
+        q = res.x
+
+        return q, res.fun
     
     def angular_error(self,R1, target):
         

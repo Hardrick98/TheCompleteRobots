@@ -566,7 +566,6 @@ class Robotoid():
 
         joint_configurations = []
         sequence_num = human_joints_seq.shape[0]
-        #sequence_num = 100
 
 
         for i in tqdm(range(sequence_num)):
@@ -659,6 +658,7 @@ class Robotoid():
             frame_ids = [self.model.getFrameId(f) for f in frame_names]
 
             
+            
             self.solver.update(self.model,self.data,target_positions,target_orientations_global,joint_names, joint_ids, frame_names, frame_ids)
             
             pose_weights = np.ones(len(joint_names))
@@ -669,11 +669,13 @@ class Robotoid():
                 q1, _ = self.solver.inverse_kinematics(self.q0, pose_weights, ori_weights)
             else:
                 q1, _ = self.solver.inverse_kinematics(q1, pose_weights, ori_weights)
-        
+   
+
             joint_configurations.append(q1)
             
             pin.forwardKinematics(self.model, self.data, q1)
             pin.updateFramePlacements(self.model, self.data)
+            
 
 
         joint_configurations = np.vstack(joint_configurations)
