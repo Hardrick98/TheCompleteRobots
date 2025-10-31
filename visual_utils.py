@@ -4,6 +4,7 @@ import trimesh
 import random
 import os
 from scipy.spatial import cKDTree
+import joblib
 
 
 import joblib
@@ -138,21 +139,18 @@ def calculate_scale_factors(human1, human2, robot1, robot2):
 
 
 placements = {"room": [[-1,-0.3,0]], 
-              "room2":[[-1,-0.5,0]], 
+              "baroque_room":[[-1,-0.5,0]], 
               "city":[[-1,-0.3,0]], 
               "hospital":[[-1,0,0],[-1.8,0,0]], 
-              "estensi_light":[[-40,35,-0.1]],
+              "estensi_hallway":[[-40,35,-0.1]],
               "estensi_room":[[0,0,0]]}
 
 
-
-correction_factors = {"room": 0.1, 
-              "room2":0.4, 
+correction_factors = {"baroque_room":0.4, 
               "city":1, 
               "hospital": 0, 
-              "estensi_light":20,
-              "office_new":0,
-              "estensi_room":0}
+              "office":0,
+              "living_room":0.2}
 
 
 
@@ -183,36 +181,38 @@ def fix_materials(mesh):
             mat.image = None
     return mesh
 
-def load_background(pyr_scene, scene_path, scene_point=[ -7.01518942 , -2.75, -5.47852708]):
+def load_background_manual(pyr_scene, scene_path):
     
+
     
+
+    scene_positions = {"estensi_hallway":[[-40,35,-0.1], [-50,35,-0.1], [-30,35,-0.1]], "estensi_room":[[0,0,0.7],[-3,-4,0.7],[3,-4,0.7],[4,-5,0.7]], "city":[[21,9,-0.2],[-5,-5,0],[-10,43,-0.2],[50,43,-0.2],[-31,7,-0.2]]}
+
+       
     scene_mesh = trimesh.load_scene(scene_path)
+
+
+
     scene_name = scene_path.split("/")[-1].removesuffix(".glb")
+    index = random.randint(0, len(scene_positions[scene_name])-1)
 
-    T0 = np.eye(4)
-    if scene_name == "estensi_light":
-        pass
-    else:
+    scene_point = np.array(scene_positions[scene_name][2])
+
+    if scene_name == "estensi_room" or scene_name == "city":
+        T0 = np.eye(4)
         T0[:3,:3] = get_rotation_matrix(axis="y") 
+        scene_mesh.apply_transform(T0)
 
-    scene_mesh.apply_transform(T0)
+    scene_mesh.apply_translation(scene_point)
 
-    bbox = scene_mesh.bounding_box_oriented
-    center = bbox.centroid
-    scene_mesh.apply_translation(-center)
-
-    trans = np.eye(4)
-    trans[:3,3] = -center
+    
 
     vertices = []
 
     for node_name in scene_mesh.graph.nodes_geometry:
         T, geom_name = scene_mesh.graph[node_name]
         geom = scene_mesh.geometry[geom_name].copy()
-
-        # Applica T del nodo, poi T0 e poi la traslazione finale
         geom.apply_transform(T)
-        geom.apply_transform(trans)
 
         vertices.append(geom.vertices)
 
@@ -220,16 +220,12 @@ def load_background(pyr_scene, scene_path, scene_point=[ -7.01518942 , -2.75, -5
         pyr_scene.add(pyr_mesh)
 
     F = np.eye(4)
-    F[:3,3] = np.array(scene_point)
 
     return F
 
-import joblib
 
 
-
-
-def load_background_new(pyr_scene, scene_path, robot_box, max_tries=2):
+def load_background_auto(pyr_scene, scene_path, robot_box, max_tries=2):
     import random, numpy as np, trimesh, pyrender
     
     robot_min, robot_max = robot_box
@@ -241,9 +237,9 @@ def load_background_new(pyr_scene, scene_path, robot_box, max_tries=2):
     scene_name = scene_path.split("/")[-1].removesuffix(".glb")
 
     T0 = np.eye(4)
-    if scene_name == "estensi_light":
+    if scene_name == "estensi_hallway":
         pass
-    elif scene_name == "room2":
+    elif scene_name == "baroque_room":
         T0[:3,:3] = get_rotation_matrix(theta=-np.pi/4,axis="z") @ get_rotation_matrix(axis="y") 
     else:
         T0[:3,:3] = get_rotation_matrix(axis="y") 
@@ -278,11 +274,10 @@ def load_background_new(pyr_scene, scene_path, robot_box, max_tries=2):
     safe_mins = scene_mins + padding
     safe_maxs = scene_maxs - offset - padding
 
-    print(safe_mins, safe_maxs)
     # Ricerca posizione valida
     best_scene = np.array([0,0,0])
     best_coll = 100
-    threshold = 0.02  # 2 cm: distanza minima accettabile dagli oggetti
+    threshold = 0.1  # 2 cm: distanza minima accettabile dagli oggetti
 
     for tries in range(max_tries):
         scene_point = np.array([
@@ -297,19 +292,17 @@ def load_background_new(pyr_scene, scene_path, robot_box, max_tries=2):
 
         # Se è libero oltre la soglia → accettalo
         if coll < threshold:
-            print(f"✅ Posizione valida trovata dopo {tries+1} tentativi.")
             final = np.eye(4)
             final[:3, 3] = scene_point
-            print(scene_point)
             return final
 
-        # Salva la migliore finora (più distante dagli oggetti)
+
         if coll  < best_coll:
             best_coll = coll
             best_scene = scene_point
 
     # Nessuna posizione libera trovata
-    print(f"⚠️ Nessuna posizione totalmente libera trovata dopo {max_tries} tentativi.")
+    print(f"Nessuna posizione totalmente libera trovata dopo {max_tries} tentativi.")
 
     final = np.eye(4)
     final[:3, 3] = best_scene

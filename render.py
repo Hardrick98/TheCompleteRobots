@@ -134,7 +134,10 @@ for name, (mesh, placement, parentFrame) in robot2_cache.items():
 #SET BACKGROUND (IF PRESENT)
 
 if args.scene != None:
-    scene_point = load_background_new(pyr_scene, args.scene, robot_box)
+    if "estensi" in args.scene or "city" in args.scene:
+        scene_point = load_background_manual(pyr_scene, args.scene)
+    else:    
+        scene_point = load_background_auto(pyr_scene, args.scene, robot_box)
 
 
 
