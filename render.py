@@ -101,6 +101,16 @@ robot1_cache = preload_robot_meshes(robot1)
 robot2_cache = preload_robot_meshes(robot2)
 
 cameras = joblib.load(os.path.join(f"{robot_folder}/data",f"{robot_name1}_cameras.pkl"))
+
+scene_data_path = os.path.join(f"{robot_folder}/data",f"scene_data.pkl")
+
+if os.path.exists(scene_data_path):
+    scene_data = joblib.load(scene_data_path)
+    if "scene_point" in scene_data.keys():
+        scene_point_index = scene_data["scene_point"] 
+else:
+    scene_data = {}
+    scene_point_index = None
 # ------------------- setup pyrender -------------------
 
 if args.frames:
@@ -135,9 +145,14 @@ for name, (mesh, placement, parentFrame) in robot2_cache.items():
 
 if args.scene != None:
     #if "estensi" in args.scene or "city" in args.scene:
-    scene_point = load_background_manual(pyr_scene, args.scene)
-    #else:    
-    #    scene_point = load_background_auto(pyr_scene, args.scene, robot_box)
+    if scene_point_index == None:
+        scene_point, scene_point_index = load_background_manual(pyr_scene, args.scene, scene_point_index=None)
+        scene_data["scene_point"] = scene_point_index
+    else:    
+        scene_point, _ = load_background_manual(pyr_scene, args.scene, scene_point_index=None)
+    
+    
+    #scene_point = load_background_auto(pyr_scene, args.scene, robot_box)
 
 
 
@@ -368,3 +383,4 @@ data2[args.camera_mode]["camera_params"] = camera_params
 
 joblib.dump(data1, f"{robot_folder}/data/{args.robot1}_1_data.pkl" )
 joblib.dump(data2, f"{robot_folder}/data/{args.robot2}_2_data.pkl" )
+joblib.dump(scene_data, scene_data_path)

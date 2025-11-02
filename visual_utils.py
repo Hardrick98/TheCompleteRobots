@@ -179,7 +179,7 @@ def fix_materials(mesh):
             mat.image = None
     return mesh
 
-def load_background_manual(pyr_scene, scene_path):
+def load_background_manual(pyr_scene, scene_path, scene_point_index=None):
     
 
     
@@ -195,10 +195,15 @@ def load_background_manual(pyr_scene, scene_path):
     scene_mesh = trimesh.load_scene(scene_path)
 
 
+    
 
     scene_name = scene_path.split("/")[-1].removesuffix(".glb")
-    index = random.randint(0, len(scene_positions[scene_name])-1)
 
+
+    if scene_point_index == None:
+        index = random.randint(0, len(scene_positions[scene_name])-1)
+    else:
+        index = scene_point_index
     scene_point = np.array(scene_positions[scene_name][index])
 
     if scene_name != "estensi_hallway":
@@ -224,7 +229,7 @@ def load_background_manual(pyr_scene, scene_path):
 
     F = np.eye(4)
 
-    return F
+    return F, scene_point_index
 
 
 
