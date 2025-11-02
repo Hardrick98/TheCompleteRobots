@@ -165,14 +165,12 @@ def random_rotation():
     ])
     
 
-            
-    
     return Rz
     
 
 
 def fix_materials(mesh):
-    # Se il materiale ha un'immagine con 1-2 canali, convertila o rimuovila
+    
     mat = getattr(mesh.visual, "material", None)
     if mat is not None and hasattr(mat, "image"):
         img = mat.image
@@ -186,8 +184,13 @@ def load_background_manual(pyr_scene, scene_path):
 
     
 
-    scene_positions = {"estensi_hallway":[[-40,35,-0.1], [-50,35,-0.1], [-30,35,-0.1]], "estensi_room":[[0,0,0.7],[-3,-4,0.7],[3,-4,0.7],[4,-5,0.7]], "city":[[21,9,-0.2],[-5,-5,0],[-10,43,-0.2],[50,43,-0.2],[-31,7,-0.2]]}
-
+    scene_positions = {"estensi_hallway":[[-40,35,-0.1], [-50,35,-0.1], [-30,35,-0.1]], 
+                       "estensi_room":[[0,0,0.7],[-3,-4,0.7],[3,-4,0.7],[4,-5,0.7]], 
+                       "city":[[21,9,-0.2],[-5,-5,0],[-10,43,-0.2],[50,43,-0.2],[-31,7,-0.2]],
+                       "hospital":[[-1,-1.5,0],[-1,1.5,0],[1,1.5,0],[1,1,0]],
+                       "office":[[-3,-4,0],[1,-4,0],[1,6,0],[1,1.5,0],[0,0,0]],
+                       "baroque_room":[[-1.5,-3.5,-0.4],[2,1,-0.4],[0,0,-0.4]]
+                       }
        
     scene_mesh = trimesh.load_scene(scene_path)
 
@@ -196,9 +199,9 @@ def load_background_manual(pyr_scene, scene_path):
     scene_name = scene_path.split("/")[-1].removesuffix(".glb")
     index = random.randint(0, len(scene_positions[scene_name])-1)
 
-    scene_point = np.array(scene_positions[scene_name][2])
+    scene_point = np.array(scene_positions[scene_name][index])
 
-    if scene_name == "estensi_room" or scene_name == "city":
+    if scene_name != "estensi_hallway":
         T0 = np.eye(4)
         T0[:3,:3] = get_rotation_matrix(axis="y") 
         scene_mesh.apply_transform(T0)

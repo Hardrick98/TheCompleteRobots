@@ -109,7 +109,7 @@ if args.frames:
 if args.green_screen == True:
     pyr_scene = pyrender.Scene(ambient_light=[0.5,0.5,0.5],bg_color=[0,255,0])
 else:
-    pyr_scene = pyrender.Scene(ambient_light=[0.5,0.5,0.5],bg_color=[135,206,235])
+    pyr_scene = pyrender.Scene(ambient_light=[0.5,0.5,0.5],bg_color=[255,255,255])
 
 
 mesh_nodes1 = []
@@ -134,10 +134,10 @@ for name, (mesh, placement, parentFrame) in robot2_cache.items():
 #SET BACKGROUND (IF PRESENT)
 
 if args.scene != None:
-    if "estensi" in args.scene or "city" in args.scene:
-        scene_point = load_background_manual(pyr_scene, args.scene)
-    else:    
-        scene_point = load_background_auto(pyr_scene, args.scene, robot_box)
+    #if "estensi" in args.scene or "city" in args.scene:
+    scene_point = load_background_manual(pyr_scene, args.scene)
+    #else:    
+    #    scene_point = load_background_auto(pyr_scene, args.scene, robot_box)
 
 
 
