@@ -334,7 +334,6 @@ class Robotoid():
 
         positions = np.array(positions)
             
-        #PULIRE CATENE INUTILI
 
         positions = positions[positions[:, 2].argsort()[::-1]]
 
@@ -565,6 +564,7 @@ class Robotoid():
         print("\nFINDING CONFIGURATIONS...")
 
         joint_configurations = []
+        retarget_errors = []
         sequence_num = human_joints_seq.shape[0]
 
 
@@ -651,7 +651,7 @@ class Robotoid():
                 self.N["LWrist"]: [directions[H["LWrist"]], self.cL],
                 #self.N["LAnkle"]: [directions[H["LAnkle"]], [1,0,0]],
                 #self.N["RAnkle"]: [directions[H["LAnkle"]], [1,0,0]],
-                self.N["Head"]: [directions[H["Head"]], [1,0,0]] #da verificare
+                self.N["Head"]: [directions[H["Head"]], [1,0,0]] #to verify
     }
             
             frame_names = [k for k,v in target_orientations_global.items()]
@@ -666,12 +666,13 @@ class Robotoid():
 
 
             if i==0:
-                q1, _ = self.solver.inverse_kinematics(self.q0, pose_weights, ori_weights)
+                q1, error = self.solver.inverse_kinematics(self.q0, pose_weights, ori_weights)
             else:
-                q1, _ = self.solver.inverse_kinematics(q1, pose_weights, ori_weights)
+                q1, error = self.solver.inverse_kinematics(q1, pose_weights, ori_weights)
    
 
             joint_configurations.append(q1)
+            retarget_errors.append(error)
             
             pin.forwardKinematics(self.model, self.data, q1)
             pin.updateFramePlacements(self.model, self.data)
@@ -679,6 +680,7 @@ class Robotoid():
 
 
         joint_configurations = np.vstack(joint_configurations)
+        retarget_errors = np.vstack(retarget_errors)
 
         return joint_configurations
 

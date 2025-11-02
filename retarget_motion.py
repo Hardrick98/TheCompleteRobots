@@ -1,5 +1,4 @@
 from utils import *
-from human_interaction import load_simple_all
 import pinocchio as pin
 import argparse
 from vedo import Mesh, merge
@@ -83,8 +82,8 @@ if __name__ == "__main__":
     human_action2 = HumanAction(action2)
 
     H = human_action1.get_joint_dict()
-    joint_config1 = robotoid1.retarget(human_action1)
-    joint_config2 = robotoid2.retarget(human_action2)
+    joint_config1, retarget_errors1 = robotoid1.retarget(human_action1)
+    joint_config2, retarget_errors2 = robotoid2.retarget(human_action2)
 
     path = file1.removesuffix(".npz")
     path = f"{args.interaction}/{args.robot}/{args.robot}1_joints_config.npy"
@@ -92,6 +91,13 @@ if __name__ == "__main__":
     path = file2.removesuffix(".npz")
     path = f"{args.interaction}/{args.robot}/{args.robot}2_joints_config.npy"
     np.save(path, joint_config2)
+
+    path = file1.removesuffix(".npz")
+    path = f"{args.interaction}/{args.robot}/{args.robot}1_errors.npy"
+    np.save(path, retarget_errors1)
+    path = file2.removesuffix(".npz")
+    path = f"{args.interaction}/{args.robot}/{args.robot}2_errors.npy"
+    np.save(path, retarget_errors2)
 
     
 
