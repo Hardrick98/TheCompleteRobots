@@ -437,7 +437,7 @@ class Robotoid():
 
 
         #print("\n")
-        print("Defined Chains:\n", robotoid_labels)
+        #print("Defined Chains:\n", robotoid_labels)
         #print("\n")
 
         final = {}
