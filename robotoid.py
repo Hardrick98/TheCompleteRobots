@@ -7,7 +7,6 @@ from smplx import SMPLX
 import torch
 import pinocchio as pin
 import trimesh
-from vedo import Mesh
 from scipy.spatial.transform import Rotation as Rot
 import cma
 class Robotoid():
@@ -682,7 +681,7 @@ class Robotoid():
         joint_configurations = np.vstack(joint_configurations)
         retarget_errors = np.vstack(retarget_errors)
 
-        return joint_configurations
+        return joint_configurations, retarget_errors
 
 
     def optimize(self, human_action, idx=None):
@@ -963,8 +962,11 @@ class HumanAction():
 
         meshes = []
         
+
         for i in range(len(vertices)):
-            meshes.append(Mesh([vertices[i].detach().cpu().numpy(), faces]))
+            verts = vertices[i].detach().cpu().numpy()
+            mesh = trimesh.Trimesh(vertices=verts, faces=faces, process=False)
+            meshes.append(mesh)
         
         
         return joints, orientations, transl, global_orient, meshes, directions

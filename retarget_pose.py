@@ -1,5 +1,4 @@
-from tqdm import tqdm
-from scipy.spatial.transform import Rotation as Rot
+import pyrender
 import numpy as np
 from robotoid import Robotoid, HumanAction
 from smplx import SMPLX
@@ -7,7 +6,7 @@ from utils import *
 from pinocchio.visualize import MeshcatVisualizer
 import pinocchio as pin
 import argparse
-from vedo import Plotter, Mesh
+import trimesh
 import os
 
 
@@ -31,14 +30,19 @@ if __name__ == "__main__":
     parser.add_argument("--idx",
                         type=int, default=0,
                         help="Path to smpl human pose")
+    parser.add_argument("--human",
+                        type=int, default=1,
+                        help="Decide which human  to visualize, could be 1 o 2")
     parser.add_argument("--visualize",
                         action="store_true",
                         help="If to visualize video or not at the end")
     args  = parser.parse_args()
     robot_name = args.robot.lower() 
     idx = args.idx
-    print(idx)
-    print(robot_name)
+    
+    print("Sequence index:", idx)
+    print("Robot to retarget:", robot_name)
+    
     try:
         robot = HumanoidRobot(f"URDF/{args.robot}.urdf")
     except Exception as e:
@@ -78,48 +82,62 @@ if __name__ == "__main__":
     human_action2 = HumanAction(action2)
 
     H = human_action1.get_joint_dict()
-    q1 = robotoid1.retarget(human_action1, idx)[0]
-    q2 = robotoid2.retarget(human_action2, idx)[0]
+    q1, error1 = robotoid1.retarget(human_action1, idx)
+    q2, error2 = robotoid2.retarget(human_action2, idx)
 
+    q1 = q1[0]
+    q2 = q2[0]
+
+    
 
     if args.visualize:
-            
-        
 
-        
-        human_action = human_action2
+        if args.human == 2:
+            robotoid = robotoid2
+            q = q2
+        else:
+            robotoid = robotoid1
+            q = q1
+
+        pin.forwardKinematics(robotoid.model, robotoid.data, q)
+        pin.updateFramePlacements(robotoid.model, robotoid.data)
+            
+        pyr_scene = pyrender.Scene(ambient_light=[0.5,0.5,0.5],bg_color=[255,255,255])
+
+        if args.human == 2:
+            human_action = human_action2
+        else:
+            human_action = human_action1
        
         human_joints_seq, orientations_seq, translation_seq, global_orient_seq, human_meshes, directions_seq = human_action.get_attributes()  
         human_origin = translation_seq[idx]
         human_mesh = human_meshes[idx]
+        human_origin[0] *= -1
 
-        viz = MeshcatVisualizer(robotoid2.model, robotoid2.collision_model, robotoid2.visual_model)
+        """
+        viz = MeshcatVisualizer(robotoid1.model, robotoid1.collision_model, robotoid1.visual_model)
         viz.initViewer(open=False) 
         viz.loadViewerModel()
-        viz.display(q2)
+        viz.display(q1)
         input("Press Enter to reset the visualization...")
         viz.reset()
-        
+        """
+
         visual_model = robot.visual_model   
-
-
-        vp = Plotter(title="Human and Robot", axes=1, interactive=False)
 
         for visual in visual_model.geometryObjects:
             
-            mesh_path = os.path.join(visual.meshPath.removesuffix(".dae")+".stl")
+            mesh_path = os.path.join(visual.meshPath)
             if not os.path.exists(mesh_path):
                 print(f"Mesh not found: {mesh_path}")
                 continue
 
             try:
-                m = Mesh(mesh_path)
+                m = trimesh.load_mesh(mesh_path)
             except Exception as e:
                 print(f"Error during loading of {mesh_path}: {e}")
                 continue
 
-            color = visual.meshColor
-            m.color(color[:3])
             placement = data.oMf[visual.parentFrame]
 
             
@@ -133,10 +151,16 @@ if __name__ == "__main__":
             T[:3, :3] = R
             T[:3, 3] = p
 
-            m.scale(visual.meshScale)
+            m.apply_scale(visual.meshScale)
             m.apply_transform(T)
 
-            vp += m
+            trans = human_origin + np.array([0,1,0])
+            m.apply_translation(trans)
+
+
+            pyr_mesh = pyrender.Mesh.from_trimesh(m, smooth=True)
+            node = pyr_scene.add(pyr_mesh)
+
 
 
         M = np.array([
@@ -146,14 +170,12 @@ if __name__ == "__main__":
         ])
         T = np.eye(4)
         T[:3, :3] = M
-        human_origin[0] *= -1
-
-        T[:3, 3] = -human_origin + (np.array([0,0.7,1]))
+    
+        #T[:3, 3] = -human_origin
         human_mesh.apply_transform(T)
-        vp += human_mesh
-        vp.camera.SetPosition([3, 0, 1])        
-        vp.camera.SetFocalPoint([0, 0, 0])      
-        vp.camera.SetViewUp([0, 0, 1])         
 
-        vp.show(axes=1, interactive=True)
+
+        pyr_mesh = pyrender.Mesh.from_trimesh(human_mesh, smooth=True)
+        node = pyr_scene.add(pyr_mesh)
+        pyrender.Viewer(pyr_scene, use_raymond_lighting=True) 
 

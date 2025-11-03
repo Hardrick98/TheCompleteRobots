@@ -78,7 +78,7 @@ robot2_poses = data_dict["robot_2_poses"]
 s1, s2 = data_dict["scales"]
 robot_box = (data_dict["ws_min"],data_dict["ws_max"])
 
-if  not os.path.exists(f"{robot_folder}/{args.camera_mode}"):  
+if not os.path.exists(f"{robot_folder}/{args.camera_mode}"):  
     os.makedirs(f"{robot_folder}/{args.camera_mode}")
 
 if os.path.exists(f"{robot_folder}/data/{args.robot1}_1_data.pkl"):  
@@ -336,9 +336,11 @@ for t in tqdm(range(n_frames)):
     poses2_2d.append(pose2_2d)
 
     # --- render frame ---
-    if args.video != None or args.frames:
+    if args.video is not None or args.frames:
         color, _ = r.render(pyr_scene)
-        frames.append(color)
+        
+        if args.video is not None:
+            frames.append(color)
 
         if args.frames:
             imageio.imwrite(f"{args.interaction}/{args.robot1}/{args.camera_mode}/frame_{t:05d}.png", color)
@@ -349,7 +351,7 @@ if args.debug:
 
 if not args.debug:
     r.delete()
-if args.video != None:
+if args.video is not None:
     imageio.mimsave(f'{args.video}/{args.robot1}_{args.camera_mode}.mp4', frames, fps=120)
 
 
