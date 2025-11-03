@@ -145,7 +145,6 @@ dependencies:
       - nvidia-nccl-cu12==2.26.2
       - nvidia-nvjitlink-cu12==12.6.85
       - nvidia-nvtx-cu12==12.6.77
-      - open3d==0.19.0
       - opencv-python==4.12.0.88
       - opt-einsum==3.4.0
       - osqp==1.0.4
@@ -207,7 +206,6 @@ dependencies:
       - u-msgpack-python==2.8.0
       - urdf2webots==2025.0.0
       - urllib3==2.5.0
-      - vedo==2025.5.4
       - vhacdx==0.0.8.post2
       - vtk==9.5.0
       - werkzeug==3.1.3

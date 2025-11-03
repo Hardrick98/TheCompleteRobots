@@ -148,7 +148,7 @@ if args.scene != None:
         scene_point, scene_point_index = load_background_manual(pyr_scene, args.scene, scene_point_index=None)
         scene_data["scene_point"] = scene_point_index
     else:    
-        scene_point, _ = load_background_manual(pyr_scene, args.scene, scene_point_index=None)
+        scene_point, _ = load_background_manual(pyr_scene, args.scene, scene_point_index)
     
     
     #scene_point = load_background_auto(pyr_scene, args.scene, robot_box)

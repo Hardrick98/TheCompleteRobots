@@ -143,14 +143,8 @@ for name, (mesh, placement, parentFrame) in robot2_cache.items():
 
 #SET BACKGROUND (IF PRESENT)
 
-if args.scene != None:
-    #if "estensi" in args.scene or "city" in args.scene:
-    if scene_point_index == None:
-        scene_point, scene_point_index = load_background_manual(pyr_scene, args.scene, scene_point_index=None)
-        scene_data["scene_point"] = scene_point_index
-    else:    
-        scene_point, _ = load_background_manual(pyr_scene, args.scene, scene_point_index=None)
 
+scene_point, scene_point_index = load_background_manual(pyr_scene, args.scene, scene_point_index=None, bb_mode= True)
 
     
 if not os.path.exists(f"{robot_folder}/data/random_rotation.npy"):
