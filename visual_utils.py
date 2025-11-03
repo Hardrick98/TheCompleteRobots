@@ -134,7 +134,6 @@ def calculate_scale_factors(human1, human2, robot1, robot2):
         robot_pos2_bounds = np.ptp(np.vstack(robot2), axis=0)
         human_bounds2 = np.ptp(human2, axis=0)
         s2 = robot_pos2_bounds / human_bounds2
-
         return s1,s2
 
 

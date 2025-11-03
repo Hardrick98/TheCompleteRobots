@@ -67,7 +67,7 @@ smpl_model = SMPLX(
 ).to("cuda:0")
 
 frames_list = robot1.body
-print(frames_list)
+#print(frames_list)
 
 robotoid = Robotoid(robot1, wheeled)
 #F, R = robotoid.build()
@@ -220,11 +220,13 @@ for t in tqdm(range(len(joint_configurations1))):
     T1 = np.eye(4)
     min_z = np.min(human1_js[t,:,2]) 
     t1_s = t1.copy()
-    t1_s[2] -= min_z           #make sure it is on the ground
+    #t1_s[2] -= min_z           #make sure it is on the ground
     t1_s = t1_s * s1           #apply scaling
     T1[:3, 3] = t1_s
     
     bounds1 = []
+
+
 
 
     for i, mesh in enumerate(meshes1):
@@ -232,43 +234,68 @@ for t in tqdm(range(len(joint_configurations1))):
         m = mesh.copy()
         m.apply_transform(T1@T0)
         bounds1.append(m.bounds)
-        manager1.set_transform(f"{args.robot1}1_{names[i]}", T1@T0)
         poses1[i] = T1@poses1[i]
+    
+    ground1 = np.array([0,0,min(b[0][2] for b in bounds1)])
+    G1 = np.eye(4)
+    G1[:3,3] = -ground1
+    bounds1 = []
+
+    for i, _ in enumerate(meshes1):
+        poses1[i] = G1@poses1[i]
+        manager1.set_transform(f"{args.robot1}1_{names[i]}", poses1[i])
+
+
 
     T2 = np.eye(4)
     min_z = np.min(human2_js[t,:,2])
     t2_s = t2.copy()
-    t2_s[2] -= min_z  
+    #t2_s[2] -= min_z  
+
+
 
     t2_s = t2_s * s2
 
-    T2[:3, 3] = t2_s
     
+
+    T2[:3, 3] = t2_s
+        
+
     bounds2 = []
+
+
 
     for i, mesh in enumerate(meshes2):
         T0 = poses2[i]
         m = mesh.copy()
         m.apply_transform(T2@T0)
         bounds2.append(m.bounds)
-        manager2.set_transform(f"{args.robot2}2_{names[i]}", T2@T0)
         poses2[i] = T2@poses2[i]
 
-    bounds1 = np.array(bounds1)
-    bounds2 = np.array(bounds2)
+    ground2 = np.array([0,0,min(b[0][2] for b in bounds2)])
+    G2 = np.eye(4)
+    G2[:3,3] = -ground2
+    bounds2 = []
 
-    minsR1 = bounds1[:,0].min(axis=0)
-    maxsR1 = bounds1[:,1].max(axis=0)
-    minsR2 = bounds2[:,0].min(axis=0)
-    maxsR2 = bounds2[:,1].max(axis=0)
+    for i, _ in enumerate(meshes2):
+        poses2[i] = G2@poses2[i]
+        manager2.set_transform(f"{args.robot2}2_{names[i]}", poses2[i])
 
 
+    #bounds1 = np.array(bounds1)
+    #bounds2 = np.array(bounds2)
 
-    maxs = np.max(np.concatenate((maxsR1[None,:], maxsR2[None,:]), axis=0), axis=0)
-    mins = np.min(np.concatenate((minsR1[None,:], minsR2[None,:]), axis=0), axis=0)
+    #minsR1 = bounds1[:,0].min(axis=0)
+    #maxsR1 = bounds1[:,1].max(axis=0)
+    #minsR2 = bounds2[:,0].min(axis=0)
+    #maxsR2 = bounds2[:,1].max(axis=0)
 
-    temporal_max[t] = maxs
-    temporal_min[t] = mins
+
+    #maxs = np.max(np.concatenate((maxsR1[None,:], maxsR2[None,:]), axis=0), axis=0)
+    #mins = np.min(np.concatenate((minsR1[None,:], minsR2[None,:]), axis=0), axis=0)
+
+    #temporal_max[t] = maxs
+    #temporal_min[t] = mins
 
 
     collisions = manager1.in_collision_other(manager2, return_names=True)
@@ -313,15 +340,15 @@ robot1_poses = np.vstack(robot1_poses_all)
 robot2_poses = np.vstack(robot2_poses_all)
 
 
-maxs = np.max(temporal_max, axis=0)
-mins = np.min(temporal_min, axis=0)
+#maxs = np.max(temporal_max, axis=0)
+#mins = np.min(temporal_min, axis=0)
 
 try:
     os.mkdir(f"{robot_folder}/data")
 except:
     pass
 
-final_dict = {"robot_1_poses":robot1_poses, "robot_2_poses":robot2_poses,"scales":(s1,s2), "ws_max":maxs, "ws_min":mins}
+final_dict = {"robot_1_poses":robot1_poses, "robot_2_poses":robot2_poses,"scales":(s1,s2)}
 
 joblib.dump(final_dict, f"{robot_folder}/data/{args.robot1}_prep.pkl")
 joblib.dump(collision_list, os.path.join(f"{robot_folder}/data",f"{args.robot1}_{args.robot2}_collisions.pkl"))

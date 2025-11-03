@@ -71,16 +71,13 @@ data = robot1.data
 q0 = robot1.q0
 
 robot_folder = f"{args.interaction}/{args.robot1}"
-robotoid = Robotoid(robot1, wheeled)
-F, R = robotoid.build()
+robot_folder = f"{args.interaction}/{args.robot1}"
+data_dict = joblib.load(f"{robot_folder}/data/{args.robot1}_prep.pkl")
 
-human1_js = np.load(os.path.join(robot_folder,"data","human1_poses.npy"))
-trans1 = np.load(os.path.join(robot_folder,"data","human1_trans.npy"))
-human2_js = np.load(os.path.join(robot_folder,"data","human2_poses.npy"))
-trans2 = np.load(os.path.join(robot_folder,"data","human2_trans.npy"))
 
-robot1_poses= np.load(f"{robot_folder}/data/{robot_name1}_1_poses.npy")
-robot2_poses = np.load(f"{robot_folder}/data/{robot_name2}_2_poses.npy")
+robot1_poses= data_dict["robot_1_poses"]
+robot2_poses = data_dict["robot_2_poses"]
+s1, s2 = data_dict["scales"]
 
 if  not os.path.exists(f"{robot_folder}/{args.camera_mode}"):  
     os.makedirs(f"{robot_folder}/{args.camera_mode}")
@@ -108,6 +105,15 @@ robot2_cache = preload_robot_meshes(robot2)
 
 cameras = joblib.load(os.path.join(f"{robot_folder}/data",f"{robot_name1}_cameras.pkl"))
 # ------------------- setup pyrender -------------------
+scene_data_path = os.path.join(f"{robot_folder}/data",f"scene_data.pkl")
+
+if os.path.exists(scene_data_path):
+    scene_data = joblib.load(scene_data_path)
+    if "scene_point" in scene_data.keys():
+        scene_point_index = scene_data["scene_point"] 
+else:
+    scene_data = {}
+    scene_point_index = None
 
 
 if args.green_screen == True:
@@ -138,7 +144,12 @@ for name, (mesh, placement, parentFrame) in robot2_cache.items():
 #SET BACKGROUND (IF PRESENT)
 
 if args.scene != None:
-    load_background(pyr_scene, args.scene)
+    #if "estensi" in args.scene or "city" in args.scene:
+    if scene_point_index == None:
+        scene_point, scene_point_index = load_background_manual(pyr_scene, args.scene, scene_point_index=None)
+        scene_data["scene_point"] = scene_point_index
+    else:    
+        scene_point, _ = load_background_manual(pyr_scene, args.scene, scene_point_index=None)
 
 
     
@@ -192,7 +203,7 @@ else:
 
 for t in tqdm(range(n_frames)):
 
-    
+
     i = 0
     robot_pos1 = []
     for node,_,_ in mesh_nodes1:
@@ -200,7 +211,6 @@ for t in tqdm(range(n_frames)):
         node.matrix = T 
         robot_pos1.append(T[:3,3])
         i+= 1
-
     
     robot_pos2 = []
     i = 0
@@ -209,37 +219,23 @@ for t in tqdm(range(n_frames)):
         node.matrix = T 
         robot_pos2.append(T[:3,3])
         i += 1
-
-    # --- scaling ---
-    t1_s = trans1[t].copy()
-    t1_s[2] -= np.min(human1_js[t,:,2])
-    t2_s = trans2[t].copy()
-    t2_s[2] -= np.min(human2_js[t,:,2])
-
-
-    if t == 0:
-        s1, s2 = calculate_scale_factors(human1_js[t],human2_js[t], robot_pos1, robot_pos2)
     
     robot_pos2 = []
     robot_pos1 = []
 
+        
     
-    t1_s *= s1 #scale translations
-    T1 = np.eye(4)
-    T1[:3,3] = t1_s
+
     for node, _, _ in mesh_nodes1:
-        Q = T1 @ node.matrix 
-        Q = Rand_Rz @ Q
+        Q = node.matrix 
+        Q = scene_point@Rand_Rz@Q
         node.matrix = Q # translate nodes in the world 
         robot_pos1.append(Q[:3,3])
-    
-    
-    t2_s *= s2
-    T2 = np.eye(4)
-    T2[:3,3] = t2_s
+
+
     for node, _, _ in mesh_nodes2:
-        Q = T2@node.matrix
-        Q = Rand_Rz @ Q
+        Q = node.matrix
+        Q = scene_point@Rand_Rz@Q
         node.matrix = Q
         robot_pos2.append(Q[:3,3])
 
@@ -282,8 +278,7 @@ for t in tqdm(range(n_frames)):
                 camera_pos = center_pos + 0.5 * horizontal_offset * robot_direction
     
 
-            E = place_camera(camera_mode, camera_pos, target, t=t)
-        
+            E = place_camera(camera_mode, camera_pos, target, t=t)        
             cam_node.matrix = E
         
 
@@ -291,7 +286,7 @@ for t in tqdm(range(n_frames)):
     else:
 
         E = place_camera(camera_mode, cameras, target=None,  t=t, random_rotation=Rand_Rz)
-        cam_node.matrix = E
+        cam_node.matrix = scene_point@ E
 
     if args.bb_mode1:
         for node, _, _ in mesh_nodes2:

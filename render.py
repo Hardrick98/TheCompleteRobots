@@ -76,7 +76,6 @@ data_dict = joblib.load(f"{robot_folder}/data/{args.robot1}_prep.pkl")
 robot1_poses= data_dict["robot_1_poses"]
 robot2_poses = data_dict["robot_2_poses"]
 s1, s2 = data_dict["scales"]
-robot_box = (data_dict["ws_min"],data_dict["ws_max"])
 
 if not os.path.exists(f"{robot_folder}/{args.camera_mode}"):  
     os.makedirs(f"{robot_folder}/{args.camera_mode}")
