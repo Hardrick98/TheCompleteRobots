@@ -144,7 +144,7 @@ for name, (mesh, placement, parentFrame) in robot2_cache.items():
 #SET BACKGROUND (IF PRESENT)
 
 
-scene_point, scene_point_index = load_background_manual(pyr_scene, args.scene, scene_point_index=None, bb_mode= True)
+scene_point = np.eye(4)
 
     
 if not os.path.exists(f"{robot_folder}/data/random_rotation.npy"):

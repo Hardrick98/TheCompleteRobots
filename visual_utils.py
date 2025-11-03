@@ -216,6 +216,7 @@ def load_background_manual(pyr_scene, scene_path, scene_point_index=None):
 
     vertices = []
 
+
     for node_name in scene_mesh.graph.nodes_geometry:
         T, geom_name = scene_mesh.graph[node_name]
         geom = scene_mesh.geometry[geom_name].copy()
@@ -225,6 +226,7 @@ def load_background_manual(pyr_scene, scene_path, scene_point_index=None):
 
         pyr_mesh = pyrender.Mesh.from_trimesh(geom, smooth=True)
         pyr_scene.add(pyr_mesh)
+ 
 
     F = np.eye(4)
 
