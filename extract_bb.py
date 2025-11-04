@@ -2,6 +2,7 @@ from utils import *
 import argparse
 import joblib
 import os
+import cv2
 from tqdm import tqdm
 import numpy as np
 from robotoid import Robotoid
@@ -195,7 +196,8 @@ if not args.debug:
 else:
     n_frames = 1
 
-for t in tqdm(range(n_frames)):
+print("Starting Extraction...")
+for t in range(n_frames):
 
 
     i = 0
@@ -300,7 +302,7 @@ for t in tqdm(range(n_frames)):
         
         if args.bb_mode1 or args.bb_mode2:
             
-            import cv2
+            
             not_green_idx = np.argwhere(np.all(color != [0,255,0], axis=-1))
             
             if not_green_idx.size != 0:

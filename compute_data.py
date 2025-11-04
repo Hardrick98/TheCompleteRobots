@@ -154,7 +154,7 @@ temporal_max = np.zeros((n_frames,3))
 temporal_min = np.zeros((n_frames,3))
 
 
-for t in tqdm(range(len(joint_configurations1))):
+for t in range(len(joint_configurations1)):
 
     q1 = joint_configurations1[t]
     pin.forwardKinematics(robot1.model, robot1.data, q1)

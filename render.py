@@ -210,7 +210,9 @@ if not os.path.exists(f"{robot_folder}/data/random_rotation.npy"):
 else:
     Rand_Rz = np.load(f"{robot_folder}/data/random_rotation.npy")
 
-for t in tqdm(range(n_frames)):
+print("Starting Rendering...")
+
+for t in range(n_frames):
 
 
     i = 0

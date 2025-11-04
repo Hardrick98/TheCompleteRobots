@@ -567,7 +567,7 @@ class Robotoid():
         sequence_num = human_joints_seq.shape[0]
 
 
-        for i in tqdm(range(sequence_num)):
+        for i in range(sequence_num):
         
             human_joints = human_joints_seq[i:i+1][0]
             orientations = orientations_seq[i:i+1][0]

@@ -99,6 +99,7 @@ if __name__ == "__main__":
     path = f"{args.interaction}/{args.robot}/{args.robot}2_errors.npy"
     np.save(path, retarget_errors2)
 
+    print("Retargeting Completed")
     
 
     if args.visualize:
