@@ -560,7 +560,7 @@ class Robotoid():
         H = human_action.get_joint_dict()
 
 
-        print("\nFINDING CONFIGURATIONS...")
+        #print("\nFINDING CONFIGURATIONS...")
 
         joint_configurations = []
         retarget_errors = []
@@ -680,6 +680,10 @@ class Robotoid():
 
         joint_configurations = np.vstack(joint_configurations)
         retarget_errors = np.vstack(retarget_errors)
+        
+        if self.robot.name == "g1":
+            joint_configurations[0] = joint_configurations[1]
+        
 
         return joint_configurations, retarget_errors
 
@@ -695,8 +699,6 @@ class Robotoid():
         human_joints_seq, orientations_seq, translation_seq, global_orient_seq, _, directions_seq = human_action.get_attributes(idx)  
         H = human_action.get_joint_dict()
 
-
-        print("\nFINDING CONFIGURATIONS...")
 
         joint_configurations = []
         sequence_num = human_joints_seq.shape[0]

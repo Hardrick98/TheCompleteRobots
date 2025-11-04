@@ -17,7 +17,7 @@ from visual_utils import preload_robot_meshes, calculate_scale_factors
 
 
 
-robot_cameras_indexes = {"nao": [30,32], "g1":[34, 34], "atlas":[24,24], "pepper":[20,22], "icub":[90,90]}
+robot_cameras_indexes = {"nao": [30,32], "g1":[34, 34], "atlas":[24,24], "pepper":[24,24], "icub":[90,90]}
 
 
 robot_list = [r.removesuffix(".urdf") for r in os.listdir("URDF") if r.endswith(".urdf")]
@@ -67,7 +67,7 @@ smpl_model = SMPLX(
 ).to("cuda:0")
 
 frames_list = robot1.body
-#print(frames_list)
+print(frames_list)
 
 robotoid = Robotoid(robot1, wheeled)
 #F, R = robotoid.build()

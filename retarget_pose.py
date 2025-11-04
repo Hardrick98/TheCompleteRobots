@@ -81,11 +81,16 @@ if __name__ == "__main__":
     human_action1 = HumanAction(action1)
     human_action2 = HumanAction(action2)
 
+    print(idx)
+    
     H = human_action1.get_joint_dict()
     q1, error1 = robotoid1.retarget(human_action1, idx)
     q2, error2 = robotoid2.retarget(human_action2, idx)
 
+    
+    
     q1 = q1[0]
+   
     q2 = q2[0]
 
     

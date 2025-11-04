@@ -153,10 +153,6 @@ if args.scene != None:
     
     #scene_point = load_background_auto(pyr_scene, args.scene, robot_box)
 
-
-
-
-
 #SET LIGHTS
 set_lights(pyr_scene)
 
