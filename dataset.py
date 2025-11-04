@@ -28,6 +28,7 @@ num_samples = len(interactions)*len(robots)
 
 scenes_shuffled = [j for _ in range((num_samples//len(scenes))+1) for j in scenes]
 scenes_shuffled.pop(-1)
+scenes_shuffled.pop(-1)
 
 
 robot_new = [r for _ in range(num_samples // len(robots)) for r in robots]
@@ -38,7 +39,12 @@ interactions_final = [i for i in interactions for _ in range(len(robots))]
 random.shuffle(scenes_shuffled)
 
 
+print(len(interactions_final))
+print(len(robot_new))
+print(len(scenes_shuffled))
+
 table = {"interaction": interactions_final, "robot":robot_new, "scenes":scenes_shuffled}
+
 
 df = pd.DataFrame(table)
 df.to_csv("dataset.csv")
