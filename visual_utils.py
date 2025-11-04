@@ -230,7 +230,7 @@ def load_background_manual(pyr_scene, scene_path, scene_point_index=None):
 
     F = np.eye(4)
 
-    return F, scene_point_index
+    return F, index
 
 
 
