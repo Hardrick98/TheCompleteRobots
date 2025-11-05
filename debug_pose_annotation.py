@@ -12,14 +12,14 @@ args = parser.parse_args()
 
 
 data1 = joblib.load(f"{args.i}/{args.r}/data/{args.r}_1_data.pkl")
-poses1 = data1[args.c]['pose2D_total']
+poses1 = data1[args.c]['pose2D']
 
 if "ego1" not in args.c:
     boxes1 = data1[args.c]['bb2D']
 
 data2 = joblib.load(f"{args.i}/{args.r}/data/{args.r}_2_data.pkl")
 
-poses2 = data2[args.c]['pose2D_total']
+poses2 = data2[args.c]['pose2D']
 if "ego2" not in args.c:
     boxes2 = data2[args.c]['bb2D']
 
