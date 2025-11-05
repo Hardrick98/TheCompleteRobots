@@ -145,7 +145,7 @@ placements = {"room": [[-1,-0.3,0]],
               "estensi_room":[[0,0,0]]}
 
 
-correction_factors = {"baroque_room":0.4, 
+correction_factors = {"baroque_room":0.3, 
               "city":1, 
               "hospital": 0, 
               "office":0,
@@ -188,7 +188,7 @@ def load_background_manual(pyr_scene, scene_path, scene_point_index=None):
                        "city":[[21,9,-0.2],[-5,-5,0],[-10,43,-0.2],[50,43,-0.2],[-31,7,-0.2]],
                        "hospital":[[-1,-1.5,0],[-1,1.5,0],[1,1.5,0],[1,1,0]],
                        "office":[[-3,-4,0],[1,-4,0],[1,6,0],[1,1.5,0],[-1,-0.6,0]],
-                       "baroque_room":[[-1.5,-3.5,-0.4],[2,1,-0.4],[0,0,-0.4]]
+                       "baroque_room":[[-1.5,-3.5,-0.5],[2,1,-0.5],[0,0,-0.5]]
                        }
        
     scene_mesh = trimesh.load_scene(scene_path)
