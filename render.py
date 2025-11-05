@@ -8,6 +8,7 @@ import pyrender
 from scipy.spatial.transform import Rotation as Rot
 import imageio
 from visual_utils import *
+import cv2
 from pose_masks import masks
 
 theta = np.pi / 2 
@@ -144,6 +145,11 @@ for name, (mesh, placement, parentFrame) in robot2_cache.items():
 
 if args.scene != None:
     #if "estensi" in args.scene or "city" in args.scene:
+
+    if args.robot1 == "atlas" and args.scene == "office":
+        scene_point_index = 0
+        scene_data["scene_point"] = scene_point_index
+
     if scene_point_index == None:
         scene_point, scene_point_index = load_background_manual(pyr_scene, args.scene, scene_point_index=None)
         scene_data["scene_point"] = scene_point_index
@@ -189,8 +195,8 @@ poses1_3d_cam = []
 poses2_3d_cam = []
 
 # renderer offscreen
-if not args.debug:
-    r = pyrender.OffscreenRenderer(viewport_width=1280, viewport_height=720)
+
+r = pyrender.OffscreenRenderer(viewport_width=1280, viewport_height=720)
 frames = []
 
 if not args.debug:
@@ -200,15 +206,17 @@ else:
     
 ## Randomly rotate interaction
     
-if not os.path.exists(f"{robot_folder}/data/random_rotation.npy"):
+if "robot_rot" not in scene_data.keys() :
     Rand_Rz =random_rotation()
-    np.save(f"{robot_folder}/data/random_rotation.npy", Rand_Rz)
+    scene_data["robot_rot"] = Rand_Rz
 else:
-    Rand_Rz = np.load(f"{robot_folder}/data/random_rotation.npy")
+    Rand_Rz = scene_data["robot_rot"]
+
+
 
 print("Starting Rendering...")
 
-for t in range(n_frames):
+for t in tqdm(range(n_frames)):
 
 
     i = 0
@@ -246,7 +254,6 @@ for t in range(n_frames):
         node.matrix = Q
         robot_pos2.append(Q[:3,3])
 
-    
 
     robot_pos1 = np.vstack(robot_pos1)
     robot_pos2 = np.vstack(robot_pos2)
@@ -260,11 +267,20 @@ for t in range(n_frames):
             target = (robot1_center + robot2_center) / 2.0
 
             direction = robot2_center - robot1_center
-            direction[2] = 0
+            direction[2] = 0            
             direction /= np.linalg.norm(direction)
 
             rot_axis = np.array([0, 0, 1.0])  # ruota attorno all'asse Z
-            rot = Rot.from_rotvec(rot_axis * np.pi/2).as_matrix()
+
+            if "exo_rot" not in scene_data.keys():
+                theta = random.uniform(0, 2*np.pi)
+                scene_data["exo_rot"] = theta
+            else:
+                theta = scene_data["exo_rot"]
+
+            #INSERT RANDOM THETA
+
+            rot = Rot.from_rotvec(rot_axis * theta).as_matrix()
             robot_direction = direction.copy()
             direction = rot @ direction
             
@@ -279,17 +295,21 @@ for t in range(n_frames):
 
             center_pos = target - direction * distance_back + np.array([0, 0, vertical_offset])
 
+            E = place_camera(camera_mode, center_pos, target, t=t)
+
+            camera_y_axis = E[:3, 0]
+
+            camera_y_axis /= np.linalg.norm(camera_y_axis)
+
+            # Applica l'offset lungo Y della camera (positivo o negativo)
             if camera_mode == "exoL":
-                camera_pos = center_pos - 0.5 * horizontal_offset * robot_direction
+                camera_pos = center_pos - 0.5 * horizontal_offset * camera_y_axis
             else:
-                camera_pos = center_pos + 0.5 * horizontal_offset * robot_direction
-    
+                camera_pos = center_pos + 0.5 * horizontal_offset * camera_y_axis
 
             E = place_camera(camera_mode, camera_pos, target, t=t)
-            camera_params["E"].append(E[None,:,:])
-        
+            camera_params["E"].append(E[None, :, :])
             cam_node.matrix = E
-        
 
 
     else:
@@ -343,7 +363,10 @@ for t in range(n_frames):
             imageio.imwrite(f"{args.interaction}/{args.robot1}/{args.camera_mode}/frame_{t:05d}.png", color)
     
 if args.debug:
-    pyrender.Viewer(pyr_scene, use_raymond_lighting=True) 
+    pyrender.Viewer(pyr_scene, use_raymond_lighting=True)
+    color, _ = r.render(pyr_scene)
+    cv2.imwrite("test_image.png", color[:,:,::-1])
+     
 # ------------------- save video -------------------
 
 if not args.debug:

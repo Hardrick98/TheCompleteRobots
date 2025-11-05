@@ -137,13 +137,6 @@ def calculate_scale_factors(human1, human2, robot1, robot2):
         return s1,s2
 
 
-placements = {"room": [[-1,-0.3,0]], 
-              "baroque_room":[[-1,-0.5,0]], 
-              "city":[[-1,-0.3,0]], 
-              "hospital":[[-1,0,0],[-1.8,0,0]], 
-              "estensi_hallway":[[-40,35,-0.1]],
-              "estensi_room":[[0,0,0]]}
-
 
 correction_factors = {"baroque_room":0.3, 
               "city":1, 
@@ -187,7 +180,7 @@ def load_background_manual(pyr_scene, scene_path, scene_point_index=None):
                        "estensi_room":[[0,0,0.6],[-3,-4,0.6],[3,-4,0.6],[4,-5,0.6]], 
                        "city":[[21,9,-0.2],[-5,-5,0],[-10,43,-0.2],[50,43,-0.2],[-31,7,-0.2]],
                        "hospital":[[-1,-1.5,0],[-1,1.5,0],[1,1.5,0],[1,1,0]],
-                       "office":[[-3,-4,0],[1,-4,0],[1,6,0],[1,1.5,0],[-1,-0.6,0]],
+                       "office":[[0,-4,0],[1,-4,0],[1,-3,0],[1,1.5,0],[-1,-0.6,0]],
                        "baroque_room":[[-1.5,-3.5,-0.5],[2,1,-0.5],[0,0,-0.5]]
                        }
        
@@ -271,22 +264,19 @@ def load_background_auto(pyr_scene, scene_path, robot_box, max_tries=2):
         pyr_scene.add(pyr_mesh)
 
     all_points = np.vstack(vertices)
-    
 
-    # Calcoli base scena
     scene_mins = np.min(all_points, axis=0)
     scene_maxs = np.max(all_points, axis=0)
 
     floor_z = float(scene_mins[2])
-    # Limiti di posizionamento con margine
+
     padding = 1
     safe_mins = scene_mins + padding
     safe_maxs = scene_maxs - offset - padding
 
-    # Ricerca posizione valida
     best_scene = np.array([0,0,0])
     best_coll = 100
-    threshold = 0.1  # 2 cm: distanza minima accettabile dagli oggetti
+    threshold = 0.1  
 
     for tries in range(max_tries):
         scene_point = np.array([
@@ -299,7 +289,6 @@ def load_background_auto(pyr_scene, scene_path, robot_box, max_tries=2):
         maxs = robot_max + scene_point
         coll = check_collision(mins, maxs, all_points, scene_point)
 
-        # Se è libero oltre la soglia → accettalo
         if coll < threshold:
             final = np.eye(4)
             final[:3, 3] = scene_point
@@ -309,8 +298,6 @@ def load_background_auto(pyr_scene, scene_path, robot_box, max_tries=2):
         if coll  < best_coll:
             best_coll = coll
             best_scene = scene_point
-
-    # Nessuna posizione libera trovata
     print(f"Nessuna posizione totalmente libera trovata dopo {max_tries} tentativi.")
 
     final = np.eye(4)

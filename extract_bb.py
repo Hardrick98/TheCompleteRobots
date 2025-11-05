@@ -148,11 +148,11 @@ for name, (mesh, placement, parentFrame) in robot2_cache.items():
 scene_point = np.eye(4)
 
     
-if not os.path.exists(f"{robot_folder}/data/random_rotation.npy"):
+if "robot_rot" not in scene_data.keys() :
     Rand_Rz =random_rotation()
-    np.save(f"{robot_folder}/data/random_rotation.npy", Rand_Rz)
+    scene_data["robot_rot"] = Rand_Rz
 else:
-    Rand_Rz = np.load(f"{robot_folder}/data/random_rotation.npy")
+    Rand_Rz = scene_data["robot_rot"]
 
 
 #SET LIGHTS
@@ -249,11 +249,20 @@ for t in range(n_frames):
             target = (robot1_center + robot2_center) / 2.0
 
             direction = robot2_center - robot1_center
-            direction[2] = 0
+            direction[2] = 0            
             direction /= np.linalg.norm(direction)
 
             rot_axis = np.array([0, 0, 1.0])  # ruota attorno all'asse Z
-            rot = Rot.from_rotvec(rot_axis * np.pi/2).as_matrix()
+
+            if "exo_rot" not in scene_data.keys():
+                theta = random.uniform(0, 2*np.pi)
+                scene_data["exo_rot"] = theta
+            else:
+                theta = scene_data["exo_rot"]
+
+            #INSERT RANDOM THETA
+
+            rot = Rot.from_rotvec(rot_axis * theta).as_matrix()
             robot_direction = direction.copy()
             direction = rot @ direction
             
@@ -268,13 +277,20 @@ for t in range(n_frames):
 
             center_pos = target - direction * distance_back + np.array([0, 0, vertical_offset])
 
-            if camera_mode == "exoL":
-                camera_pos = center_pos - 0.5 * horizontal_offset * robot_direction
-            else:
-                camera_pos = center_pos + 0.5 * horizontal_offset * robot_direction
-    
+            E = place_camera(camera_mode, center_pos, target, t=t)
 
-            E = place_camera(camera_mode, camera_pos, target, t=t)        
+            camera_y_axis = E[:3, 0]
+
+            camera_y_axis /= np.linalg.norm(camera_y_axis)
+
+            # Applica l'offset lungo Y della camera (positivo o negativo)
+            if camera_mode == "exoL":
+                camera_pos = center_pos - 0.5 * horizontal_offset * camera_y_axis
+            else:
+                camera_pos = center_pos + 0.5 * horizontal_offset * camera_y_axis
+
+            E = place_camera(camera_mode, camera_pos, target, t=t)
+        
             cam_node.matrix = E
         
 
