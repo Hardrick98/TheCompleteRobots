@@ -119,7 +119,7 @@ if args.frames:
 if args.green_screen == True:
     pyr_scene = pyrender.Scene(ambient_light=[0.5,0.5,0.5],bg_color=[0,255,0])
 else:
-    pyr_scene = pyrender.Scene(ambient_light=[0.5,0.5,0.5],bg_color=[255,255,255])
+    pyr_scene = pyrender.Scene(ambient_light=[0.5,0.5,0.5],bg_color=[0,0,0])
 
 
 mesh_nodes1 = []
