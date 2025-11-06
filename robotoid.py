@@ -23,7 +23,7 @@ class Robotoid():
         self.collision_model = robot.collision_model
         self.solver = EvolvedInverseKinematicSolver(self.model,self.data)
         self.wheeled = wheeled
-        if robot.name == "g1" or robot.name == "pepper":
+        if robot.name in ["g1","pepper","icub"]:
             self.N, self.J = self.manual_build(robot.name)
         else:
             self.N, self.J = self.build()
@@ -437,7 +437,7 @@ class Robotoid():
 
 
         #print("\n")
-        #print("Defined Chains:\n", robotoid_labels)
+        print("Defined Chains:\n", robotoid_labels)
         #print("\n")
 
         final = {}
@@ -505,7 +505,12 @@ class Robotoid():
                      1: [['LShoulderPitch', 'LShoulderRoll'], ['LElbowYaw', 'LElbowRoll'], ['LWristYaw']], 
                      2: [['RShoulderPitch', 'RShoulderRoll'], ['RElbowYaw', 'RElbowRoll'], ['RWristYaw']], 
                      3: [['HipRoll', 'HipPitch', 'KneePitch']], 
-                     4: [['WheelB', 'WheelFR', 'WheelFL']]}}
+                     4: [['WheelB', 'WheelFR', 'WheelFL']]},
+          "icub":{0: [['neck_pitch', 'neck_roll','neck_yaw',]], 
+           1: [['r_shoulder_pitch', 'r_shoulder_roll', 'r_shoulder_yaw'], ['r_elbow', 'r_wrist_prosup'], ['r_wrist_pitch', 'r_wrist_yaw']], 
+           2: [['l_shoulder_pitch', 'l_shoulder_roll', 'l_shoulder_yaw'], ['l_elbow', 'l_wrist_prosup'], ['l_wrist_pitch', 'l_wrist_yaw']],  
+           3: [['r_hip_pitch', 'r_hip_roll', 'r_hip_yaw'], ['r_knee'], ['r_ankle_pitch', 'r_ankle_roll']],
+           4: [['l_hip_pitch', 'l_hip_roll', 'l_hip_yaw'], ['l_knee'], ['l_ankle_pitch', 'l_ankle_roll']]}}
 
         robotoid_labels = chains[robot_name]
         
@@ -513,13 +518,20 @@ class Robotoid():
 
         final["Head"] = robotoid_labels[0][0]
 
-        
-        final["LShoulder"] = robotoid_labels[1][0]
-        final["LElbow"] = robotoid_labels[1][1]
-        final["LWrist"] = robotoid_labels[1][2]
-        final["RShoulder"] = robotoid_labels[2][0]
-        final["RElbow"] = robotoid_labels[2][1]
-        final["RWrist"] = robotoid_labels[2][2]
+        if  robot_name == 'g1':
+            final["LShoulder"] = robotoid_labels[1][0]
+            final["LElbow"] = robotoid_labels[1][1]
+            final["LWrist"] = robotoid_labels[1][2]
+            final["RShoulder"] = robotoid_labels[2][0]
+            final["RElbow"] = robotoid_labels[2][1]
+            final["RWrist"] = robotoid_labels[2][2]
+        elif robot_name == 'icub':
+            final["LShoulder"] = robotoid_labels[2][0]
+            final["LElbow"] = robotoid_labels[2][1]
+            final["LWrist"] = robotoid_labels[2][2]
+            final["RShoulder"] = robotoid_labels[1][0]
+            final["RElbow"] = robotoid_labels[1][1]
+            final["RWrist"] = robotoid_labels[1][2]
         
               
         if  robot_name == 'g1':
@@ -529,6 +541,13 @@ class Robotoid():
             final["RHip"] = robotoid_labels[4][0]
             final["RKnee"] = robotoid_labels[4][1]
             final["RAnkle"] = robotoid_labels[4][2]
+        elif  robot_name == 'icub':
+            final["LHip"] = robotoid_labels[4][0]
+            final["LKnee"] = robotoid_labels[4][1]
+            final["LAnkle"] = robotoid_labels[4][2]
+            final["RHip"] = robotoid_labels[3][0]
+            final["RKnee"] = robotoid_labels[3][1]
+            final["RAnkle"] = robotoid_labels[3][2]
         else:
          
             final["Hip"] = robotoid_labels[3][0][0:2]
@@ -645,14 +664,21 @@ class Robotoid():
             
             
 
-            target_orientations_global  = {
-                self.N["RWrist"]: [directions[H["RWrist"]], self.cR], 
-                self.N["LWrist"]: [directions[H["LWrist"]], self.cL],
-                #self.N["LAnkle"]: [directions[H["LAnkle"]], [1,0,0]],
-                #self.N["RAnkle"]: [directions[H["LAnkle"]], [1,0,0]],
-                self.N["Head"]: [directions[H["Head"]], [1,0,0]] #to verify
-    }
-            
+            if self.robot.name == "icub":
+                target_orientations_global  = {
+                    self.N["RWrist"]: [directions[H["RWrist"]], self.cR], 
+                    self.N["LWrist"]: [directions[H["LWrist"]], self.cL],
+                }
+            else:
+                target_orientations_global  = {
+                    self.N["RWrist"]: [directions[H["RWrist"]], self.cR], 
+                    self.N["LWrist"]: [directions[H["LWrist"]], self.cL],
+                    self.N["Head"]: [directions[H["Head"]], [1,0,0]]
+                    #self.N["LAnkle"]: [directions[H["LAnkle"]], [1,0,0]],
+                    #self.N["RAnkle"]: [directions[H["LAnkle"]], [1,0,0]],
+                    
+                }
+                
             frame_names = [k for k,v in target_orientations_global.items()]
             frame_ids = [self.model.getFrameId(f) for f in frame_names]
 
