@@ -26,9 +26,13 @@ for l in labels:
 
 num_samples = len(interactions)*len(robots)
 
-scenes_shuffled = [j for _ in range((num_samples//len(scenes))+1) for j in scenes]
-scenes_shuffled.pop(-1)
-scenes_shuffled.pop(-1)
+print(num_samples)
+print(len(scenes))
+
+scenes_shuffled = [j for _ in range((num_samples//len(scenes))) for j in scenes]
+
+if num_samples%len(scenes) != 0:
+    scenes_shuffled = scenes_shuffled[:num_samples]
 
 
 robot_new = [r for _ in range(num_samples // len(robots)) for r in robots]
