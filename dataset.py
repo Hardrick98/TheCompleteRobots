@@ -29,7 +29,7 @@ num_samples = len(interactions)*len(robots)
 print(num_samples)
 print(len(scenes))
 
-scenes_shuffled = [j for _ in range((num_samples//len(scenes))) for j in scenes]
+scenes_shuffled = [j for _ in range((num_samples//len(scenes))+1) for j in scenes]
 
 if num_samples%len(scenes) != 0:
     scenes_shuffled = scenes_shuffled[:num_samples]
