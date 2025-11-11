@@ -383,8 +383,16 @@ pose2D_1 = np.vstack(np.array(poses1_2d)[None,:,:])[:,masks[args.robot1],:]
 pose2D_2 = np.vstack(np.array(poses2_2d)[None,:,:])[:,masks[args.robot2],:]
 
 if args.robot1 == "g1":
-    pose2D_1[1] = (pose2D_1[5] + pose2D_1[11])/2
-    pose2D_2[1] = (pose2D_2[5] + pose2D_2[11])/2
+    pose2D_1[:,1] = (pose2D_1[:,5] + pose2D_1[:,11])/2
+    pose2D_2[:,1] = (pose2D_2[:,5] + pose2D_2[:,11])/2
+
+mask = (pose2D_1[:,:,0] > 1280) | (pose2D_1[:,:,0] < 0) | \
+       (pose2D_1[:,:,1] > 720)  | (pose2D_1[:,:,1] < 0)
+pose2D_1[mask] = -1
+
+mask = (pose2D_2[:,:,0] > 1280) | (pose2D_2[:,:,0] < 0) | \
+       (pose2D_2[:,:,1] > 720)  | (pose2D_2[:,:,1] < 0)
+pose2D_2[mask] = -1
 
 data1[args.camera_mode]["pose2D"] = pose2D_1
 data2[args.camera_mode]["pose2D"] = pose2D_2
@@ -405,8 +413,8 @@ pose3D_1 = np.vstack(np.array(poses1_3d_cam)[None,:,:])[:,masks[args.robot1],:]
 pose3D_2 = np.vstack(np.array(poses2_3d_cam)[None,:,:])[:,masks[args.robot2],:]
 
 if args.robot1 == "g1":
-    pose3D_1[1] = (pose3D_1[5] + pose3D_1[11])/2
-    pose3D_2[1] = (pose3D_2[5] + pose3D_2[11])/2
+    pose3D_1[:,1] = (pose3D_1[:,5] + pose3D_1[:,11])/2
+    pose3D_2[:,1] = (pose3D_2[:,5] + pose3D_2[:,11])/2
 
 data1[args.camera_mode]["pose3D"]  = pose3D_1
 data2[args.camera_mode]["pose3D"]  = pose3D_2
