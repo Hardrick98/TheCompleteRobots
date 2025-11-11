@@ -518,7 +518,7 @@ class Robotoid():
 
         final["Head"] = robotoid_labels[0][0]
 
-        if  robot_name == 'g1':
+        if  robot_name == 'g1' or robot_name=='pepper':
             final["LShoulder"] = robotoid_labels[1][0]
             final["LElbow"] = robotoid_labels[1][1]
             final["LWrist"] = robotoid_labels[1][2]
