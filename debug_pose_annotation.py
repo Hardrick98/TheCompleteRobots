@@ -11,6 +11,8 @@ parser.add_argument("-r", type=str)
 args = parser.parse_args()
 
 
+collisions = joblib.load(f"{args.i}/{args.r}/data/{args.r}_{args.r}_collisions.pkl")
+
 data1 = joblib.load(f"{args.i}/{args.r}/data/{args.r}_1_data.pkl")
 poses1 = data1[args.c]['pose2D']
 
@@ -33,6 +35,9 @@ out = cv2.VideoWriter(f"{args.r}_{args.c}.mp4", fourcc, 120, (1280, 720))
 for i in tqdm(range(len(frames))):
         
     image = cv2.imread(frames[i])
+
+    if len(collisions[i])>0:
+        cv2.putText(image, text="COLLISION", org=(500,100), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=2, color=(0,0,255), thickness=4)
 
     for p in poses1[i]:
         cv2.circle(image,center=(int(p[0]),int(p[1])),radius=2,color=(0,0,255),thickness=2)

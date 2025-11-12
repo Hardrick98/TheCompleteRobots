@@ -1,11 +1,3 @@
 echo "Starting Retargeting"
 
-python retarget_motion.py --robot $3 --interaction $1
-python compute_data.py --robot1 $3 --robot2 $3 --interaction $1
-
-echo "Rendering videos..."
-
-python render.py --interaction $1 --robot1 $3 --robot2 $3 --scene $2 --video $1 --camera_mode $4
-#python extract_bb.py --interaction $1 --robot1 $3 --robot2 $3 --green_screen --camera_mode exoL --bb_mode1
-
-#python remove_auxiliary_files.py -i $1
+python debug_pose_annotation.py -i $1 -r "g1" -c "exoR"
