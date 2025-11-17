@@ -153,16 +153,21 @@ FINAL NOTE: If you can't load the data with pickle, i suggest to:
 
 <table align="center">
   <tr>
+    <td align="center" colspan="3">
+      <h3>NAO — Multi-View Visualization</h3>
+    </td>
+  </tr>
+  <tr>
     <td align="center">
-      <img src="images/nao_exoR.gif" width="400"/><br>
+      <img src="gifs/nao_exoR.gif" width="400"/><br>
       <sub>Exo Camera L</sub>
     </td>
     <td align="center">
-      <img src="images/nao_ego1R.gif" width="400"/><br>
+      <img src="gifs/nao_ego1R.gif" width="400"/><br>
       <sub>Exo Camera R</sub>
     </td>
     <td align="center">
-      <img src="images/nao_ego2R.gif" width="400"/><br>
+      <img src="gifs/nao_ego2R.gif" width="400"/><br>
       <sub>Exo Camera</sub>
     </td>
   </tr>
@@ -198,6 +203,40 @@ FINAL NOTE: If you can't load the data with pickle, i suggest to:
     </td>
     <td align="center">
       <img src="gifs/icub_ego2R.gif" width="400"/><br>
+      <sub>Nao2 Camera R</sub>
+    </td>
+  </tr>
+</table>
+
+<table align="center">
+  <tr>
+    <td align="center">
+      <img src="gifs/pepper_exoR.gif" width="400"/><br>
+      <sub>Nao2 Camera L</sub>
+    </td>
+    <td align="center">
+      <img src="gifs/pepper_ego1R.gif" width="400"/><br>
+      <sub>Nao2 Camera R</sub>
+    </td>
+    <td align="center">
+      <img src="gifs/pepper_ego2R.gif" width="400"/><br>
+      <sub>Nao2 Camera R</sub>
+    </td>
+  </tr>
+</table>
+
+<table align="center">
+  <tr>
+    <td align="center">
+      <img src="gifs/atlas_exoL.gif" width="400"/><br>
+      <sub>Nao2 Camera L</sub>
+    </td>
+    <td align="center">
+      <img src="gifs/atlas_ego1L.gif" width="400"/><br>
+      <sub>Nao2 Camera R</sub>
+    </td>
+    <td align="center">
+      <img src="gifs/atlas_ego2L.gif" width="400"/><br>
       <sub>Nao2 Camera R</sub>
     </td>
   </tr>
