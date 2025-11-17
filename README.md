@@ -154,93 +154,111 @@ FINAL NOTE: If you can't load the data with pickle, i suggest to:
 <table align="center">
   <tr>
     <td align="center" colspan="3">
-      <h3>NAO — Multi-View Visualization</h3>
+      <h3>NAO — PULL</h3>
     </td>
   </tr>
   <tr>
     <td align="center">
       <img src="gifs/nao_exoR.gif" width="400"/><br>
-      <sub>Exo Camera L</sub>
+      <sub>Exo Camera</sub>
     </td>
     <td align="center">
       <img src="gifs/nao_ego1R.gif" width="400"/><br>
-      <sub>Exo Camera R</sub>
+      <sub>Ego Camera 1 R</sub>
     </td>
     <td align="center">
       <img src="gifs/nao_ego2R.gif" width="400"/><br>
-      <sub>Exo Camera</sub>
+      <sub>Ego Camera 2 R</sub>
     </td>
   </tr>
 </table>
 
 
 <table align="center">
+  <tr>
+    <td align="center" colspan="3">
+      <h3>G1 — KICK</h3>
+    </td>
+  </tr>
   <tr>
     <td align="center">
       <img src="gifs/g1_exoR.gif" width="400"/><br>
-      <sub>Nao1 Camera L</sub>
+      <sub>Exo Camera</sub>
     </td>
     <td align="center">
       <img src="gifs/g1_ego1R.gif" width="400"/><br>
-      <sub>Nao1 Camera R</sub>
+      <sub>Ego Camera 1 R</sub>
     </td>
     <td align="center">
       <img src="gifs/g1_ego2R.gif" width="400"/><br>
-      <sub>G1 Camera</sub>
+      <sub>Ego Camera 2 R</sub>
     </td>
   </tr>
 </table>
 
 <table align="center">
+  <tr>
+    <td align="center" colspan="3">
+      <h3>ICUB — HUG</h3>
+    </td>
+  </tr>
   <tr>
     <td align="center">
       <img src="gifs/icub_exoR.gif" width="400"/><br>
-      <sub>Nao2 Camera L</sub>
+      <sub>Exo Camera</sub>
     </td>
     <td align="center">
       <img src="gifs/icub_ego1R.gif" width="400"/><br>
-      <sub>Nao2 Camera R</sub>
+      <sub>Ego Camera 1 R</sub>
     </td>
     <td align="center">
       <img src="gifs/icub_ego2R.gif" width="400"/><br>
-      <sub>Nao2 Camera R</sub>
+      <sub>Ego Camera 2 R</sub>
     </td>
   </tr>
 </table>
 
 <table align="center">
+  <tr>
+    <td align="center" colspan="3">
+      <h3>PEPPER — LINK ARMS</h3>
+    </td>
+  </tr>
   <tr>
     <td align="center">
       <img src="gifs/pepper_exoR.gif" width="400"/><br>
-      <sub>Nao2 Camera L</sub>
+      <sub>Exo Camera</sub>
     </td>
     <td align="center">
       <img src="gifs/pepper_ego1R.gif" width="400"/><br>
-      <sub>Nao2 Camera R</sub>
+      <sub>Ego Camera 1 R</sub>
     </td>
     <td align="center">
       <img src="gifs/pepper_ego2R.gif" width="400"/><br>
-      <sub>Nao2 Camera R</sub>
+      <sub>Ego Camera 2 R</sub>
     </td>
   </tr>
 </table>
 
 <table align="center">
   <tr>
+    <td align="center" colspan="3">
+      <h3>ATLAS — TOUCH FACE</h3>
+    </td>
+  </tr>
+  <tr>
     <td align="center">
       <img src="gifs/atlas_exoL.gif" width="400"/><br>
-      <sub>Nao2 Camera L</sub>
+      <sub>Exo Camera</sub>
     </td>
     <td align="center">
       <img src="gifs/atlas_ego1L.gif" width="400"/><br>
-      <sub>Nao2 Camera R</sub>
+      <sub>Ego Camera 1 R</sub>
     </td>
     <td align="center">
       <img src="gifs/atlas_ego2L.gif" width="400"/><br>
-      <sub>Nao2 Camera R</sub>
+      <sub>Ego Camera 2 R</sub>
     </td>
   </tr>
 </table>
 
-
-The displayed action is **Slap**.
