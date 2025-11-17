@@ -154,15 +154,15 @@ FINAL NOTE: If you can't load the data with pickle, i suggest to:
 <table align="center">
   <tr>
     <td align="center">
-      <img src="images/nao_exoL.gif" width="400"/><br>
+      <img src="images/nao_exoR.gif" width="400"/><br>
       <sub>Exo Camera L</sub>
     </td>
     <td align="center">
-      <img src="images/nao_exoR.gif" width="400"/><br>
+      <img src="images/nao_ego1R.gif" width="400"/><br>
       <sub>Exo Camera R</sub>
     </td>
     <td align="center">
-      <img src="images/g1_exo.gif" width="400"/><br>
+      <img src="images/nao_ego2R.gif" width="400"/><br>
       <sub>Exo Camera</sub>
     </td>
   </tr>
@@ -172,15 +172,15 @@ FINAL NOTE: If you can't load the data with pickle, i suggest to:
 <table align="center">
   <tr>
     <td align="center">
-      <img src="images/nao_ego1L.gif" width="400"/><br>
+      <img src="gifs/g1_exoR.gif" width="400"/><br>
       <sub>Nao1 Camera L</sub>
     </td>
     <td align="center">
-      <img src="images/nao_ego1R.gif" width="400"/><br>
+      <img src="gifs/g1_ego1R.gif" width="400"/><br>
       <sub>Nao1 Camera R</sub>
     </td>
     <td align="center">
-      <img src="images/g1_ego1.gif" width="400"/><br>
+      <img src="gifs/g1_ego2R.gif" width="400"/><br>
       <sub>G1 Camera</sub>
     </td>
   </tr>
@@ -189,15 +189,15 @@ FINAL NOTE: If you can't load the data with pickle, i suggest to:
 <table align="center">
   <tr>
     <td align="center">
-      <img src="images/nao_ego2L.gif" width="400"/><br>
+      <img src="gifs/icub_exoR.gif" width="400"/><br>
       <sub>Nao2 Camera L</sub>
     </td>
     <td align="center">
-      <img src="images/nao_ego2R.gif" width="400"/><br>
+      <img src="gifs/icub_ego1R.gif" width="400"/><br>
       <sub>Nao2 Camera R</sub>
     </td>
     <td align="center">
-      <img src="images/g1_ego2.gif" width="400"/><br>
+      <img src="gifs/icub_ego2R.gif" width="400"/><br>
       <sub>Nao2 Camera R</sub>
     </td>
   </tr>
