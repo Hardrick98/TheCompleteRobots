@@ -1,1 +1,0 @@
-#ffmpeg -i human_play.mp4 -vf "fps=30,scale=600:-1:flags=lanczos" -gifflags -transdiff -y human_play.gif
