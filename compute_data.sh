@@ -2,7 +2,7 @@
 #SBATCH --job-name=complete
 #SBATCH --output="logs/last.out"
 #SBATCH --partition=boost_usr_prod
-#SBATCH --gres=gpu:a100:1
+#SBATCH --gres=gpu:0
 #SBATCH --account=IscrC_SDG-GS
 #SBATCH --time=02:00:00
 #SBATCH --mem=40G

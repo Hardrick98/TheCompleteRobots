@@ -394,8 +394,6 @@ mask = (pose2D_2[:,:,0] > 1280) | (pose2D_2[:,:,0] < 0) | \
        (pose2D_2[:,:,1] > 720)  | (pose2D_2[:,:,1] < 0)
 pose2D_2[mask] = -1
 
-data1[args.camera_mode]["pose2D"] = pose2D_1
-data2[args.camera_mode]["pose2D"] = pose2D_2
 
 
 
@@ -419,7 +417,20 @@ if args.robot1 == "g1":
 data1[args.camera_mode]["pose3D"]  = pose3D_1
 data2[args.camera_mode]["pose3D"]  = pose3D_2
 
-#1 = 5 + 11
+
+mask1 = (pose3D_1[:,:,2] > 0)
+
+pose2D_1 = pose2D_1.copy()
+pose2D_1[mask1, :] = -1
+
+mask2 = (pose3D_2[:,:,2] > 0)
+
+pose2D_2 = pose2D_2.copy()
+pose2D_2[mask1, :] = -1
+
+
+data1[args.camera_mode]["pose2D"] = pose2D_1
+data2[args.camera_mode]["pose2D"] = pose2D_2
 
 camera_params["E"] = np.vstack(camera_params["E"])
 
