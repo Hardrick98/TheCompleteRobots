@@ -15,7 +15,7 @@ class HumanoidRobot:
         self.pose_dict, self.abs_pose = self.get_joints(self.q0)
         self.collision_model = self.robot.collision_model
         self.visual_model = self.robot.visual_model
-        self.body, self.joints = self.get_frames()
+        self.body, self.joints, self.fixed = self.get_frames()
         self.name = urdf_path.split("/")[-1].removesuffix(".urdf")
 
           # Initial configuration
@@ -53,13 +53,16 @@ class HumanoidRobot:
     def get_frames(self):
         body = {}
         joints = {}
+        fixed = {}
         for i, frame in enumerate(self.model.frames):
             if frame.type == pin.FrameType.BODY:
                 body[frame.name] = i
-            if frame.type == pin.FrameType.JOINT:
+            elif frame.type == pin.FrameType.JOINT:
                 joints[frame.name] = i
+            else:
+                fixed[frame.name] = i
             
-        return body, joints
+        return body, joints, fixed
     
     def get_links_positions(self, q0):
        pin.forwardKinematics(self.model, self.data, q0)
@@ -132,7 +135,6 @@ class HumanoidRobot:
     
         
         filtered_joints = [self.abs_pose[i[0]] for i in joints]
-        
         
         return np.vstack(filtered_joints), new_limbs
     
@@ -454,12 +456,10 @@ def get_camera_placement(robot, frame_number, trans, robot_name = None, stereo=N
     R = camera_placement.rotation
     p = camera_placement.translation
     
+
     T = np.eye(4)
     T[:3, :3] = R
     T[:3, 3] = p
-
-    
-    T = T@camera_base
 
     if robot_name != "nao":
         
@@ -468,7 +468,10 @@ def get_camera_placement(robot, frame_number, trans, robot_name = None, stereo=N
         right = np.cross(forward, up)
         right /= np.linalg.norm(right)
 
-        d = 0.05  # distanza in metri (10 cm)
+        if robot_name != "atlas":
+            d = 0.05  # distanza in metri (10 cm)
+        else:
+            d = 0.02
 
         T_left  = T.copy()
         T_right = T.copy()

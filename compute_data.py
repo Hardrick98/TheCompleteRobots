@@ -55,6 +55,11 @@ except Exception as e:
 
 pose_dict, robot_joints = robot1.get_joints(robot1.q0)
 _, robot_limbs = robot1.get_physical_joints()
+a,b,c = robot1.get_frames()
+
+print(a)
+print(b)
+print(c)
 
 model = robot1.model
 data = robot1.data
@@ -67,7 +72,7 @@ smpl_model = SMPLX(
 ).to("cuda:0")
 
 frames_list = robot1.body
-print(frames_list)
+
 
 robotoid = Robotoid(robot1, wheeled)
 #F, R = robotoid.build()
@@ -140,6 +145,7 @@ names = []
 for name, (base_mesh, placement, frame) in robot1_cache.items():
     manager1.add_object(name=f"{args.robot1}1_{name}", mesh=base_mesh)
     names.append(name)
+
 
 for name, (base_mesh, placement, frame) in robot2_cache.items():
     manager2.add_object(name=f"{args.robot2}2_{name}", mesh=base_mesh)
@@ -316,6 +322,7 @@ for t in range(len(joint_configurations1)):
         R[:3,:3] = np.linalg.inv(Rz)
         R[:3,3] = np.array([0,-0.2,0.05]) #Valore che sarebbe da vedere bene
         camera_base = camera_base @ R
+
     if t==0:
         if args.robot1 == "g1":
             R = np.eye(4)
@@ -324,10 +331,12 @@ for t in range(len(joint_configurations1)):
             camera_base = camera_base @ R
 
 
-    camera1L = get_camera_placement(robot1, robot1_camera_left, T1, robot_name= args.robot1, stereo="L", camera_base=camera_base)
-    camera1R = get_camera_placement(robot1, robot1_camera_right, T1, robot_name= args.robot1, stereo="R",camera_base=camera_base)
-    camera2L = get_camera_placement(robot2, robot2_camera_left, T2, robot_name= args.robot2, stereo="L", camera_base=camera_base)
-    camera2R = get_camera_placement(robot2, robot2_camera_right, T2, robot_name= args.robot2, stereo="R", camera_base=camera_base)
+    camera1L = get_camera_placement(robot1, robot1_camera_left, G1@T1, robot_name= args.robot1, stereo="L", camera_base=camera_base)
+    camera1R = get_camera_placement(robot1, robot1_camera_right, G1@T1, robot_name= args.robot1, stereo="R",camera_base=camera_base)
+    camera2L = get_camera_placement(robot2, robot2_camera_left, G2@T2, robot_name= args.robot2, stereo="L", camera_base=camera_base)
+    camera2R = get_camera_placement(robot2, robot2_camera_right, G2@T2, robot_name= args.robot2, stereo="R", camera_base=camera_base)
+
+
 
     cameras["ego1L"].append(camera1L)
     cameras["ego1R"].append(camera1R)

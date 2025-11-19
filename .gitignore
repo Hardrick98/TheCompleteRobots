@@ -20,7 +20,6 @@ credits.txt
 *.png
 *.txt
 *.ipynb
-visualize_data.ipynb
 create_subfolders.py
 logs/
 fix_annotations.py
