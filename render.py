@@ -326,13 +326,20 @@ for t in tqdm(range(n_frames)):
     p_camera = (np.linalg.inv(E) @ robot_pos1_exp.T).T  
 
     p_camera = p_camera[:, :3]  
+    mask = p_camera[:, 2] < 0
+
+    # Applica la mask
+    p_camera_visible = p_camera[mask]
 
     poses1_3d_cam.append(p_camera)
 
-    pixels_h = (K @ p_camera.T).T 
+    pixels_h = (K @ p_camera_visible.T).T  
     pose1_2d = pixels_h[:, :2] / pixels_h[:, 2:3]
 
     pose1_2d[:,0] = w - pose1_2d[:,0]
+
+    pose1_2d_full = np.full((len(p_camera),2), -1)
+    pose1_2d_full[mask] = pose1_2d
 
 
     robot_pos2_exp = np.concatenate((robot_pos2, np.ones((robot_pos2.shape[0], 1))), axis=-1)
@@ -341,16 +348,23 @@ for t in tqdm(range(n_frames)):
     p_camera = (np.linalg.inv(E) @ robot_pos2_exp.T).T  
 
     p_camera = p_camera[:, :3]  
+    mask = p_camera[:, 2] < 0
+
+    # Applica la mask
+    p_camera_visible = p_camera[mask]
 
     poses2_3d_cam.append(p_camera)
 
-    pixels_h = (K @ p_camera.T).T  
+    pixels_h = (K @ p_camera_visible.T).T  
     pose2_2d = pixels_h[:, :2] / pixels_h[:, 2:3]
 
     pose2_2d[:,0] = w - pose2_2d[:,0]
 
-    poses1_2d.append(pose1_2d)
-    poses2_2d.append(pose2_2d)
+    pose2_2d_full = np.full((len(p_camera),2), -1)
+    pose2_2d_full[mask] = pose2_2d
+
+    poses1_2d.append(pose1_2d_full)
+    poses2_2d.append(pose2_2d_full)
 
     # --- render frame ---
     if args.video is not None or args.frames:
@@ -416,17 +430,6 @@ if args.robot1 == "g1":
 
 data1[args.camera_mode]["pose3D"]  = pose3D_1
 data2[args.camera_mode]["pose3D"]  = pose3D_2
-
-
-mask1 = (pose3D_1[:,:,2] > 0)
-
-pose2D_1 = pose2D_1.copy()
-pose2D_1[mask1, :] = -1
-
-mask2 = (pose3D_2[:,:,2] > 0)
-
-pose2D_2 = pose2D_2.copy()
-pose2D_2[mask1, :] = -1
 
 
 data1[args.camera_mode]["pose2D"] = pose2D_1
