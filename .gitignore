@@ -25,3 +25,6 @@ logs/
 fix_annotations.py
 filtered_dataset.csv
 subdataset.py
+runs/
+*.jpg
+*.pt

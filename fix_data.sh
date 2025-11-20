@@ -1,6 +1,6 @@
 #!/bin/bash
-#SBATCH --job-name=complete
-#SBATCH --output="logs/fix.out"
+#SBATCH --job-name=detection
+#SBATCH --output="logs/detection.out"
 #SBATCH --partition=lrd_all_serial
 #SBATCH --account=IscrC_SDG-GS
 #SBATCH --nodes=1                         # Request one node
@@ -12,4 +12,4 @@
 
 module load anaconda3/2023.09-0
 source activate /leonardo/home/userexternal/rcatalin/.conda/envs/Robots
-python fix_annotations.py
+python prepare_detection.py

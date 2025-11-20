@@ -461,7 +461,7 @@ def get_camera_placement(robot, frame_number, trans, robot_name = None, stereo=N
     T[:3, :3] = R
     T[:3, 3] = p
 
-    T = camera_base@T
+    T = T@camera_base
     if robot_name != "nao":
         
         forward = T[:3, 0]  # asse X locale
