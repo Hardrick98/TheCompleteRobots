@@ -151,10 +151,10 @@ if args.scene != None:
         scene_data["scene_point"] = scene_point_index
 
     if scene_point_index == None:
-        scene_point, scene_point_index = load_background_manual(pyr_scene, args.scene, scene_point_index=None)
+        scene_point_index, bounds = load_background_manual(pyr_scene, args.scene, scene_point_index=None)
         scene_data["scene_point"] = scene_point_index
     else:    
-        scene_point, _ = load_background_manual(pyr_scene, args.scene, scene_point_index)
+        _, bounds = load_background_manual(pyr_scene, args.scene, scene_point_index)
     
     
     #scene_point = load_background_auto(pyr_scene, args.scene, robot_box)
@@ -243,14 +243,14 @@ for t in tqdm(range(n_frames)):
 
     for node, _, _ in mesh_nodes1:
         Q = node.matrix 
-        Q = scene_point@Rand_Rz@Q
+        Q = Rand_Rz@Q
         node.matrix = Q # translate nodes in the world 
         robot_pos1.append(Q[:3,3])
 
 
     for node, _, _ in mesh_nodes2:
         Q = node.matrix
-        Q = scene_point@Rand_Rz@Q
+        Q = Rand_Rz@Q
         node.matrix = Q
         robot_pos2.append(Q[:3,3])
 
@@ -270,30 +270,42 @@ for t in tqdm(range(n_frames)):
             direction[2] = 0            
             direction /= np.linalg.norm(direction)
 
-            rot_axis = np.array([0, 0, 1.0])  # ruota attorno all'asse Z
+            check = False
 
-            if "exo_rot" not in scene_data.keys():
-                theta = random.uniform(0, 2*np.pi)
-                scene_data["exo_rot"] = theta
-            else:
-                theta = scene_data["exo_rot"]
+             # ruota attorno all'asse Z
+            while check==False:
+                rot_axis = np.array([0, 0, 1.0]) 
+                
+                if "exo_rot" not in scene_data.keys():
+                    theta = random.uniform(0, 2*np.pi)
+                    scene_data["exo_rot"] = theta
+                else:
+                    theta = scene_data["exo_rot"]
+                    check = True
 
             #INSERT RANDOM THETA
 
-            rot = Rot.from_rotvec(rot_axis * theta).as_matrix()
-            robot_direction = direction.copy()
-            direction = rot @ direction
-            
+                rot = Rot.from_rotvec(rot_axis * theta).as_matrix()
+                robot_direction = direction.copy()
+                robot_direction = rot @ robot_direction
+                
 
-            up = np.array([0, 0, 1.0])
+                up = np.array([0, 0, 1.0])
 
 
-            # Parametri camera
-            horizontal_offset = 0.3   
-            vertical_offset = 0.15   
-            distance_back = 2 * s1[2]      
+                # Parametri camera
+                horizontal_offset = 0.3   
+                vertical_offset = 0.15   
+                distance_back = 2 * s1[2]      
 
-            center_pos = target - direction * distance_back + np.array([0, 0, vertical_offset])
+                center_pos = target - robot_direction * distance_back + np.array([0, 0, vertical_offset])
+
+                if check == False:
+                    check = check_camera_inside_scene(bounds, center_pos)
+                    if check == False:
+                        print("Invalid camera found, recalculating")
+
+            print("Found valid Exo camera")
 
             E = place_camera(camera_mode, center_pos, target, t=t)
 
@@ -316,7 +328,7 @@ for t in tqdm(range(n_frames)):
 
         E = place_camera(camera_mode, cameras, target=None,  t=t, random_rotation=Rand_Rz)
         camera_params["E"].append(E[None,:,:])
-        cam_node.matrix = scene_point@ E
+        cam_node.matrix = E
 
     poses1_3d.append(robot_pos1)
     poses2_3d.append(robot_pos2)

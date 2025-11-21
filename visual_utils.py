@@ -171,10 +171,7 @@ def fix_materials(mesh):
             mat.image = None
     return mesh
 
-def load_background_manual(pyr_scene, scene_path, scene_point_index=None):
-    
-
-    
+def load_background_manual(pyr_scene, scene_path, scene_point_index=None):  
 
     scene_positions = {"estensi_hallway":[[-40,35,-0.1], [-50,35,-0.1], [-30,35,-0.1]], 
                        "castle":[[0,0,-40]],
@@ -187,10 +184,7 @@ def load_background_manual(pyr_scene, scene_path, scene_point_index=None):
                        "baroque_room":[[-1.5,-3.5,-0.5],[2,1,-0.5],[0,0,-0.5]]
                        }
        
-    scene_mesh = trimesh.load_scene(scene_path)
-
-
-    
+    scene_mesh = trimesh.load_scene(scene_path)    
 
     scene_name = scene_path.split("/")[-1].removesuffix(".glb")
 
@@ -220,13 +214,20 @@ def load_background_manual(pyr_scene, scene_path, scene_point_index=None):
 
         vertices.append(geom.vertices)
 
+        
         pyr_mesh = pyrender.Mesh.from_trimesh(geom, smooth=True)
         pyr_scene.add(pyr_mesh)
  
-
     F = np.eye(4)
 
-    return F, index
+    all_vertices = np.vstack(vertices)
+
+    scene_min = all_vertices.min(axis=0)
+    scene_max = all_vertices.max(axis=0)
+
+    bounds = [scene_min, scene_max]
+
+    return index, bounds
 
 
 
@@ -339,3 +340,12 @@ def check_collision(maxs, mins, scene_points, scene_point):
     inside_mask = np.all((scene_points >= mins) & (scene_points <= maxs), axis=1)
     percent_inside = 100 * (inside_mask.sum() / scene_points.shape[0])
     return percent_inside
+
+
+def check_camera_inside_scene(scene_bounds, camera_pose):
+
+    mins = scene_bounds[0]+0.5
+    maxs = scene_bounds[1]-0.5
+    check = np.all((camera_pose >= mins) & (camera_pose <= maxs))
+    
+    return check

@@ -490,3 +490,4 @@ def get_camera_placement(robot, frame_number, trans, robot_name = None, stereo=N
     else:
 
         return trans @ T
+    
