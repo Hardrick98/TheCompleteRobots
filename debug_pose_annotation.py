@@ -43,7 +43,7 @@ frames.sort()
 
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
 out = cv2.VideoWriter(f"{args.r}_{args.c}.mp4", fourcc, 120, (1280, 720))
-for i in tqdm(range(len(frames))):
+for i in range(len(frames)):
         
     image = cv2.imread(frames[i])
 

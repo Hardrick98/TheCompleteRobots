@@ -1,26 +1,27 @@
 #!/bin/bash
 #SBATCH --job-name=generate
-#SBATCH --output="logs/chunk_%a.out"
-#SBATCH --array=0
+#SBATCH --output="logs/chunk_fix_%a.out"
+#SBATCH --array=0-1
 #SBATCH --partition=boost_usr_prod
 #SBATCH --gres=gpu:a100:1
 #SBATCH --account=IscrC_SDG-GS
-#SBATCH --time=10:00:00
+#SBATCH --time=1-00:00:00
 #SBATCH --mem=40G
-#SBATCH --cpus-per-gpu=4
+##SBATCH --cpus-per-gpu=4
 
+echo "$(date)"
 module load anaconda3/2023.09-0
 source activate /leonardo/home/userexternal/rcatalin/.conda/envs/Robots
 #module load ffmpeg/7.1-gcc-11.4.0
 export PYOPENGL_PLATFORM=egl
 
-DATASET="/leonardo_work/IscrC_SDG-GS/TheCompleteRobots/dataset.csv"
+DATASET="/leonardo_work/IscrC_SDG-GS/TheCompleteRobots/errors.csv"
 
 # Numero di righe da processare per job
-BATCH_SIZE=3
+BATCH_SIZE=13
 
 # Calcola le righe di inizio/fine per questo job
-START=$(( SLURM_ARRAY_TASK_ID * BATCH_SIZE + 4 ))  # +2 per saltare intestazione
+START=$(( SLURM_ARRAY_TASK_ID * BATCH_SIZE + 2 ))  # +2 per saltare intestazione
 END=$(( START + BATCH_SIZE - 1 ))
 
 echo "Processing lines $START to $END from dataset.csv"
@@ -59,7 +60,7 @@ do
 
     echo "Script completed for $interaction ($robot, $scene)!"
 done
-
+echo "$(date)"
 echo "Job completed!"
 
 
