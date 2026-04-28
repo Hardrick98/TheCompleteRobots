@@ -28,4 +28,5 @@ subdataset.py
 runs/
 *.jpg
 *.pt
+icub_init.pkl
 
