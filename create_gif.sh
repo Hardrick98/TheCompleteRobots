@@ -1,1 +1,0 @@
-ffmpeg -i $1.mp4 -vf "fps=30,scale=600:-1:flags=lanczos" -gifflags -transdiff -y $1.gif

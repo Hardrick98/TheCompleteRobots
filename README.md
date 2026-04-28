@@ -1,4 +1,4 @@
-# The Complete Robots
+# R2RI Dataset
 
 We are creating a dataset of robots interacting with each other. 
 
@@ -43,18 +43,18 @@ This will save robot configurations in the same folder.
 To extract data like poses and collisions run:
 
 ```
-python robot_interaction.py --interaction PATH_TO_INTERACTION --robot1 ROBOT1_NAME --robot2 ROBOT2_NAME --video 
+python compute_data.py --interaction PATH_TO_INTERACTION --robot1 ROBOT1_NAME --robot2 ROBOT2_NAME
 ```
 
 To create videos 
 
 ```
-python render.py --robot1 ROBOT1 --robot2 ROBOT2 --interaction PATH_TO_INTERACTION --scene SCENE --video --camera_mode CAMERA MODE
+python render.py --robot1 ROBOT1 --robot2 ROBOT2 --interaction PATH_TO_INTERACTION --scene SCENE --video PATH_TO_VIDEO --camera_mode CAMERA MODE
 ```
 
 
 
-Alternatively you can use ./compute_data.sh INTERACTION, tp do it all at once.
+Alternatively you can use ./compute_data.sh $INTERACTION $SCENE $ROBOT, to do it all at once.
 
 
 
@@ -62,15 +62,18 @@ Alternatively you can use ./compute_data.sh INTERACTION, tp do it all at once.
 
 
 ```
-robot_dataset_samples/
+R2RI_dataset/
 ├── G020T004A024R021/
 │   ├── g1/
-│   │   ├── g1_exoL.mp4
-|   |   ├── g1_exoR.mp4
-|   |   ├── g1_ego1L.mp4
-|   |   ├── g1_ego1R.mp4
-|   |   ├── g1_ego2L.mp4
-|   |   ├── g1_ego2R.mp4
+│   │   ├── exoL/
+|   |   |     ├── frame_00000.png
+|   |   |     ├── frame_00001.png
+|   |   |     ...
+|   |   ├── exoR/
+|   |   ├── ego1L/
+|   |   ├── ego1R/
+|   |   ├── ego2L/
+|   |   ├── ego2R/
 │   │   └── data/
 │   │       ├── g1_data_1.pkl
 │   │       ├── g1_data_2.pkl
@@ -78,13 +81,12 @@ robot_dataset_samples/
 │   │       └── g1_g1_collisions.pkl
 │   │
 │   └── nao/
-│       ├── nao_exoL.mp4
-|       ├── nao_exoR.mp4
-|       ├── nao_ego1L.mp4
-|       ├── nao_ego1R.mp4
-|       ├── nao_ego2L.mp4
-|       ├── nao_ego2R.mp4
-│       └── data/
+|   |    ├── exoR/
+|   ...  ├── ego1L/
+|        ├── ego1R/
+|        ├── ego2L/
+|        ├── ego2R/
+│        └── data/
 │           ├── nao_1_data.pkl
 │           ├── nao_2_data.pkl
 │           ├── nao_cameras.pkl

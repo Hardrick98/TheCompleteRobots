@@ -1,4 +1,5 @@
 old_stuff/*
+old_scripts/*
 __pycache__/*
 URDF/t-pose.npy
 */__pycache__/
@@ -13,7 +14,7 @@ profile_output.prof
 *.obj
 *.mtl
 *.glb
-nao_pose.pkl
+*.pkl
 credits.txt
 *.zip
 *not_colored/
@@ -28,3 +29,4 @@ subdataset.py
 runs/
 *.jpg
 *.pt
+
